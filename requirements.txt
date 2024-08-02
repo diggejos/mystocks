@@ -1,0 +1,6 @@
+dash
+yfinance
+pandas
+plotly.express
+plotly.graph_objects
+requests
