@@ -9,7 +9,7 @@ import plotly.express as px
 import pandas as pd
 from datetime import datetime, timedelta
 import requests
-import plotly.graph_objects as go
+#import plotly.graph_objects as go
 from dotenv import load_dotenv
 import os
 
