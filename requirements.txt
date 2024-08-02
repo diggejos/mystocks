@@ -2,5 +2,5 @@ dash
 yfinance
 pandas
 plotly.express
-plotly.graph_objects
+plotly.graph_objects == 4.9
 requests
