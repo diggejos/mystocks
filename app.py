@@ -10,6 +10,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 import requests
 import plotly.graph_objects as go
+from dotenv import load_dotenv
+import os
 
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
@@ -501,8 +503,10 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         fig_indexed.add_scatter(x=df_indexed['Date'], y=df_indexed[f'{benchmark_selection}_Index'], mode='lines', name=benchmark_selection, line=dict(dash='dot'))
     
     fig_indexed.update_layout(template=plotly_theme)
+
+    load_dotenv()
+    api_key = os.getenv('API_KEY')
     
-    api_key = 'fcf2a8680255486bb083742f68252328'
     news_content = fetch_news(api_key, selected_stocks)
     
     return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks, start_date, end_date
