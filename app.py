@@ -239,7 +239,7 @@ about_layout = dbc.Container([
                 html.Li("View stock prices over a specified date range."),
                 html.Li("Fetch and display the latest news articles related to the selected stocks."),
                 html.Li("Visualize stock prices with interactive graphs."),
-                html.Li("Compare stock performance using indexed comparison graphs."),
+                html.Li("Compare stock performance using  comparison graphs."),
                 html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index)"),
                 html.Li("Responsive design for use on different devices."),
                 html.Li("Historical stock performance simulation in order to derive profit/loss")
@@ -309,7 +309,7 @@ def fetch_news(api_key, symbols):
     [Output('stock-graph', 'figure'),
       Output('stock-graph', 'style'),
       Output('stock-news', 'children'),
-      Output('indexed-comparison-graph', 'figure'),
+      Output('-comparison-graph', 'figure'),
       Output('individual-stocks-store', 'data'),
       Output('date-picker-range', 'start_date'),
       Output('date-picker-range', 'end_date')],
@@ -426,7 +426,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     df_all.set_index('Date', inplace=True)
     
     # Create an index for each stock
-    indexed_data = {}
+    _data = {}
     for symbol in selected_stocks:
         df_stock = df_all[df_all['Stock'] == symbol].copy()
         df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
@@ -446,7 +446,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     df_indexed.reset_index(inplace=True)
     df_indexed.columns = ['Date'] + [f'{symbol}_Index' for symbol in indexed_data.keys()]
     
-    fig_indexed = px.line(df_indexed, x='Date', y=[f'{symbol}_Index' for symbol in selected_stocks], title='Indexed Comparison', template=plotly_theme)
+    fig_indexed = px.line(df_indexed, x='Date', y=[f'{symbol}_Index' for symbol in selected_stocks], template=plotly_theme)
     fig_indexed.update_yaxes(matches=None, title_text=None)
     fig_indexed.update_xaxes(title_text=None)
     fig_indexed.update_layout(legend=dict(
