@@ -247,12 +247,6 @@ about_layout = dbc.Container([
     ]),
     dbc.Row([
         dbc.Col(html.Figure([
-            html.Img(src='/assets/example_stocks.png', className="mt-4"),
-            html.Figcaption("Comparing indexed stock prices over time", className="text-left mt-2")
-        ], className="text-left"))
-    ]),
-    dbc.Row([
-        dbc.Col(html.Figure([
             html.Img(src='/assets/gif.gif', className="mt-4"),
             html.Figcaption("Application in Action", className="text-left mt-2")
         ], className="text-left"))
