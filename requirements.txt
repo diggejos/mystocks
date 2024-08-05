@@ -5,3 +5,4 @@ plotly.express
 plotly
 requests
 gunicorn
+bootstrap
