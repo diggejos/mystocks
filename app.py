@@ -401,25 +401,25 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         fig_stock = px.line(df_all, x='Date', y=['Close', '30D_MA','100D_MA'], color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
         fig_stock.update_yaxes(matches=None, title_text=None)
         fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height)
+        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
     
     elif '30D Moving Average' in movag_input:
         fig_stock = px.line(df_all, x='Date', y=['Close', '30D_MA'], color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
         fig_stock.update_yaxes(matches=None, title_text=None)
         fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height)
+        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
     
     elif '100D Moving Average' in movag_input:
         fig_stock = px.line(df_all, x='Date', y=['Close', "100D_MA"], color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
         fig_stock.update_yaxes(matches=None, title_text=None)
         fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height)
+        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
     
     else:
         fig_stock = px.line(df_all, x='Date', y='Close', color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
         fig_stock.update_yaxes(matches=None, title_text=None)
         fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height)
+        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
 
     
     df_all['Date'] = pd.to_datetime(df_all['Date'])
@@ -454,7 +454,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         y=0.99,
         xanchor="left",
         x=0.01
-    ),legend_title_text=None)
+    ),legend_title_text=None,margin=dict(l=10, r=10, t=15, b=10))
   
 
     
@@ -522,7 +522,7 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
                 showlegend=False,
                 template=plotly_theme,
                 yaxis=dict(visible=False),
-                margin=dict(t=100,)  # Add extra margin on top
+                margin=dict(t=100,l=10,r=10,b=10)  # Add extra margin on top
             )
 
             return html.Div([
