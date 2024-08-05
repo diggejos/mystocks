@@ -1,5 +1,6 @@
-dash
+dash==2.9.3
 yfinance
 pandas
 plotly.express
+plotly
 requests
