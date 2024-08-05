@@ -240,8 +240,9 @@ about_layout = dbc.Container([
                 html.Li("Fetch and display the latest news articles related to the selected stocks."),
                 html.Li("Visualize stock prices with interactive graphs."),
                 html.Li("Compare stock performance using indexed comparison graphs."),
-                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
-                html.Li("Responsive design for use on different devices.")
+                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index)",
+                html.Li("Responsive design for use on different devices."),
+                html.Li("Historical stock performance simulation in order to derive profit/loss")
             ]),
             "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
             html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
