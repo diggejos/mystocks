@@ -94,7 +94,7 @@ dashboard_layout = dbc.Container([
                         dcc.Input(
                             id='individual-stock-input',
                             type='text',
-                            placeholder='Enter stock symbol: e.g. SPOT for Spotify',
+                            placeholder='SPOT for Spotify',
                             debounce=True,
                             className='form-control'
                         ),
@@ -240,7 +240,7 @@ about_layout = dbc.Container([
                 html.Li("Fetch and display the latest news articles related to the selected stocks."),
                 html.Li("Visualize stock prices with interactive graphs."),
                 html.Li("Compare stock performance using indexed comparison graphs."),
-                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index)",
+                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index)"),
                 html.Li("Responsive design for use on different devices."),
                 html.Li("Historical stock performance simulation in order to derive profit/loss")
             ]),
