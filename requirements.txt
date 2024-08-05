@@ -7,4 +7,3 @@ requests
 gunicorn
 dash_bootstrap_components
 dotenv
-
