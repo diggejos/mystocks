@@ -5,3 +5,5 @@ plotly.express
 plotly
 requests
 gunicorn
+dash_bootstrap_components
+
