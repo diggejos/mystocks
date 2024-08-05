@@ -1,5 +1,3 @@
-
-
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -32,6 +30,7 @@ themes = {
 # Initialize the Dash app with a default Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
+
 
 app.layout = html.Div([
     dcc.Store(id='individual-stocks-store', data=[]),
@@ -80,11 +79,10 @@ dashboard_layout = dbc.Container([
                                 {'label': 'META (META)', 'value': 'META'},
                                 {'label': 'Netflix (NFLX)', 'value': 'NFLX'},
                                 {'label': 'MSCI WORLD ETF (URTH)', 'value': 'URTH'},
-                                {'label': 'Paypal (PYPL)', 'value': 'PYPL'},
                                 {'label': 'Bitcoin (BTC-USD)', 'value': 'BTC-USD'},
                                 {'label': 'Uber (UBER)', 'value': 'UBER'}
                             ],
-                            value=['AAPL', 'AMZN', 'MSFT'],
+                            value=['AAPL', 'AMZN', 'GOOGL'],
                             multi=True,
                             className='form-control'
                         ),
@@ -94,7 +92,7 @@ dashboard_layout = dbc.Container([
                         dcc.Input(
                             id='individual-stock-input',
                             type='text',
-                            placeholder='e.g. SPOT for Spotify',
+                            placeholder='Enter stock symbol',
                             debounce=True,
                             className='form-control'
                         ),
@@ -185,16 +183,15 @@ dashboard_layout = dbc.Container([
                                 dcc.Dropdown(
                                     id='simulation-stock-input',
                                     options=[
-                                        {'label': 'Apple (AAPL)', 'value': 'AAPL'},
-                                        {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
-                                        {'label': 'Google (GOOGL)', 'value': 'GOOGL'},
-                                        {'label': 'Tesla (TSLA)', 'value': 'TSLA'},
-                                        {'label': 'META (META)', 'value': 'META'},
-                                        {'label': 'Netflix (NFLX)', 'value': 'NFLX'},
-                                        {'label': 'MSCI WORLD ETF (URTH)', 'value': 'URTH'},
-                                        {'label': 'Paypal (PYPL)', 'value': 'PYPL'},
-                                        {'label': 'Bitcoin (BTC-USD)', 'value': 'BTC-USD'},
-                                        {'label': 'Uber (UBER)', 'value': 'UBER'},
+                                    {'label': 'Apple (AAPL)', 'value': 'AAPL'},
+                                    {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
+                                    {'label': 'Google (GOOGL)', 'value': 'GOOGL'},
+                                    {'label': 'Tesla (TSLA)', 'value': 'TSLA'},
+                                    {'label': 'META (META)', 'value': 'META'},
+                                    {'label': 'Netflix (NFLX)', 'value': 'NFLX'},
+                                    {'label': 'MSCI WORLD ETF (URTH)', 'value': 'URTH'},
+                                    {'label': 'Bitcoin (BTC-USD)', 'value': 'BTC-USD'},
+                                    {'label': 'Uber (UBER)', 'value': 'UBER'}
                                     ],
                                     value='AAPL',
                                     className='form-control'
@@ -239,10 +236,9 @@ about_layout = dbc.Container([
                 html.Li("View stock prices over a specified date range."),
                 html.Li("Fetch and display the latest news articles related to the selected stocks."),
                 html.Li("Visualize stock prices with interactive graphs."),
-                html.Li("Compare stock performance using  comparison graphs."),
-                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index)"),
-                html.Li("Responsive design for use on different devices."),
-                html.Li("Historical stock performance simulation in order to derive profit/loss")
+                html.Li("Compare stock performance using indexed comparison graphs."),
+                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
+                html.Li("Responsive design for use on different devices.")
             ]),
             "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
             html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
@@ -309,7 +305,7 @@ def fetch_news(api_key, symbols):
     [Output('stock-graph', 'figure'),
       Output('stock-graph', 'style'),
       Output('stock-news', 'children'),
-      Output('-comparison-graph', 'figure'),
+      Output('indexed-comparison-graph', 'figure'),
       Output('individual-stocks-store', 'data'),
       Output('date-picker-range', 'start_date'),
       Output('date-picker-range', 'end_date')],
@@ -426,7 +422,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     df_all.set_index('Date', inplace=True)
     
     # Create an index for each stock
-    _data = {}
+    indexed_data = {}
     for symbol in selected_stocks:
         df_stock = df_all[df_all['Stock'] == symbol].copy()
         df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
@@ -454,7 +450,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         y=0.99,
         xanchor="left",
         x=0.01
-    ),legend_title_text=None,margin=dict(l=10, r=10, t=15, b=10))
+    ),legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
   
 
     
@@ -476,10 +472,11 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         fig_indexed.add_scatter(x=df_indexed['Date'], y=df_indexed[f'{benchmark_selection}_Index'], mode='lines', name=benchmark_selection, line=dict(dash='dot'))
     
     fig_indexed.update_layout(template=plotly_theme)
-
+    
     load_dotenv()
     api_key = os.getenv('API_KEY')
     
+    # api_key = 'fcf2a8680255486bb083742f68252328'
     news_content = fetch_news(api_key, selected_stocks)
     
     return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks, start_date, end_date
@@ -522,7 +519,7 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
                 showlegend=False,
                 template=plotly_theme,
                 yaxis=dict(visible=False),
-                margin=dict(t=100,l=10,r=10,b=10)  # Add extra margin on top
+                margin=dict(t=100,l=10,r=10,b=10)  
             )
 
             return html.Div([
@@ -589,10 +586,3 @@ app.index_string = '''
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
-
-
-
-
-
-
-
