@@ -94,7 +94,7 @@ dashboard_layout = dbc.Container([
                         dcc.Input(
                             id='individual-stock-input',
                             type='text',
-                            placeholder='SPOT for Spotify',
+                            placeholder='e.g. 'SPOT' for Spotify',
                             debounce=True,
                             className='form-control'
                         ),
