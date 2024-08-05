@@ -41,7 +41,7 @@ themes = {
 
 # Initialize the Dash app with a default Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app:server
+server = app.server
 
 app.layout = html.Div([
     dcc.Store(id='individual-stocks-store', data=[]),
