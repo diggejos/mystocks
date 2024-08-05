@@ -1,10 +1,10 @@
 dash==2.9.2
-dash-bootstrap-components==1.4.1
-yfinance==0.2.18
-plotly==5.15.0
-pandas==1.5.3
-requests==2.31.0
-python-dotenv==1.0.0
-gunicorn==20.1.0
-numpy==1.21.0
+dash-bootstrap-components
+yfinance
+plotly
+pandas
+requests
+python-dotenv
+gunicorn
+numpy
 
