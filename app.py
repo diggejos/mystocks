@@ -10,6 +10,8 @@ import requests
 import plotly.graph_objects as go
 from dotenv import load_dotenv
 import os
+from plotly.subplots import make_subplots
+
 
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
@@ -50,7 +52,7 @@ app.layout = html.Div([
         ],
         brand=[
             html.Img(src='/assets/logo_with_transparent_background.png', height='60px'),
-            "Josua's Stock Dashboard"
+            "MySTOCKS"
         ],
         brand_href="/",
         color="primary",
@@ -99,15 +101,7 @@ dashboard_layout = dbc.Container([
                         dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
                         dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2')
                     ], className='mb-3'),
-                    html.Div([
-                        html.Label("Select Date Range:", className="font-weight-bold"),
-                        dcc.DatePickerRange(
-                            id='date-picker-range',
-                            start_date=pd.to_datetime('2023-01-01'),
-                            end_date=pd.to_datetime('today'),
-                            className='form-control'
-                        ),
-                    ], className='mb-3'),
+                    
                     html.Div([
                         html.Label("Or Select Predefined Range:", className="font-weight-bold"),
                         dcc.RadioItems(
@@ -135,10 +129,14 @@ dashboard_layout = dbc.Container([
                 dcc.Tab(label='Stock Prices', children=[
                     dbc.Card(
                         dbc.CardBody([
-                            dcc.Checklist(
+                          dcc.Checklist(
                                 id='movag_input',
-                                options=['30D Moving Average', '100D Moving Average'],
-                                value=[''],
+                                options=[
+                                    {'label': '30D Moving Average', 'value': '30D_MA'},
+                                    {'label': '100D Moving Average', 'value': '100D_MA'},
+                                    {'label': 'Volume', 'value': 'Volume'}
+                                ],
+                                value=['Volume'],
                                 inline=True,
                                 inputStyle={"margin-right": "10px"},
                                 labelStyle={"margin-right": "20px"}
@@ -228,29 +226,46 @@ dashboard_layout = dbc.Container([
 # Layout for the About page
 about_layout = dbc.Container([
     dbc.Row([
-        dbc.Col(html.P([
-            "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:",
-            html.Ul([
-                html.Li("Track stock prices for multiple companies simultaneously."),
-                html.Li("Add individual stock symbols manually."),
-                html.Li("View stock prices over a specified date range."),
-                html.Li("Fetch and display the latest news articles related to the selected stocks."),
-                html.Li("Visualize stock prices with interactive graphs."),
-                html.Li("Compare stock performance using indexed comparison graphs."),
-                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
-                html.Li("Responsive design for use on different devices.")
-            ]),
-            "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
-            html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
-            "."
-        ], className="text-left"))
-    ]),
+       dbc.Col(html.Div([
+           html.P([
+               "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:"
+           ], className="text-center"),
+           html.Ul([
+               html.Li("Track stock prices for multiple companies simultaneously."),
+               html.Li("Add individual stock symbols manually."),
+               html.Li("View stock prices over a specified date range."),
+               html.Li("Fetch and display the latest news articles related to the selected stocks."),
+               html.Li("Visualize stock prices with interactive graphs."),
+               html.Li("Compare stock performance using indexed comparison graphs."),
+               html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
+               html.Li("Responsive design for use on different devices.")
+           ], className="text-left"),
+           html.P([
+               "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
+               html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
+               "."
+           ], className="text-center")
+       ], className="mx-auto", style={"max-width": "600px"}))
+   ]),
     dbc.Row([
         dbc.Col(html.Figure([
-            html.Img(src='/assets/gif.gif', className="mt-4"),
-            html.Figcaption("Application in Action", className="text-left mt-2")
-        ], className="text-left"))
+            html.Img(src='/assets/gif.gif', className="mt-4",style={"max-width": "100%", "height": "auto"}),
+            html.Figcaption("Get latest Stock news", className="text-center mt-2")
+        ], className="text-center"))
+    ]),
+    dbc.Row([
+        dbc.Col(html.Div([
+            html.H2("About the Author"),
+            html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle mt-4", style={"max-width": "150px", "height": "auto"}),
+            html.P("Josua is a professional with 10+ years experience in pricing, marketing, data analysis and revenue management in the airline, consumer goods and publishing industries. He holds an executive master's in international business combined with a bachelor's degree in engineering and management and two executive certificates in data analysis and visualization. With his strong data-driven and business acumen, he strives to optimize performance and bring value to organizations."
+                   ),
+            html.A(
+            html.Img(src='/assets/linkedin.png', className="img-fluid", style={"max-width": "30px", "height": "auto"}),
+            href="https://www.linkedin.com/in/diggejos", target="_blank", className="mt-4"
+        )
+        ], className="text-center", style={"background-color": "#eeeeeeff", "padding": "10px", "border-radius": "10px"}))
     ])
+
 ], fluid=True)
 
 
@@ -295,29 +310,26 @@ def fetch_news(api_key, symbols):
     
     return news_content
 
+
 @app.callback(
     [Output('stock-graph', 'figure'),
-      Output('stock-graph', 'style'),
-      Output('stock-news', 'children'),
-      Output('indexed-comparison-graph', 'figure'),
-      Output('individual-stocks-store', 'data'),
-      Output('date-picker-range', 'start_date'),
-      Output('date-picker-range', 'end_date')],
+     Output('stock-graph', 'style'),
+     Output('stock-news', 'children'),
+     Output('indexed-comparison-graph', 'figure'),
+     Output('individual-stocks-store', 'data')],
     [Input('add-stock-button', 'n_clicks'),
-      Input('submit-button', 'n_clicks'),
-      Input('reset-stocks-button', 'n_clicks'),
-      Input('stock-input', 'value'),
-      Input('predefined-ranges', 'value'),
-      Input('movag_input', 'value'),
-      Input('benchmark-selection', 'value'),
-      Input('plotly-theme-store', 'data')],
+     Input('submit-button', 'n_clicks'),
+     Input('reset-stocks-button', 'n_clicks'),
+     Input('stock-input', 'value'),
+     Input('predefined-ranges', 'value'),
+     Input('movag_input', 'value'),
+     Input('benchmark-selection', 'value'),
+     Input('plotly-theme-store', 'data')],
     [State('individual-stock-input', 'value'),
-      State('individual-stocks-store', 'data'),
-      State('stock-input', 'value'),
-      State('date-picker-range', 'start_date'),
-      State('date-picker-range', 'end_date')]
+     State('individual-stocks-store', 'data'),
+     State('stock-input', 'value')]
 )
-def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, new_stock, individual_stocks, selected_stocks, start_date, end_date):
+def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, new_stock, individual_stocks, selected_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
         selected_stocks = ['AAPL']
@@ -339,9 +351,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
                 {'height': '400px'},
                 html.Div("Please select at least one stock symbol."),
                 px.line(title="Please select at least one stock symbol.", template=plotly_theme),
-                individual_stocks,
-                start_date,
-                end_date)
+                individual_stocks)
     
     today = pd.to_datetime('today')
     if predefined_range == 'YTD':
@@ -353,10 +363,9 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     elif predefined_range == '5Y':
         start_date = today - timedelta(days=1825)
     elif predefined_range == '10Y':
-        start_date = today - timedelta(days=1825*2)
+        start_date = today - timedelta(days=3650)
     else:
-        start_date = datetime.strptime(start_date.split('T')[0], '%Y-%m-%d')
-        end_date = datetime.strptime(end_date.split('T')[0], '%Y-%m-%d')
+        start_date = pd.to_datetime('2023-01-01')
     
     end_date = today
     
@@ -375,9 +384,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
                 {'height': '400px'},
                 html.Div("No news found for the given stock symbols."),
                 px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
-                individual_stocks,
-                start_date,
-                end_date)
+                individual_stocks)
     
     df_all = pd.concat(data)
     
@@ -386,31 +393,26 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     num_rows = num_stocks
     graph_height = 400 * num_rows  # Each facet should be 400px in height
     
+    fig_stock = make_subplots(rows=num_rows, cols=1, shared_xaxes=True, vertical_spacing=0.02, subplot_titles=selected_stocks, row_heights=[1]*num_rows, specs=[[{"secondary_y": True}]]*num_rows)
     
-    if '30D Moving Average' in movag_input and '100D Moving Average' in movag_input:
-        fig_stock = px.line(df_all, x='Date', y=['Close', '30D_MA','100D_MA'], color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
-        fig_stock.update_yaxes(matches=None, title_text=None)
-        fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
+    for i, symbol in enumerate(selected_stocks):
+        df_stock = df_all[df_all['Stock'] == symbol]
+        
+        fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['Close'], name=f'{symbol} Close', line=dict(color='blue')), row=i+1, col=1)
+        
+        if '30D_MA' in movag_input:
+            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['30D_MA'], name=f'{symbol} 30D MA', line=dict(color='green')), row=i+1, col=1)
+        
+        if '100D_MA' in movag_input:
+            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['100D_MA'], name=f'{symbol} 100D MA', line=dict(color='red')), row=i+1, col=1)
+        
+        if 'Volume' in movag_input:
+            fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
+            fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
     
-    elif '30D Moving Average' in movag_input:
-        fig_stock = px.line(df_all, x='Date', y=['Close', '30D_MA'], color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
-        fig_stock.update_yaxes(matches=None, title_text=None)
-        fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
-    
-    elif '100D Moving Average' in movag_input:
-        fig_stock = px.line(df_all, x='Date', y=['Close', "100D_MA"], color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
-        fig_stock.update_yaxes(matches=None, title_text=None)
-        fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
-    
-    else:
-        fig_stock = px.line(df_all, x='Date', y='Close', color='Stock', facet_col='Stock', facet_col_wrap=1, template=plotly_theme)
-        fig_stock.update_yaxes(matches=None, title_text=None)
-        fig_stock.update_xaxes(title_text=None)
-        fig_stock.update_layout(showlegend=False, height=graph_height,margin=dict(l=10, r=10, t=15, b=10))
-
+    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False,margin=dict(l=10, r=10, t=20, b=10))
+    fig_stock.update_yaxes(title_text=None, secondary_y=False)
+    fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
     
     df_all['Date'] = pd.to_datetime(df_all['Date'])
     df_all.set_index('Date', inplace=True)
@@ -445,11 +447,9 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         xanchor="left",
         x=0.01
     ),legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
-  
-
     
     fig_indexed.add_shape(
-    type='line',
+        type='line',
         x0=df_indexed['Date'].min(),
         y0=100,
         x1=df_indexed['Date'].max(),
@@ -470,10 +470,11 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     load_dotenv()
     api_key = os.getenv('API_KEY')
     
-    # api_key = 'fcf2a8680255486bb083742f68252328'
     news_content = fetch_news(api_key, selected_stocks)
     
-    return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks, start_date, end_date
+    return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks
+
+
 
 @app.callback(Output('simulation-result', 'children'),
               Input('simulate-button', 'n_clicks'),
