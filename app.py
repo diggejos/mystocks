@@ -1,3 +1,5 @@
+
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -82,9 +84,11 @@ dashboard_layout = dbc.Container([
                                 {'label': 'Netflix (NFLX)', 'value': 'NFLX'},
                                 {'label': 'MSCI WORLD ETF (URTH)', 'value': 'URTH'},
                                 {'label': 'Bitcoin (BTC-USD)', 'value': 'BTC-USD'},
-                                {'label': 'Uber (UBER)', 'value': 'UBER'}
+                                {'label': 'Uber (UBER)', 'value': 'UBER'},
+                                {'label': 'Sonova (SOON.SW)', 'value': 'SOON.SW'}
+
                             ],
-                            value=['AAPL', 'AMZN', 'GOOGL'],
+                            value=['AAPL', 'MSFT', 'META', 'SOON.SW'],
                             multi=True,
                             className='form-control'
                         ),
@@ -103,11 +107,13 @@ dashboard_layout = dbc.Container([
                     ], className='mb-3'),
                     
                     html.Div([
-                        html.Label("Or Select Predefined Range:", className="font-weight-bold"),
+                        html.Label("Select Predefined Range:", className="font-weight-bold"),
                         dcc.RadioItems(
                             id='predefined-ranges',
                             options=[
                                 {'label': 'Year to Date', 'value': 'YTD'},
+                                {'label': 'last Month', 'value': '1M'},
+                                {'label': 'last 3 Months', 'value': '3M'},
                                 {'label': 'Last 12 Months', 'value': '12M'},
                                 {'label': 'Last 24 Months', 'value': '24M'},
                                 {'label': 'Last 5 Years', 'value': '5Y'},
@@ -226,27 +232,27 @@ dashboard_layout = dbc.Container([
 # Layout for the About page
 about_layout = dbc.Container([
     dbc.Row([
-       dbc.Col(html.Div([
-           html.P([
-               "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:"
-           ], className="text-center"),
-           html.Ul([
-               html.Li("Track stock prices for multiple companies simultaneously."),
-               html.Li("Add individual stock symbols manually."),
-               html.Li("View stock prices over a specified date range."),
-               html.Li("Fetch and display the latest news articles related to the selected stocks."),
-               html.Li("Visualize stock prices with interactive graphs."),
-               html.Li("Compare stock performance using indexed comparison graphs."),
-               html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
-               html.Li("Responsive design for use on different devices.")
-           ], className="text-left"),
-           html.P([
-               "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
-               html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
-               "."
-           ], className="text-center")
-       ], className="mx-auto", style={"max-width": "600px"}))
-   ]),
+        dbc.Col(html.Div([
+            html.P([
+                "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:"
+            ], className="text-center"),
+            html.Ul([
+                html.Li("Track stock prices for multiple companies simultaneously."),
+                html.Li("Add individual stock symbols manually."),
+                html.Li("View stock prices over a specified date range."),
+                html.Li("Fetch and display the latest news articles related to the selected stocks."),
+                html.Li("Visualize stock prices with interactive graphs."),
+                html.Li("Compare stock performance using indexed comparison graphs."),
+                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
+                html.Li("Responsive design for use on different devices.")
+            ], className="text-left"),
+            html.P([
+                "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
+                html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
+                "."
+            ], className="text-center")
+        ], className="mx-auto", style={"max-width": "600px"}))
+    ]),
     dbc.Row([
         dbc.Col(html.Figure([
             html.Img(src='/assets/gif.gif', className="mt-4",style={"max-width": "100%", "height": "auto"}),
@@ -258,7 +264,7 @@ about_layout = dbc.Container([
             html.H2("About the Author"),
             html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle mt-4", style={"max-width": "150px", "height": "auto"}),
             html.P("Josua is a professional with 10+ years experience in pricing, marketing, data analysis and revenue management in the airline, consumer goods and publishing industries. He holds an executive master's in international business combined with a bachelor's degree in engineering and management and two executive certificates in data analysis and visualization. With his strong data-driven and business acumen, he strives to optimize performance and bring value to organizations."
-                   ),
+                    ),
             html.A(
             html.Img(src='/assets/linkedin.png', className="img-fluid", style={"max-width": "30px", "height": "auto"}),
             href="https://www.linkedin.com/in/diggejos", target="_blank", className="mt-4"
@@ -313,21 +319,21 @@ def fetch_news(api_key, symbols):
 
 @app.callback(
     [Output('stock-graph', 'figure'),
-     Output('stock-graph', 'style'),
-     Output('stock-news', 'children'),
-     Output('indexed-comparison-graph', 'figure'),
-     Output('individual-stocks-store', 'data')],
+      Output('stock-graph', 'style'),
+      Output('stock-news', 'children'),
+      Output('indexed-comparison-graph', 'figure'),
+      Output('individual-stocks-store', 'data')],
     [Input('add-stock-button', 'n_clicks'),
-     Input('submit-button', 'n_clicks'),
-     Input('reset-stocks-button', 'n_clicks'),
-     Input('stock-input', 'value'),
-     Input('predefined-ranges', 'value'),
-     Input('movag_input', 'value'),
-     Input('benchmark-selection', 'value'),
-     Input('plotly-theme-store', 'data')],
+      Input('submit-button', 'n_clicks'),
+      Input('reset-stocks-button', 'n_clicks'),
+      Input('stock-input', 'value'),
+      Input('predefined-ranges', 'value'),
+      Input('movag_input', 'value'),
+      Input('benchmark-selection', 'value'),
+      Input('plotly-theme-store', 'data')],
     [State('individual-stock-input', 'value'),
-     State('individual-stocks-store', 'data'),
-     State('stock-input', 'value')]
+      State('individual-stocks-store', 'data'),
+      State('stock-input', 'value')]
 )
 def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, new_stock, individual_stocks, selected_stocks):
     ctx = dash.callback_context
@@ -356,6 +362,10 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     today = pd.to_datetime('today')
     if predefined_range == 'YTD':
         start_date = datetime(today.year, 1, 1)
+    elif predefined_range == '1M':
+        start_date = today - timedelta(days=30)
+    elif predefined_range == '3M':
+        start_date = today - timedelta(days=3*30)
     elif predefined_range == '12M':
         start_date = today - timedelta(days=365)
     elif predefined_range == '24M':
@@ -409,8 +419,52 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         if 'Volume' in movag_input:
             fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
             fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
+        
+        # Get the most recent price and percentage change
+        last_close = df_stock['Close'].iloc[-2]
+        latest_close = df_stock['Close'].iloc[-1]
+        change_percent = ((latest_close - last_close) / last_close) * 100
+        
+        # Add the last available data point as a marker
+        fig_stock.add_trace(go.Scatter(
+            x=[df_stock['Date'].iloc[-1]],
+            y=[latest_close],
+            mode='markers',
+            marker=dict(color='red', size=10),
+            name=f'{symbol} Last Price'
+        ), row=i+1, col=1)
+        
+        # Add annotations for the latest price and percentage change
+        fig_stock.add_annotation(
+            x=df_stock['Date'].iloc[-1],
+            y=latest_close,
+            text=f"{latest_close:.2f} ({change_percent:.2f}%)",
+            showarrow=True,
+            arrowhead=None,
+            ax=0,
+            ay=-30,
+            row=i+1,
+            col=1,
+            font=dict(color="blue", size=12),
+            bgcolor = 'white'
+        )
+        
+        fig_stock.add_shape(
+            type="line",
+            x0=df_stock['Date'].min(),
+            x1=df_stock['Date'].max(),
+            y0=latest_close,
+            y1=latest_close,
+            line=dict(
+                color="red",
+                width=2,
+                dash="dot"
+            ),
+            row=i+1,
+            col=1
+        )
     
-    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False,margin=dict(l=10, r=10, t=20, b=10))
+    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, margin=dict(l=10, r=10, t=20, b=10))
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
     
@@ -473,6 +527,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     news_content = fetch_news(api_key, selected_stocks)
     
     return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks
+
 
 
 
@@ -581,3 +636,4 @@ app.index_string = '''
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
+
