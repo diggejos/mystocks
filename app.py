@@ -1,5 +1,3 @@
-
-
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -286,8 +284,6 @@ about_layout = dbc.Container([
 
 ], fluid=True)
 
-
-# Modify the fetch_news function to update the table style
 def fetch_news(api_key, symbols):
     news_content = []
     base_url = "https://newsapi.org/v2/everything"
@@ -305,24 +301,23 @@ def fetch_news(api_key, symbols):
         
         if articles:
             news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
-            table_header = [
-                html.Thead(html.Tr([
-                    html.Th("Title", style={'width': '40%'}),
-                    html.Th("Preview", style={'width': '40%'}),
-                    html.Th("Source", style={'width': '10%'}),
-                    html.Th("Published At", style={'width': '10%'})
-                ]))
-            ]
-            table_body = [html.Tbody([
-                html.Tr([
-                    html.Td(html.A(article['title'], href=article['url'], target="_blank")),
-                    html.Td(article.get('description', 'No summary available')),  # Add summary here
-                    html.Td(article['source']['name']),
-                    html.Td(article['publishedAt'])
-                ]) for article in articles
-            ])]
-            news_table = dbc.Table(table_header + table_body, bordered=True, className='news-table')
-            news_content.append(news_table)
+            for article in articles:
+                news_card = dbc.Card(
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col(
+                                html.Img(src=article['urlToImage'], style={"width": "70%", "height": "auto"})
+                                if article['urlToImage'] else html.Div(), width=3
+                            ),
+                            dbc.Col([
+                                html.H5(html.A(article['title'], href=article['url'], target="_blank")),
+                                html.P(article.get('description', 'No summary available')),
+                                html.Footer(f"Source: {article['source']['name']} - Published at: {article['publishedAt']}")
+                            ], width=8)
+                        ])
+                    ]), className='mb-4'
+                )
+                news_content.append(news_card)
         else:
             news_content.append(html.P(f"No news found for {symbol}."))
     
