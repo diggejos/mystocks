@@ -1,3 +1,5 @@
+
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -105,7 +107,7 @@ dashboard_layout = dbc.Container([
                     ], className='mb-3'),
                     
                     html.Div([
-                        html.Label("Select Predefined Range:", className="font-weight-bold"),
+                        html.Label("Select Date Range:", className="font-weight-bold"),
                         dcc.RadioItems(
                             id='predefined-ranges',
                             options=[
@@ -133,7 +135,19 @@ dashboard_layout = dbc.Container([
                 dcc.Tab(label='Stock Prices', children=[
                     dbc.Card(
                         dbc.CardBody([
-                          dcc.Checklist(
+                            dcc.RadioItems(
+                                id='chart-type',
+                                options=[
+                                    {'label': 'Line Chart', 'value': 'line'},
+                                    {'label': 'Candlestick Chart', 'value': 'candlestick'}
+                                ],
+                                value='line',
+                                inline=True,
+                                className='form-control',
+                                inputStyle={"margin-right": "10px"},
+                                labelStyle={"margin-right": "20px"}
+                            ),
+                            dcc.Checklist(
                                 id='movag_input',
                                 options=[
                                     {'label': '30D Moving Average', 'value': '30D_MA'},
@@ -328,12 +342,13 @@ def fetch_news(api_key, symbols):
       Input('predefined-ranges', 'value'),
       Input('movag_input', 'value'),
       Input('benchmark-selection', 'value'),
-      Input('plotly-theme-store', 'data')],
+      Input('plotly-theme-store', 'data'),
+      Input('chart-type', 'value')],
     [State('individual-stock-input', 'value'),
       State('individual-stocks-store', 'data'),
       State('stock-input', 'value')]
 )
-def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, new_stock, individual_stocks, selected_stocks):
+def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type, new_stock, individual_stocks, selected_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
         selected_stocks = ['AAPL']
@@ -401,68 +416,98 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     num_rows = num_stocks
     graph_height = 400 * num_rows  # Each facet should be 400px in height
     
-    fig_stock = make_subplots(rows=num_rows, cols=1, shared_xaxes=True, vertical_spacing=0.02, subplot_titles=selected_stocks, row_heights=[1]*num_rows, specs=[[{"secondary_y": True}]]*num_rows)
+    # fig_stock = make_subplots(rows=num_rows, cols=1, shared_xaxes=True, vertical_spacing=0.02, subplot_titles=selected_stocks, row_heights=[1]*num_rows, specs=[[{"secondary_y": True}]]*num_rows)
+    fig_stock = make_subplots(
+        rows=num_rows, 
+        cols=1, 
+        shared_xaxes=True, 
+        vertical_spacing=0.05,  # Adjusted vertical spacing
+        subplot_titles=selected_stocks, 
+        row_heights=[1]*num_rows, 
+        specs=[[{"secondary_y": True}]]*num_rows
+    )
+    
     
     for i, symbol in enumerate(selected_stocks):
         df_stock = df_all[df_all['Stock'] == symbol]
         
-        fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['Close'], name=f'{symbol} Close', line=dict(color='blue')), row=i+1, col=1)
-        
-        if '30D_MA' in movag_input:
-            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['30D_MA'], name=f'{symbol} 30D MA', line=dict(color='green')), row=i+1, col=1)
-        
-        if '100D_MA' in movag_input:
-            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['100D_MA'], name=f'{symbol} 100D MA', line=dict(color='red')), row=i+1, col=1)
-        
+        if chart_type == 'line':
+            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['Close'], name=f'{symbol} Close', line=dict(color='blue')), row=i+1, col=1)
+            
+            # Get the most recent price and percentage change
+            last_close = df_stock['Close'].iloc[-2]
+            latest_close = df_stock['Close'].iloc[-1]
+            change_percent = ((latest_close - last_close) / last_close) * 100
+            
+            # Add the last available data point as a marker
+            fig_stock.add_trace(go.Scatter(
+                x=[df_stock['Date'].iloc[-1]],
+                y=[latest_close],
+                mode='markers',
+                marker=dict(color='red', size=10),
+                name=f'{symbol} Last Price'
+            ), row=i+1, col=1)
+            
+            # Add annotations for the latest price and percentage change
+            latest_timestamp = df_stock['Date'].iloc[-1]
+            fig_stock.add_annotation(
+                x=latest_timestamp,
+                y=latest_close,
+                text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
+                showarrow=True,
+                arrowhead=None,
+                ax=20,  # Adjusted to position the annotation to the right
+                ay=-40,
+                row=i+1,
+                col=1,
+                font=dict(color="blue", size=12),
+                bgcolor='white'
+                )
+            
+            fig_stock.add_shape(
+                type="line",
+                x0=df_stock['Date'].min(),
+                x1=df_stock['Date'].max(),
+                y0=latest_close,
+                y1=latest_close,
+                line=dict(
+                    color="red",
+                    width=2,
+                    dash="dot"
+                ),
+                row=i+1,
+                col=1
+            )
+        elif chart_type == 'candlestick':
+            fig_stock.add_trace(go.Candlestick(
+                x=df_stock['Date'],
+                open=df_stock['Open'],
+                high=df_stock['High'],
+                low=df_stock['Low'],
+                close=df_stock['Close'],    
+                name=f'{symbol} Candlestick'), row=i+1, col=1)
+            
+            fig_stock.update_xaxes(rangeslider= {'visible':False}, row=i+1, col=1)
+
+            
+            
         if 'Volume' in movag_input:
             fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
             fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
-        
-        # Get the most recent price and percentage change
-        last_close = df_stock['Close'].iloc[-2]
-        latest_close = df_stock['Close'].iloc[-1]
-        change_percent = ((latest_close - last_close) / last_close) * 100
-        
-        # Add the last available data point as a marker
-        fig_stock.add_trace(go.Scatter(
-            x=[df_stock['Date'].iloc[-1]],
-            y=[latest_close],
-            mode='markers',
-            marker=dict(color='red', size=10),
-            name=f'{symbol} Last Price'
-        ), row=i+1, col=1)
-        
-        # Add annotations for the latest price and percentage change
-        latest_timestamp = df_stock['Date'].iloc[-1]
-        fig_stock.add_annotation(
-            x=latest_timestamp,
-            y=latest_close,
-            text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
-            showarrow=True,
-            arrowhead=None,
-            ax=20,  # Adjusted to position the annotation to the right
-            ay=-40,
-            row=i+1,
-            col=1,
-            font=dict(color="blue", size=12),
-            bgcolor='white'
-            )
-        
-        fig_stock.add_shape(
-            type="line",
-            x0=df_stock['Date'].min(),
-            x1=df_stock['Date'].max(),
-            y0=latest_close,
-            y1=latest_close,
-            line=dict(
-                color="red",
-                width=2,
-                dash="dot"
-            ),
-            row=i+1,
-            col=1
-        )
-    
+                
+        if '30D_MA' in movag_input:
+            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['30D_MA'], name=f'{symbol} 30D MA', line=dict(color='green')), row=i+1, col=1)
+                
+        if '100D_MA' in movag_input:
+            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['100D_MA'], name=f'{symbol} 100D MA', line=dict(color='red')), row=i+1, col=1)
+                
+        if 'Volume' in movag_input:
+            fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
+            fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
+                
+                
+    # disable range slicer for candle stick chart
+
     fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, margin=dict(l=10, r=10, t=20, b=10))
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
@@ -526,8 +571,6 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     news_content = fetch_news(api_key, selected_stocks)
     
     return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks
-
-
 
 
 @app.callback(Output('simulation-result', 'children'),
