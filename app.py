@@ -1,5 +1,3 @@
-
-
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -435,19 +433,20 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         ), row=i+1, col=1)
         
         # Add annotations for the latest price and percentage change
+        latest_timestamp = df_stock['Date'].iloc[-1]
         fig_stock.add_annotation(
-            x=df_stock['Date'].iloc[-1],
+            x=latest_timestamp,
             y=latest_close,
-            text=f"{latest_close:.2f} ({change_percent:.2f}%)",
+            text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
             showarrow=True,
             arrowhead=None,
-            ax=0,
-            ay=-30,
+            ax=20,  # Adjusted to position the annotation to the right
+            ay=-40,
             row=i+1,
             col=1,
             font=dict(color="blue", size=12),
-            bgcolor = 'white'
-        )
+            bgcolor='white'
+            )
         
         fig_stock.add_shape(
             type="line",
@@ -636,4 +635,3 @@ app.index_string = '''
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
-
