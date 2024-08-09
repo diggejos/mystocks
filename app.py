@@ -16,7 +16,6 @@ from plotly.subplots import make_subplots
 
 
 
-
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
     'YETI': {'dbc': dbc.themes.YETI, 'plotly': 'simple_white'},
@@ -306,27 +305,27 @@ def fetch_news(api_key, symbols):
         if articles:
             news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
             for article in articles:
-                news_card = dbc.Card(
-                    dbc.CardBody([
-                        dbc.Row([
-                            dbc.Col([
-                                html.H5(html.A(article['title'], href=article['url'], target="_blank")),
-                                html.Img(src=article['urlToImage'], style={"width": "200px","height": "auto"})
-                                if article['urlToImage'] else html.Div(),
-                                html.P(article.get('description', 'No summary available')),
-                                html.Footer(
-                                    f"Source: {article['source']['name']} - Published at: {article['publishedAt']}",
-                                    style={"margin-bottom": "0px", "padding-bottom": "0px"}
-                                )
-                            ], width=12),
-                        ], style={"margin-bottom": "0px"})  # Ensure no margin in the Row
-                    ]), style={"margin-bottom": "0px", "padding-bottom": "0px"}, className='mb-2'
+                news_card = dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.H5(html.A(article['title'], href=article['url'], target="_blank")),
+                            html.Img(src=article['urlToImage'], style={"width": "100%", "height": "auto"})
+                            if article['urlToImage'] else html.Div(),
+                            html.P(article.get('description', 'No summary available')),
+                            html.Footer(
+                                f"Source: {article['source']['name']} - Published at: {article['publishedAt']}",
+                                style={"margin-bottom": "0px", "padding-bottom": "0px"}
+                            )
+                        ])
+                    ), width=12, md=6, className="mb-2"
                 )
                 news_content.append(news_card)
         else:
-            news_content.append(html.P(f"No news found for {symbol}."))
+            news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
     
-    return news_content
+    # Wrap the news_content in a Row
+    return dbc.Row(news_content, className="news-row")
+
 
 
 @app.callback(
@@ -664,6 +663,18 @@ app.index_string = '''
         {%favicon%}
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
+        <style>
+            .news-row > .col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+            @media (max-width: 768px) {
+                .news-row > .col-md-6 {
+                    flex: 0 0 100%;
+                    max-width: 100%;
+                }
+            }
+        </style>
     </head>
     <body>
         {%app_entry%}
@@ -678,6 +689,3 @@ app.index_string = '''
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
-
-
-
