@@ -309,7 +309,7 @@ def fetch_news(api_key, symbols):
                     dbc.Card(
                         dbc.CardBody([
                             html.H5(html.A(article['title'], href=article['url'], target="_blank")),
-                            html.Img(src=article['urlToImage'], style={"width": "100%", "height": "auto"})
+                            html.Img(src=article['urlToImage'], style={"width": "300px", "height": "auto"})
                             if article['urlToImage'] else html.Div(),
                             html.P(article.get('description', 'No summary available')),
                             html.Footer(
