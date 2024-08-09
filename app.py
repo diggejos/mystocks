@@ -1,3 +1,5 @@
+
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -11,6 +13,8 @@ import plotly.graph_objects as go
 from dotenv import load_dotenv
 import os
 from plotly.subplots import make_subplots
+
+
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
@@ -287,7 +291,7 @@ about_layout = dbc.Container([
 def fetch_news(api_key, symbols):
     news_content = []
     base_url = "https://newsapi.org/v2/everything"
-    
+
     for symbol in symbols:
         query = f"{symbol} stock"
         response = requests.get(base_url, params={
@@ -298,24 +302,25 @@ def fetch_news(api_key, symbols):
             'pageSize': 5  # Number of news articles to fetch
         })
         articles = response.json().get('articles', [])
-        
+
         if articles:
             news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
             for article in articles:
                 news_card = dbc.Card(
                     dbc.CardBody([
                         dbc.Row([
-                            dbc.Col(
-                                html.Img(src=article['urlToImage'], style={"width": "100%", "height": "auto"})
-                                if article['urlToImage'] else html.Div(), width=3
-                            ),
                             dbc.Col([
                                 html.H5(html.A(article['title'], href=article['url'], target="_blank")),
+                                html.Img(src=article['urlToImage'], style={"width": "200px","height": "auto"})
+                                if article['urlToImage'] else html.Div(),
                                 html.P(article.get('description', 'No summary available')),
-                                html.Footer(f"Source: {article['source']['name']} - Published at: {article['publishedAt']}")
-                            ], width=8)
-                        ])
-                    ]), className='mb-4'
+                                html.Footer(
+                                    f"Source: {article['source']['name']} - Published at: {article['publishedAt']}",
+                                    style={"margin-bottom": "0px", "padding-bottom": "0px"}
+                                )
+                            ], width=12),
+                        ], style={"margin-bottom": "0px"})  # Ensure no margin in the Row
+                    ]), style={"margin-bottom": "0px", "padding-bottom": "0px"}, className='mb-2'
                 )
                 news_content.append(news_card)
         else:
@@ -673,3 +678,6 @@ app.index_string = '''
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
+
+
+
