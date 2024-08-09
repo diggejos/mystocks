@@ -306,7 +306,7 @@ def fetch_news(api_key, symbols):
                     dbc.CardBody([
                         dbc.Row([
                             dbc.Col(
-                                html.Img(src=article['urlToImage'], style={"width": "70%", "height": "auto"})
+                                html.Img(src=article['urlToImage'], style={"width": "100%", "height": "auto"})
                                 if article['urlToImage'] else html.Div(), width=3
                             ),
                             dbc.Col([
