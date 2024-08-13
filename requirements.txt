@@ -9,4 +9,3 @@ gunicorn
 numpy
 flask_sqlalchemy
 flask_bcrypt
-json
