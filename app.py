@@ -43,9 +43,8 @@ server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(server)
-
 # Initialize Bcrypt for password hashing
-bcrypt = Bcrypt(app.server)
+bcrypt = Bcrypt(server)
 
 
 # Define User model
@@ -63,7 +62,7 @@ class User(db.Model):
         self.watchlist = watchlist
      
 # Create the database tables
-with app.app_context():
+with server.app_context():
     db.create_all()
 
 navbar = dbc.NavbarSimple(
