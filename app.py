@@ -15,8 +15,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import json
 from flask_migrate import Migrate
-
-migrate = Migrate(server, db)
+import psycopg2
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
