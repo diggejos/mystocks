@@ -1,5 +1,3 @@
-
-
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -13,7 +11,9 @@ import plotly.graph_objects as go
 from dotenv import load_dotenv
 import os
 from plotly.subplots import make_subplots
-
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+import json
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
@@ -36,35 +36,90 @@ themes = {
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
+# Configure the SQLAlchemy part of the app instance
+app.server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Create the SQLAlchemy db instance
+db = SQLAlchemy(app.server)
+
+# Initialize Bcrypt for password hashing
+bcrypt = Bcrypt(app.server)
+
+
+# Define User model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    watchlist = db.Column(db.Text, nullable=True, default="[]")  # Watchlist field
+
+    def __init__(self, username, email, password, watchlist="[]"):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.watchlist = watchlist
+
+        
+        
+# Create the database tables
+with app.server.app_context():
+    db.create_all()
+    
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink("Dashboard", href="/", active="exact")),
+        dbc.NavItem(dbc.NavLink("About", href="/about", active="exact")),
+        dbc.NavItem(dbc.NavLink("Register", href="/register", active="exact", id='register-link')),
+        dbc.NavItem(dbc.NavLink("Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
+        dbc.NavItem(dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"})),
+        html.Div([
+            dbc.DropdownMenu(
+                children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
+                nav=True,
+                in_navbar=True,
+                label="Select Theme",
+                id='theme-dropdown',
+            )
+        ], id='theme-dropdown-wrapper', n_clicks=0),
+    ],
+    brand=[
+        html.Img(src='/assets/logo_with_transparent_background.png', height='60px'),
+        "MySTOCKS"
+    ],
+    brand_href="/",
+    color="primary",
+    dark=True,
+    className="sticky-top mb-4"
+)
+
+overlay = dbc.Modal(
+    [
+        dbc.ModalHeader(dbc.ModalTitle("Access Restricted")),
+        dbc.ModalBody("Please register or log in to use this feature."),
+        dbc.ModalFooter(
+            dbc.Button("Please register or login", href="/login", color="primary", id="overlay-registerP-button")
+        ),
+    ],
+    id="login-overlay",
+    is_open=False,  # Initially closed
+)
 
 app.layout = html.Div([
     dcc.Store(id='individual-stocks-store', data=[]),
     dcc.Store(id='theme-store', data=dbc.themes.BOOTSTRAP),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
+    dcc.Store(id='login-status', data=False),  # Store to track login status
+    dcc.Store(id='login-username-store', data=None),  # Store to persist the username
     html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
-    dbc.NavbarSimple(
-        children=[
-            dbc.NavItem(dbc.NavLink("Dashboard", href="/", active="exact")),
-            dbc.NavItem(dbc.NavLink("About", href="/about", active="exact")),
-            dbc.DropdownMenu(
-                children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
-                nav=True,
-                in_navbar=True,
-                label="Select Theme"
-            ),
-        ],
-        brand=[
-            html.Img(src='/assets/logo_with_transparent_background.png', height='60px'),
-            "MySTOCKS"
-        ],
-        brand_href="/",
-        color="primary",
-        dark=True,
-        className="sticky-top mb-4"
-    ),
+    navbar,
+    overlay,  # Add the overlay to the layout
     dcc.Location(id='url', refresh=False),
     dbc.Container(id='page-content', fluid=True)
 ])
+
+
 
 # Layout for the Dashboard page
 dashboard_layout = dbc.Container([
@@ -79,17 +134,9 @@ dashboard_layout = dbc.Container([
                             options=[
                                 {'label': 'Apple (AAPL)', 'value': 'AAPL'},
                                 {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
-                                {'label': 'Google (GOOGL)', 'value': 'GOOGL'},
-                                {'label': 'Tesla (TSLA)', 'value': 'TSLA'},
-                                {'label': 'META (META)', 'value': 'META'},
-                                {'label': 'Netflix (NFLX)', 'value': 'NFLX'},
-                                {'label': 'MSCI WORLD ETF (URTH)', 'value': 'URTH'},
-                                {'label': 'Bitcoin (BTC-USD)', 'value': 'BTC-USD'},
-                                {'label': 'Uber (UBER)', 'value': 'UBER'},
-                                {'label': 'Sonova (SOON.SW)', 'value': 'SOON.SW'}
-
                             ],
-                            value=['AAPL', 'MSFT', 'META', 'SOON.SW'],
+                            value=['AAPL', 'MSFT'],
+                            # value=None,
                             multi=True,
                             className='form-control'
                         ),
@@ -104,7 +151,9 @@ dashboard_layout = dbc.Container([
                             className='form-control'
                         ),
                         dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
-                        dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2')
+                        dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
+                        dbc.Button("Save Portfolio", id='save-portfolio-button', color='primary', className='mt-2', disabled=True),
+
                     ], className='mb-3'),
                     
                     html.Div([
@@ -242,6 +291,47 @@ dashboard_layout = dbc.Container([
     ], className='mb-4'),
 ], fluid=True)
 
+# Layout for Registration page
+register_layout = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H2("Register", className="text-center"),
+                    dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
+                    dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
+                    dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
+                    dcc.Input(id='confirm_password', type='password', placeholder='Confirm Password', className='form-control mb-3'),
+                    dbc.Button("Register", id='register-button', color='primary', className='mt-2'),
+                    html.Div(id='register-output', className='mt-3')
+                ])
+            ])
+        ], width=12, md=6, className="mx-auto")
+    ])
+], fluid=True)
+
+# Layout for Login page
+login_layout = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H2("Login", className="text-center"),
+                    dcc.Input(id='login-username', type='text', placeholder='Username', className='form-control mb-3'),
+                    dcc.Input(id='login-password', type='password', placeholder='Password', className='form-control mb-3'),
+                    dbc.Button("Login", id='login-button', color='primary', className='mt-2 w-100'),
+                    html.Div(id='login-output', className='mt-3'),
+                    html.Div([
+                        html.P("Don't have an account?", className="text-center"),
+                        html.A("Register here", href="/register", className="text-center", style={"display": "block"})
+                    ], className='mt-3')
+                ])
+            ])
+        ], width=12, md=6, className="mx-auto")
+    ])
+], fluid=True)
+
+
 # Layout for the About page
 about_layout = dbc.Container([
     dbc.Row([
@@ -325,6 +415,149 @@ def fetch_news(api_key, symbols):
     
     # Wrap the news_content in a Row
     return dbc.Row(news_content, className="news-row")
+
+@app.callback(
+    Output('register-output', 'children'),
+    [Input('register-button', 'n_clicks')],
+    [State('username', 'value'),
+      State('email', 'value'),
+      State('password', 'value'),
+      State('confirm_password', 'value')]
+)
+def register_user(n_clicks, username, email, password, confirm_password):
+    if n_clicks:
+        if not username:
+            return dbc.Alert("Username is required.", color="danger")
+        if not email:
+            return dbc.Alert("Email is required.", color="danger")
+        if not password:
+            return dbc.Alert("Password is required.", color="danger")
+        if password != confirm_password:
+            return dbc.Alert("Passwords do not match.", color="danger")
+
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        new_user = User(username=username, email=email, password=hashed_password)
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            return dbc.Alert("Registration successful!", color="success")
+        except Exception as e:
+            return dbc.Alert(f"Error: {str(e)}", color="danger")
+    return dash.no_update
+
+
+@app.callback(
+    [Output('login-output', 'children'),
+     Output('login-status', 'data', allow_duplicate=True),
+     Output('login-link', 'style', allow_duplicate=True),
+     Output('logout-button', 'style', allow_duplicate=True),
+     Output('login-username-store', 'data'),  # Store the username
+     Output('login-password', 'value')],
+    [Input('login-button', 'n_clicks'),
+     Input('url', 'pathname')],
+    [State('login-username', 'value'),
+     State('login-password', 'value')],
+    prevent_initial_call=True
+)
+def handle_login(login_clicks, pathname, username, password):
+    if pathname == '/login':  # Ensure this callback only runs on the login page
+        if login_clicks:
+            user = User.query.filter_by(username=username).first()
+            if user and bcrypt.check_password_hash(user.password, password):
+                return (dbc.Alert("Login successful!", color="success"),
+                        True,
+                        {"display": "none"},
+                        {"display": "block"},
+                        username,  # Save the username in the store
+                        None)  # Clear password input
+            else:
+                return (dbc.Alert("Invalid username or password.", color="danger"),
+                        False,
+                        {"display": "block"},
+                        {"display": "none"},
+                        dash.no_update,
+                        None)
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+
+@app.callback(
+    [Output('login-status', 'data', allow_duplicate=True),
+      Output('login-link', 'style', allow_duplicate=True),
+      Output('logout-button', 'style', allow_duplicate=True)],
+    [Input('logout-button', 'n_clicks')],
+    prevent_initial_call='initial_duplicate'  # Prevent initial call for duplicates
+)
+def handle_logout(logout_clicks):
+    if logout_clicks:
+        return False, {"display": "block"}, {"display": "none"}
+    return dash.no_update, dash.no_update, dash.no_update
+
+
+
+@app.callback(
+    Output('theme-dropdown', 'disabled'),
+    Input('login-status', 'data')
+)
+def update_dropdown_status(login_status):
+    return not login_status  # Disable dropdown if not logged in
+
+
+@app.callback(
+    Output('login-overlay', 'is_open'),
+    [Input('theme-dropdown-wrapper', 'n_clicks')],
+    [State('login-status', 'data')]
+)
+def show_overlay_if_logged_out(n_clicks, login_status):
+    # Show the overlay if the user is not logged in and clicks the dropdown
+    if n_clicks > 0 and not login_status:
+        return True  # Show overlay
+    return False  # Don't show overlay
+
+@app.callback(
+    Output('save-portfolio-button', 'disabled'),
+    Input('login-status', 'data')
+)
+def toggle_save_button(login_status):
+    return not login_status  # Disable the button if the user is not logged in
+
+@app.callback(
+    [Output('save-portfolio-button', 'children'),  # Provide feedback to the user
+     Output('login-overlay', 'is_open', allow_duplicate=True)],  # Control the overlay
+    Input('save-portfolio-button', 'n_clicks'),
+    State('individual-stocks-store', 'data'),
+    State('login-status', 'data'),
+    State('login-username-store', 'data'),  # Use the store to get the username
+    prevent_initial_call=True
+)
+def save_portfolio(n_clicks, selected_stocks, login_status, username):
+    if n_clicks:
+        if login_status and username:
+            user = User.query.filter_by(username=username).first()
+            if user:
+                try:
+                    user.watchlist = json.dumps(selected_stocks)  # Convert the watchlist to JSON and save
+                    db.session.commit()  # Commit the changes to the database
+                    return "Portfolio Saved!", False  # Feedback for the user, don't show overlay
+                except Exception as e:
+                    return f"Error saving portfolio: {str(e)}", False  # Feedback for errors, don't show overlay
+        else:
+            return dash.no_update, True  # Show the overlay if not logged in
+    return dash.no_update, False  # Default: no changes
+
+
+@app.callback(
+    Output('individual-stocks-store', 'data', allow_duplicate=True),
+    Input('login-status', 'data'),
+    State('login-username', 'value'),
+    prevent_initial_call='initial_duplicate'
+)
+def load_watchlist(login_status, username):
+    if login_status and username:
+        user = User.query.filter_by(username=username).first()
+        if user and user.watchlist:
+            return json.loads(user.watchlist)  # Load the watchlist from the database
+    return []
 
 
 
@@ -626,13 +859,22 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
             ])
     return dash.no_update
 
-@app.callback(Output('page-content', 'children'),   
-              [Input('url', 'pathname')])
-def display_page(pathname):
+
+@app.callback(
+    [Output('page-content', 'children'),
+      Output('register-link', 'style')],
+    [Input('url', 'pathname'),
+      Input('login-status', 'data')]
+)
+def display_page(pathname, login_status):
     if pathname == '/about':
-        return about_layout
+        return about_layout, {"display": "block"} if not login_status else {"display": "none"}
+    elif pathname == '/register':
+        return register_layout, {"display": "block"} if not login_status else {"display": "none"}
+    elif pathname == '/login' and not login_status:
+        return login_layout, {"display": "block"} if not login_status else {"display": "none"}
     else:
-        return dashboard_layout
+        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}
 
 @app.callback(
     [Output('theme-store', 'data'),
@@ -682,10 +924,11 @@ app.index_string = '''
             {%config%}
             {%scripts%}
             {%renderer%}
-        </footer>
+        </footer>§
     </body>
 </html>
 '''
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
+
