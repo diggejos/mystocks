@@ -44,11 +44,11 @@ db = SQLAlchemy(app)
 
 
 # Configure the SQLAlchemy part of the app instance
-#app.server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-#app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Create the SQLAlchemy db instance
-#db = SQLAlchemy(app.server)
+# db = SQLAlchemy(app.server)
 
 # Initialize Bcrypt for password hashing
 bcrypt = Bcrypt(app.server)
