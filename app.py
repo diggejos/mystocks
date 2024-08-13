@@ -14,6 +14,9 @@ from plotly.subplots import make_subplots
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import json
+from flask_migrate import Migrate
+
+migrate = Migrate(server, db)
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
