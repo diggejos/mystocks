@@ -14,6 +14,9 @@ from plotly.subplots import make_subplots
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import json
+from flask_migrate import Migrate
+
+migrate = Migrate(server, db)
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
@@ -37,10 +40,10 @@ themes = {
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+db = SQLAlchemy(server)
 
 # Initialize Bcrypt for password hashing
 bcrypt = Bcrypt(app.server)
@@ -59,13 +62,11 @@ class User(db.Model):
         self.email = email
         self.password = password
         self.watchlist = watchlist
-
-        
-        
+     
 # Create the database tables
-with app.server.app_context():
+with app.app_context():
     db.create_all()
-    
+
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Dashboard", href="/", active="exact")),
