@@ -32,16 +32,23 @@ themes = {
     'VAPOR': {'dbc': dbc.themes.VAPOR, 'plotly': 'plotly_dark'}
 }
 
+
 # Initialize the Dash app with a default Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app.server)
+
+
 # Configure the SQLAlchemy part of the app instance
-app.server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#app.server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+#app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Create the SQLAlchemy db instance
-db = SQLAlchemy(app.server)
+#db = SQLAlchemy(app.server)
 
 # Initialize Bcrypt for password hashing
 bcrypt = Bcrypt(app.server)
