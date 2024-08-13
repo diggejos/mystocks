@@ -40,7 +40,7 @@ server = app.server
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app.server)
+db = SQLAlchemy(app)
 
 
 # Configure the SQLAlchemy part of the app instance
