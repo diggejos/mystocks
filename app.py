@@ -132,8 +132,10 @@ dashboard_layout = dbc.Container([
                             options=[
                                 {'label': 'Apple (AAPL)', 'value': 'AAPL'},
                                 {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
+                                {'label': 'Microsoft (MSFT)', 'value': 'AMZN'},
+                                {'label': 'Microsoft (MSFT)', 'value': 'GOOGL'},
                             ],
-                            value=['AAPL', 'MSFT'],
+                            value=[],
                             # value=None,
                             multi=True,
                             className='form-control'
