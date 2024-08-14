@@ -524,28 +524,31 @@ def toggle_save_button(login_status):
     return not login_status  # Disable the button if the user is not logged in
 
 @app.callback(
-    [Output('save-portfolio-button', 'children'),  # Provide feedback to the user
-     Output('login-overlay', 'is_open', allow_duplicate=True)],  # Control the overlay
+    [Output('save-portfolio-button', 'children'),
+     Output('login-overlay', 'is_open', allow_duplicate=True)],
     Input('save-portfolio-button', 'n_clicks'),
     State('individual-stocks-store', 'data'),
+    State('theme-store', 'data'),
     State('login-status', 'data'),
-    State('login-username-store', 'data'),  # Use the store to get the username
+    State('login-username-store', 'data'),
     prevent_initial_call=True
 )
-def save_portfolio(n_clicks, selected_stocks, login_status, username):
+def save_portfolio(n_clicks, selected_stocks, selected_theme, login_status, username):
     if n_clicks:
         if login_status and username:
             user = User.query.filter_by(username=username).first()
             if user:
                 try:
-                    user.watchlist = json.dumps(selected_stocks)  # Convert the watchlist to JSON and save
-                    db.session.commit()  # Commit the changes to the database
-                    return "Portfolio Saved!", False  # Feedback for the user, don't show overlay
+                    user.watchlist = json.dumps(selected_stocks)
+                    user.theme = selected_theme  # Save the selected theme
+                    db.session.commit()
+                    return "Portfolio and Theme Saved!", False
                 except Exception as e:
-                    return f"Error saving portfolio: {str(e)}", False  # Feedback for errors, don't show overlay
+                    return f"Error saving portfolio: {str(e)}", False
         else:
-            return dash.no_update, True  # Show the overlay if not logged in
-    return dash.no_update, False  # Default: no changes
+            return dash.no_update, True
+    return dash.no_update, False
+
 
 
 @app.callback(
