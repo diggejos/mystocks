@@ -132,8 +132,8 @@ dashboard_layout = dbc.Container([
                             options=[
                                 {'label': 'Apple (AAPL)', 'value': 'AAPL'},
                                 {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
-                                {'label': 'Microsoft (MSFT)', 'value': 'AMZN'},
-                                {'label': 'Microsoft (MSFT)', 'value': 'GOOGL'},
+                                {'label': 'Amazon (AMZN)', 'value': 'AMZN'},
+                                {'label': 'Google (GOOGL)', 'value': 'GOOGL'},
                             ],
                             value=[],
                             # value=None,
