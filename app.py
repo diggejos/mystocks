@@ -54,7 +54,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     watchlist = db.Column(db.Text, nullable=True, default="[]")
-    theme = db.Column(db.String(200), nullable=True, default="MATERIA")  # New theme field
+    theme = db.Column(db.String(500), nullable=True, default="MATERIA")  # New theme field
 
     def __init__(self, username, email, password, watchlist="[]", theme="MATERIA"):
         self.username = username
