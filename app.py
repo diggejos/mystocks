@@ -182,7 +182,7 @@ dashboard_layout = dbc.Container([
         ], width=12, md=3),
         dbc.Col([
             dcc.Tabs(id='tabs', children=[
-                dcc.Tab(label='Stock Prices', children=[
+                dcc.Tab(label='📈 Stock Prices', children=[
                     dbc.Card(
                         dbc.CardBody([
                             dcc.RadioItems(
@@ -213,14 +213,14 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
-                dcc.Tab(label='Stock News', children=[
+                dcc.Tab(label='📰 Stock News', children=[
                     dbc.Card(
                         dbc.CardBody([
                             html.Div(id='stock-news', className='news-container')
                         ])
                     )
                 ]),
-                dcc.Tab(label='Indexed Comparison', children=[
+                dcc.Tab(label='⚖️ Indexed Comparison', children=[
                     dbc.Card(
                         dbc.CardBody([
                             dcc.RadioItems(
@@ -241,7 +241,7 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
-                dcc.Tab(label='Investment Simulation', children=[
+                dcc.Tab(label='📊 Investment Simulation', children=[
                     dbc.Card(
                         dbc.CardBody([
                             html.Div([
