@@ -67,17 +67,17 @@ with server.app_context():
 
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Dashboard", href="/", active="exact")),
-        dbc.NavItem(dbc.NavLink("About", href="/about", active="exact")),
-        dbc.NavItem(dbc.NavLink("Register", href="/register", active="exact", id='register-link')),
-        dbc.NavItem(dbc.NavLink("Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
-        dbc.NavItem(dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"})),
+        dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
+        dbc.NavItem(dbc.NavLink("ℹ️ About", href="/about", active="exact")),
+        dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
+        dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
+        dbc.NavItem(dbc.Button("↪ Logout", id='logout-button', color='secondary', style={"display": "none"})),
         html.Div([
             dbc.DropdownMenu(
                 children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
                 nav=True,
                 in_navbar=True,
-                label="Select Theme",
+                label="🎨Select Theme",
                 id='theme-dropdown',
             )
         ], id='theme-dropdown-wrapper', n_clicks=0),
@@ -297,7 +297,7 @@ register_layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H2("Register", className="text-center"),
+                    html.H2("📝 Register", className="text-center"),
                     dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
                     dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
                     dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
@@ -316,7 +316,7 @@ login_layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H2("Login", className="text-center"),
+                    html.H2("🔐 Login", className="text-center"),
                     dcc.Input(id='login-username', type='text', placeholder='Username', className='form-control mb-3'),
                     dcc.Input(id='login-password', type='password', placeholder='Password', className='form-control mb-3'),
                     dbc.Button("Login", id='login-button', color='primary', className='mt-2 w-100'),
