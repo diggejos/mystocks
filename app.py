@@ -36,7 +36,7 @@ themes = {
 
 
 # Initialize the Dash app with a default Bootstrap theme
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA])
 server = app.server
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
@@ -53,13 +53,15 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    watchlist = db.Column(db.Text, nullable=True, default="[]")  # Watchlist field
+    watchlist = db.Column(db.Text, nullable=True, default="[]")
+    theme = db.Column(db.String(20), nullable=True, default="MATERIA")  # New theme field
 
-    def __init__(self, username, email, password, watchlist="[]"):
+    def __init__(self, username, email, password, watchlist="[]", theme="MATERIA"):
         self.username = username
         self.email = email
         self.password = password
         self.watchlist = watchlist
+        self.theme = theme
      
 # Create the database tables
 with server.app_context():
@@ -106,11 +108,11 @@ overlay = dbc.Modal(
 
 app.layout = html.Div([
     dcc.Store(id='individual-stocks-store', data=[]),
-    dcc.Store(id='theme-store', data=dbc.themes.BOOTSTRAP),
+    dcc.Store(id='theme-store', data=dbc.themes.MATERIA),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
     dcc.Store(id='login-status', data=False),  # Store to track login status
     dcc.Store(id='login-username-store', data=None),  # Store to persist the username
-    html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
+    html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.MATERIA),
     navbar,
     overlay,  # Add the overlay to the layout
     dcc.Location(id='url', refresh=False),
@@ -559,6 +561,18 @@ def load_watchlist(login_status, username):
             return json.loads(user.watchlist)  # Load the watchlist from the database
     return []
 
+@app.callback(
+    Output('theme-store', 'data', allow_duplicate=True),
+    Input('login-status', 'data'),
+    State('login-username-store', 'data'),
+    prevent_initial_call=True
+)
+def load_user_theme(login_status, username):
+    if login_status and username:
+        user = User.query.filter_by(username=username).first()
+        if user and user.theme:
+            return user.theme
+    return 'MATERIA'  # Default theme if none is found
 
 
 @app.callback(
@@ -878,16 +892,28 @@ def display_page(pathname, login_status):
 
 @app.callback(
     [Output('theme-store', 'data'),
-      Output('plotly-theme-store', 'data')],
-    [Input(f'theme-{theme}', 'n_clicks') for theme in themes.keys()]
+     Output('plotly-theme-store', 'data')],
+    [Input(f'theme-{theme}', 'n_clicks') for theme in themes.keys()],
+    [State('login-status', 'data'),
+     State('login-username-store', 'data')]
 )
-def update_theme(*args):
+def update_theme(*args, login_status=None, username=None):
     ctx = dash.callback_context
-    if not ctx.triggered:
-        return dbc.themes.YETI, 'plotly_white'
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    theme = button_id.split('-')[1]
-    return themes[theme]['dbc'], themes[theme]['plotly']
+
+    # Check if any theme button was clicked
+    if ctx.triggered and ctx.triggered[0]['prop_id'].split('.')[0].startswith('theme-'):
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        theme = button_id.split('-')[1]
+        return themes[theme]['dbc'], themes[theme]['plotly']
+
+    # If no theme button was clicked, load the user's theme
+    if login_status and username:
+        user = User.query.filter_by(username=username).first()
+        if user and user.theme:
+            return themes[user.theme]['dbc'], themes[user.theme]['plotly']
+
+    # Default theme if no selection was made or user not logged in
+    return dbc.themes.MATERIA, 'plotly_white'
 
 @app.callback(
     Output('theme-switch', 'href'),
