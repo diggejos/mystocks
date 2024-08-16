@@ -124,7 +124,7 @@ dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             html.Div([
-                dbc.Button("↕🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "190px"})
+                dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "190px"})
             ]),
             dbc.Collapse(
                 dbc.Card([  
