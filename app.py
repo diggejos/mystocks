@@ -772,16 +772,18 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
     # Combine all indexed data
     df_indexed = pd.concat(indexed_data, axis=1)
     df_indexed.reset_index(inplace=True)
-    df_indexed.columns = ['Date'] + [f'{symbol}_Index' for symbol in indexed_data.keys()]
-    
-    fig_indexed = px.line(df_indexed, x='Date', y=[f'{symbol}_Index' for symbol in selected_stocks], template=plotly_theme)
+    df_indexed.columns = ['Date'] + [symbol for symbol in indexed_data.keys()]
+
+    # Create the line chart with updated column names
+    fig_indexed = px.line(df_indexed, x='Date', y=[symbol for symbol in indexed_data.keys()], template=plotly_theme)
     fig_indexed.update_yaxes(matches=None, title_text=None)
     fig_indexed.update_xaxes(title_text=None)
     fig_indexed.update_layout(legend=dict(
         yanchor="top",
         y=0.99,
         xanchor="left",
-        x=0.01
+        x=0.01,
+        font=dict(size=10)
     ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
     
     fig_indexed.add_shape(
