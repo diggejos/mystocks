@@ -119,69 +119,70 @@ app.layout = html.Div([
     dbc.Container(id='page-content', fluid=True)
 ])
 
-
-
 # Layout for the Dashboard page
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.Div([
-                        html.Label("Stock Symbols:", className="font-weight-bold"),
-                        dcc.Dropdown(
-                            id='stock-input',
-                            options=[
-                                {'label': 'Apple (AAPL)', 'value': 'AAPL'},
-                                {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
-                                {'label': 'Amazon (AMZN)', 'value': 'AMZN'},
-                                {'label': 'Google (GOOGL)', 'value': 'GOOGL'},
-                            ],
-                            value=[],
-                            # value=None,
-                            multi=True,
-                            className='form-control'
-                        ),
-                    ], className='mb-3'),
-                    html.Div([
-                        html.Label("Add Individual Stock:", className="font-weight-bold"),
-                        dcc.Input(
-                            id='individual-stock-input',
-                            type='text',
-                            placeholder='Enter stock symbol',
-                            debounce=True,
-                            className='form-control'
-                        ),
-                        dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
-                        dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
-                        dbc.Button("Save Portfolio and Theme", id='save-portfolio-button', color='primary', className='mt-2', disabled=True),
-
-                    ], className='mb-3'),
-                    
-                    html.Div([
-                        html.Label("Select Date Range:", className="font-weight-bold"),
-                        dcc.RadioItems(
-                            id='predefined-ranges',
-                            options=[
-                                {'label': 'Year to Date', 'value': 'YTD'},
-                                {'label': 'last Month', 'value': '1M'},
-                                {'label': 'last 3 Months', 'value': '3M'},
-                                {'label': 'Last 12 Months', 'value': '12M'},
-                                {'label': 'Last 24 Months', 'value': '24M'},
-                                {'label': 'Last 5 Years', 'value': '5Y'},
-                                {'label': 'Last 10 Years', 'value': '10Y'}
-                            ],
-                            value='12M',
-                            inline=True,
-                            className='form-control',
-                            inputStyle={"margin-right": "10px"},
-                            labelStyle={"margin-right": "20px"}
-                        )
-                    ], className='mb-3'),
-                    dbc.Button("Submit", id='submit-button', color='primary', className='mt-2'),
-                ])
+            html.Div([
+                dbc.Button("↕🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "190px"})
             ]),
-        ], width=12, md=3),
+            dbc.Collapse(
+                dbc.Card([  
+                    dbc.CardBody([
+                        html.Div([
+                            html.Label("Stock Symbols:", className="font-weight-bold"),
+                            dcc.Dropdown(
+                                id='stock-input',
+                                options=[
+                                    {'label': 'Apple (AAPL)', 'value': 'AAPL'},
+                                    {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
+                                ],
+                                value=[],
+                                multi=True,
+                                className='form-control'
+                            ),
+                        ], className='mb-3'),
+                        html.Div([
+                            html.Label("Add Individual Stock:", className="font-weight-bold"),
+                            dcc.Input(
+                                id='individual-stock-input',
+                                type='text',
+                                placeholder='Enter stock symbol',
+                                debounce=True,
+                                className='form-control'
+                            ),
+                            dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
+                            dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
+                            dbc.Button("Save Portfolio and Theme", id='save-portfolio-button', color='primary', className='mt-2', disabled=True),
+
+                        ], className='mb-3'),
+                        
+                        html.Div([
+                            html.Label("Select Date Range:", className="font-weight-bold"),
+                            dcc.RadioItems(
+                                id='predefined-ranges',
+                                options=[
+                                    {'label': 'Year to Date', 'value': 'YTD'},
+                                    {'label': 'last Month', 'value': '1M'},
+                                    {'label': 'last 3 Months', 'value': '3M'},
+                                    {'label': 'Last 12 Months', 'value': '12M'},
+                                    {'label': 'Last 24 Months', 'value': '24M'},
+                                    {'label': 'Last 5 Years', 'value': '5Y'},
+                                    {'label': 'Last 10 Years', 'value': '10Y'}
+                                ],
+                                value='12M',
+                                inline=True,
+                                className='form-control',
+                                inputStyle={"margin-right": "10px"},
+                                labelStyle={"margin-right": "20px"}
+                            )
+                        ], className='mb-3'),
+                    ])
+                ]), 
+                id="filters-collapse", 
+                is_open=True,  # Start with the card open
+             style={"margin-top": "20px"}), 
+        ], width=12, md=3, style={"margin-top": "-25px"} ),
         dbc.Col([
             dcc.Tabs(id='tabs', children=[
                 dcc.Tab(label='📈 Stock Prices', children=[
@@ -206,7 +207,7 @@ dashboard_layout = dbc.Container([
                                     {'label': '100D Moving Average', 'value': '100D_MA'},
                                     {'label': 'Volume', 'value': 'Volume'}
                                 ],
-                                value=['Volume'],
+                                value=[],
                                 inline=True,
                                 inputStyle={"margin-right": "10px"},
                                 labelStyle={"margin-right": "20px"}
@@ -580,24 +581,23 @@ def load_user_theme(login_status, username):
 
 @app.callback(
     [Output('stock-graph', 'figure'),
-      Output('stock-graph', 'style'),
-      Output('stock-news', 'children'),
-      Output('indexed-comparison-graph', 'figure'),
-      Output('individual-stocks-store', 'data')],
+     Output('stock-graph', 'style'),
+     Output('stock-news', 'children'),
+     Output('indexed-comparison-graph', 'figure'),
+     Output('individual-stocks-store', 'data')],
     [Input('add-stock-button', 'n_clicks'),
-      Input('submit-button', 'n_clicks'),
-      Input('reset-stocks-button', 'n_clicks'),
-      Input('stock-input', 'value'),
-      Input('predefined-ranges', 'value'),
-      Input('movag_input', 'value'),
-      Input('benchmark-selection', 'value'),
-      Input('plotly-theme-store', 'data'),
-      Input('chart-type', 'value')],
+     Input('reset-stocks-button', 'n_clicks'),
+     Input('stock-input', 'value'),
+     Input('predefined-ranges', 'value'),
+     Input('movag_input', 'value'),
+     Input('benchmark-selection', 'value'),
+     Input('plotly-theme-store', 'data'),
+     Input('chart-type', 'value')],
     [State('individual-stock-input', 'value'),
-      State('individual-stocks-store', 'data'),
-      State('stock-input', 'value')]
+     State('individual-stocks-store', 'data'),
+     State('stock-input', 'value')]
 )
-def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type, new_stock, individual_stocks, selected_stocks):
+def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type, new_stock, individual_stocks, selected_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
         selected_stocks = ['AAPL']
@@ -662,20 +662,18 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
     
     # Determine the number of rows needed for the graph
     num_stocks = len(selected_stocks)
-    num_rows = num_stocks
-    graph_height = 400 * num_rows  # Each facet should be 400px in height
+    graph_height = 400 * num_stocks  # Each facet should be 400px in height
     
-    # fig_stock = make_subplots(rows=num_rows, cols=1, shared_xaxes=True, vertical_spacing=0.02, subplot_titles=selected_stocks, row_heights=[1]*num_rows, specs=[[{"secondary_y": True}]]*num_rows)
+    # Create the subplot with fixed margins
     fig_stock = make_subplots(
-        rows=num_rows, 
+        rows=num_stocks, 
         cols=1, 
         shared_xaxes=True, 
-        vertical_spacing=0.05,  # Adjusted vertical spacing
+        vertical_spacing=0.02,  # Keep this small to maintain consistent spacing
         subplot_titles=selected_stocks, 
-        row_heights=[1]*num_rows, 
-        specs=[[{"secondary_y": True}]]*num_rows
+        row_heights=[1]*num_stocks, 
+        specs=[[{"secondary_y": True}]]*num_stocks
     )
-    
     
     for i, symbol in enumerate(selected_stocks):
         df_stock = df_all[df_all['Stock'] == symbol]
@@ -711,7 +709,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
                 col=1,
                 font=dict(color="blue", size=12),
                 bgcolor='white'
-                )
+            )
             
             fig_stock.add_shape(
                 type="line",
@@ -736,9 +734,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
                 close=df_stock['Close'],    
                 name=f'{symbol} Candlestick'), row=i+1, col=1)
             
-            fig_stock.update_xaxes(rangeslider= {'visible':False}, row=i+1, col=1)
-
-            
+            fig_stock.update_xaxes(rangeslider={'visible': False}, row=i+1, col=1)
             
         if 'Volume' in movag_input:
             fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
@@ -750,14 +746,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         if '100D_MA' in movag_input:
             fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['100D_MA'], name=f'{symbol} 100D MA', line=dict(color='red')), row=i+1, col=1)
                 
-        if 'Volume' in movag_input:
-            fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
-            fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
-                
-                
-    # disable range slicer for candle stick chart
-
-    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, margin=dict(l=10, r=10, t=20, b=10))
+    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, margin=dict(l=40, r=40, t=40, b=40))
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
     
@@ -793,7 +782,7 @@ def update_content(add_n_clicks, submit_n_clicks, reset_n_clicks, stock_input, p
         y=0.99,
         xanchor="left",
         x=0.01
-    ),legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
+    ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
     
     fig_indexed.add_shape(
         type='line',
@@ -925,6 +914,20 @@ def update_theme(*args, login_status=None, username=None):
 def update_stylesheet(theme):
     return theme
 
+# Callback to handle the collapse toggle and emoji change
+@app.callback(
+    [Output("filters-collapse", "is_open"),
+     Output("toggle-filters-button", "children")],
+    [Input("toggle-filters-button", "n_clicks")],
+    [State("filters-collapse", "is_open")]
+)
+def toggle_filters_visibility(n_clicks, is_open):
+    if n_clicks:
+        is_open = not is_open  # Toggle the state
+    # Change the emoji based on the collapse state
+    emoji = "🔽" if not is_open else "🔼"
+    return is_open, emoji
+
 app.index_string = '''
 <!DOCTYPE html>
 <html>
@@ -953,7 +956,7 @@ app.index_string = '''
             {%config%}
             {%scripts%}
             {%renderer%}
-        </footer>§
+        </footer>
     </body>
 </html>
 '''
