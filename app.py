@@ -290,13 +290,31 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
-                 dcc.Tab(label='❤️ Analyst Recommendations', children=[
+                dcc.Tab(label='❤️ Analyst Recommendations', children=[
                     dbc.Card(
                         dbc.CardBody([
-                            html.Div(id='analyst-recommendations-content', className='mt-4')
-                        ])
+                            dcc.Loading(
+                                id="loading-analyst-recommendations",
+                                children=[
+                                    html.Div(id='analyst-recommendations-content', className='mt-4')
+                                ],
+                                type="default"
+                            ),
+                            html.Div(id='blur-overlay', style={
+                                'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+                                'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
+                                'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                                'backdrop-filter': 'blur(5px)'
+                            }, children=[
+                                html.Div([
+                                    html.P("Please ", style={'display': 'inline'}),
+                                    html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
+                                    html.P(" to view this content.", style={'display': 'inline'}),
+                                ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
+                            ])
+                        ], style={'position': 'relative'})
                     )
-                ]),
+                ])  
             ]),
         ], width=12, md=8)
     ], className='mb-4'),
@@ -435,7 +453,6 @@ def fetch_analyst_recommendations(symbol):
     return pd.DataFrame()  # Return an empty DataFrame if no data
 
 
-
 def generate_recommendations_heatmap(dataframe):
     # Ensure the periods and recommendations are in the correct order
     periods_order = ['-3m', '-2m', '-1m', '0m']  # Adjust according to your actual periods
@@ -506,10 +523,39 @@ def update_analyst_recommendations(stock_symbols):
             fig = generate_recommendations_heatmap(df)
             recommendations_content.append(html.H4(f"{symbol}", className='mt-3'))
             recommendations_content.append(dcc.Graph(figure=fig))
+            # Adding the link to the article on how to interpret the ratings
+            recommendations_content.append(
+                html.P([
+                    "For more information on how to interpret these ratings, please visit ",
+                    html.A("this article", href="https://finance.yahoo.com/news/buy-sell-hold-stock-analyst-180414724.html", target="_blank"),
+                    "."
+                ], className='mt-2')
+            )
         else:
             recommendations_content.append(html.P(f"No analyst recommendations found for {symbol}."))
     
     return recommendations_content
+
+
+@app.callback(
+    [Output('blur-overlay', 'style'),
+     Output('analyst-recommendations-content', 'style')],
+    Input('login-status', 'data')
+)
+def update_recommendations_visibility(login_status):
+    if not login_status:
+        blur_style = {
+            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+            'backdrop-filter': 'blur(5px)'
+        }
+        content_style = {'filter': 'blur(5px)'}
+    else:
+        blur_style = {'display': 'none'}
+        content_style = {'filter': 'none'}
+    
+    return blur_style, content_style
 
 
 @app.callback(
