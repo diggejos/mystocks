@@ -112,14 +112,15 @@ app.layout = html.Div([
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
     dcc.Store(id='login-status', data=False),  # Store to track login status
     dcc.Store(id='login-username-store', data=None),  # Store to persist the username
-    html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.MATERIA),
+    html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
     navbar,
     overlay,  # Add the overlay to the layout
     dcc.Location(id='url', refresh=False),
-    dbc.Container(id='page-content', fluid=True)
+    dbc.Container(id='page-content', fluid=True),
+    dcc.Store(id='active-tab', data='📈 Prices'), 
+    dcc.Store(id='forecast-data-store'),
 ])
 
-# Layout for the Dashboard page
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -185,8 +186,8 @@ dashboard_layout = dbc.Container([
              style={"margin-top": "20px"}), 
         ], width=12, md=3, style={"margin-top": "-25px"} ),
         dbc.Col([
-            dcc.Tabs(id='tabs', children=[
-                dcc.Tab(label='📈 Stock Prices', children=[
+            dcc.Tabs(id='tabs', value='📈 Prices', children=[
+                dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
                     dbc.Card(
                         dbc.CardBody([
                             dcc.RadioItems(
@@ -217,14 +218,14 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
-                dcc.Tab(label='📰 Stock News', children=[
+                dcc.Tab(label='📰 News', value='📰 News', children=[
                     dbc.Card(
                         dbc.CardBody([
                             html.Div(id='stock-news', className='news-container')
                         ])
                     )
                 ]),
-                dcc.Tab(label='⚖️ Indexed Comparison', children=[
+                dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
                     dbc.Card(
                         dbc.CardBody([
                             dcc.RadioItems(
@@ -245,52 +246,43 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
-                dcc.Tab(label='📊 Investment Simulation', children=[
+                dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
                     dbc.Card(
                         dbc.CardBody([
                             html.Div([
-                                html.Label("Stock Symbol:", className="font-weight-bold"),
-                                dcc.Dropdown(
-                                    id='simulation-stock-input',
-                                    options=[
-                                    {'label': 'Apple (AAPL)', 'value': 'AAPL'},
-                                    {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
-                                    {'label': 'Google (GOOGL)', 'value': 'GOOGL'},
-                                    {'label': 'Tesla (TSLA)', 'value': 'TSLA'},
-                                    {'label': 'META (META)', 'value': 'META'},
-                                    {'label': 'Netflix (NFLX)', 'value': 'NFLX'},
-                                    {'label': 'MSCI WORLD ETF (URTH)', 'value': 'URTH'},
-                                    {'label': 'Bitcoin (BTC-USD)', 'value': 'BTC-USD'},
-                                    {'label': 'Uber (UBER)', 'value': 'UBER'}
-                                    ],
-                                    value='AAPL',
-                                    className='form-control'
-                                ),
-                            ], className='mb-3'),
-                            html.Div([
-                                html.Label("Investment Amount ($):", className="font-weight-bold"),
+                                html.Label("Forecast Horizon (days):", className="font-weight-bold"),
                                 dcc.Input(
-                                    id='investment-amount',
+                                    id='forecast-horizon-input',
                                     type='number',
-                                    placeholder='enter Amount',
-                                    value=1000,
+                                    value=90,
                                     className='form-control',
+                                    min=1,
+                                    max=365
                                 ),
+                                dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
                             ], className='mb-3'),
-                            html.Div([
-                                html.Label("Investment Date:", className="font-weight-bold"),
-                                dcc.DatePickerSingle(
-                                    id='investment-date',
-                                    date=pd.to_datetime('2023-01-01'),
-                                    className='form-control'
-                                ),
-                            ], className='mb-3'),
-                            dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
-                            html.Div(id='simulation-result', className='mt-4')
-                        ])
+                            dcc.Loading(
+                                id="loading-forecast",
+                                type="default",
+                                children=[dcc.Graph(id='forecast-graph')]
+                            ),
+                            # Add the blur overlay here
+                            html.Div(id='forecast-blur-overlay', style={
+                                'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+                                'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
+                                'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                                'backdrop-filter': 'blur(5px)'
+                            }, children=[
+                                html.Div([
+                                    html.P("Please ", style={'display': 'inline'}),
+                                    html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
+                                    html.P(" to view this content.", style={'display': 'inline'}),
+                                ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
+                            ])
+                        ], style={'position': 'relative'})
                     )
                 ]),
-                dcc.Tab(label='❤️ Analyst Recommendations', children=[
+                dcc.Tab(label='❤️ Analyst Recommendations', value='❤️ Analyst Recommendations', children=[
                     dbc.Card(
                         dbc.CardBody([
                             dcc.Loading(
@@ -314,11 +306,13 @@ dashboard_layout = dbc.Container([
                             ])
                         ], style={'position': 'relative'})
                     )
-                ])  
+                ])
+
             ]),
         ], width=12, md=8)
     ], className='mb-4'),
 ], fluid=True)
+
 
 # Layout for Registration page
 register_layout = dbc.Container([
@@ -506,6 +500,14 @@ def generate_recommendations_heatmap(dataframe):
 
     return fig
 
+# Add a callback to update the active-tab store
+@app.callback(
+    Output('active-tab', 'data'),
+    Input('tabs', 'value')
+)
+def update_active_tab(value):
+    return value
+
 
 @app.callback(
     Output('analyst-recommendations-content', 'children'),
@@ -543,6 +545,144 @@ def update_analyst_recommendations(stock_symbols):
     Input('login-status', 'data')
 )
 def update_recommendations_visibility(login_status):
+    if not login_status:
+        blur_style = {
+            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+            'backdrop-filter': 'blur(5px)'
+        }
+        content_style = {'filter': 'blur(5px)'}
+    else:
+        blur_style = {'display': 'none'}
+        content_style = {'filter': 'none'}
+    
+    return blur_style, content_style
+
+@app.callback(
+    [Output('forecast-data-store', 'data'),
+     Output('forecast-graph', 'figure')],
+    [Input('generate-forecast-button', 'n_clicks')],
+    [State('individual-stocks-store', 'data'),
+     State('forecast-horizon-input', 'value'),
+     State('predefined-ranges', 'value'),
+     State('plotly-theme-store', 'data')]
+)
+def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plotly_theme):
+    if n_clicks and selected_stocks:
+        forecast_figures = []
+
+        # Determine the date range for display based on predefined_range
+        today = pd.to_datetime('today')
+        if predefined_range == 'YTD':
+            display_start_date = datetime(today.year, 1, 1)
+        elif predefined_range == '1M':
+            display_start_date = today - timedelta(days=30)
+        elif predefined_range == '3M':
+            display_start_date = today - timedelta(days=3 * 30)
+        elif predefined_range == '12M':
+            display_start_date = today - timedelta(days=365)
+        elif predefined_range == '24M':
+            display_start_date = today - timedelta(days=730)
+        elif predefined_range == '5Y':
+            display_start_date = today - timedelta(days=1825)
+        elif predefined_range == '10Y':
+            display_start_date = today - timedelta(days=3650)
+        else:
+            display_start_date = pd.to_datetime('2023-01-01')
+
+        for symbol in selected_stocks:
+            df = yf.download(symbol, period='5y')
+            df.reset_index(inplace=True)
+
+            # Prepare the data for Prophet
+            df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+            model = Prophet()
+            model.fit(df_prophet)
+
+            # Make the forecast
+            future = model.make_future_dataframe(periods=horizon)
+            forecast = model.predict(future)
+
+            # Filter the forecast and historical data based on the selected display range
+            forecast_filtered = forecast[forecast['ds'] >= display_start_date]
+            df_filtered = df[df['Date'] >= display_start_date]
+
+            # Create individual plots for each stock
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'], 
+                y=forecast_filtered['yhat'], 
+                mode='lines', 
+                name=f'{symbol} Forecast',
+                line=dict(color='blue')
+            ))
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'], 
+                y=forecast_filtered['yhat_lower'], 
+                fill=None,
+                mode='lines', 
+                line=dict(color='lightblue'),
+                showlegend=False
+            ))
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'], 
+                y=forecast_filtered['yhat_upper'], 
+                fill='tonexty', 
+                mode='lines', 
+                line=dict(color='lightblue'),
+                name=f'{symbol} Forecast Range'
+            ))
+            fig.add_trace(go.Scatter(
+                x=df_filtered['Date'], 
+                y=df_filtered['Close'], 
+                mode='lines', 
+                name=f'{symbol} Historical',
+                line=dict(color='green')
+            ))
+            forecast_figures.append(fig)
+
+        # Combine all forecasts into subplots
+        combined_fig = make_subplots(
+            rows=len(forecast_figures), cols=1,
+            shared_xaxes=True, 
+            subplot_titles=selected_stocks
+        )
+
+        for i, fig in enumerate(forecast_figures):
+            for trace in fig['data']:
+                combined_fig.add_trace(trace, row=i+1, col=1)
+        
+        combined_fig.update_layout(
+            title=f"Stock Price Forecasts for {', '.join(selected_stocks)}",
+            template=plotly_theme,
+            height=400 * len(selected_stocks),
+            showlegend=False
+        )
+
+        # Save the figure to the store and also return it for immediate display
+        return combined_fig, combined_fig
+    return dash.no_update, dash.no_update
+
+
+@app.callback(
+    Output('forecast-graph', 'figure',allow_duplicate=True),
+    [Input('active-tab', 'data')],
+    [State('forecast-data-store', 'data')],
+    prevent_initial_call=True
+)
+def display_stored_forecast(active_tab, stored_forecast):
+    if active_tab == '🌡️ Forecast' and stored_forecast:
+        return stored_forecast
+    return dash.no_update
+
+
+@app.callback(
+    [Output('forecast-blur-overlay', 'style'),
+     Output('forecast-graph', 'style')],
+    Input('login-status', 'data')
+)
+def update_forecast_visibility(login_status):
     if not login_status:
         blur_style = {
             'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
