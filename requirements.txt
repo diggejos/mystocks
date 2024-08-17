@@ -11,3 +11,5 @@ flask_sqlalchemy
 flask_bcrypt
 psycopg2
 flask_migrate
+prophet
+json
