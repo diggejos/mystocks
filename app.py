@@ -534,15 +534,6 @@ def style_save_button(login_status):
         return 'grayed-out'  # Apply the grayed-out class when logged out
     return ''  # No class when logged in
 
-
-@app.callback(
-    Output('save-portfolio-button', 'disabled'),
-    Input('login-status', 'data')
-)
-def toggle_save_button(login_status):
-    return not login_status  # Disable the button if the user is not logged in
-
-
 @app.callback(
     [Output('save-portfolio-button', 'children'),
      Output('login-overlay', 'is_open', allow_duplicate=True)],
