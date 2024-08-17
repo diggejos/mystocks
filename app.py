@@ -153,7 +153,8 @@ dashboard_layout = dbc.Container([
                             ),
                             dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
                             dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
-                            dbc.Button("Save Portfolio and Theme", id='save-portfolio-button', color='primary', className='mt-2', disabled=True),
+                            dbc.Button("Save Portfolio and Theme", id='save-portfolio-button', color='primary', className='',
+                                       disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
 
                         ], className='mb-3'),
                         
@@ -505,17 +506,34 @@ def handle_logout(logout_clicks):
 def update_dropdown_status(login_status):
     return not login_status  # Disable dropdown if not logged in
 
-
 @app.callback(
     Output('login-overlay', 'is_open'),
-    [Input('theme-dropdown-wrapper', 'n_clicks')],
+    [Input('theme-dropdown-wrapper', 'n_clicks'),
+     Input('save-portfolio-button', 'n_clicks')],
     [State('login-status', 'data')]
 )
-def show_overlay_if_logged_out(n_clicks, login_status):
-    # Show the overlay if the user is not logged in and clicks the dropdown
-    if n_clicks > 0 and not login_status:
+def show_overlay_if_logged_out(theme_n_clicks, save_n_clicks, login_status):
+    # Ensure no NoneType errors
+    theme_n_clicks = theme_n_clicks or 0
+    save_n_clicks = save_n_clicks or 0
+    
+    # Debugging print to see if the callback is triggered
+    print(f"Save Button Clicks: {save_n_clicks}, Theme Dropdown Clicks: {theme_n_clicks}, Logged In: {login_status}")
+    
+    # Show the overlay if the user is not logged in and clicks on either element
+    if (theme_n_clicks > 0 or save_n_clicks > 0) and not login_status:
         return True  # Show overlay
     return False  # Don't show overlay
+
+@app.callback(
+    Output('save-portfolio-button', 'className'),
+    Input('login-status', 'data')
+)
+def style_save_button(login_status):
+    if not login_status:
+        return 'grayed-out'  # Apply the grayed-out class when logged out
+    return ''  # No class when logged in
+
 
 @app.callback(
     Output('save-portfolio-button', 'disabled'),
@@ -523,6 +541,7 @@ def show_overlay_if_logged_out(n_clicks, login_status):
 )
 def toggle_save_button(login_status):
     return not login_status  # Disable the button if the user is not logged in
+
 
 @app.callback(
     [Output('save-portfolio-button', 'children'),
@@ -547,7 +566,7 @@ def save_portfolio(n_clicks, selected_stocks, selected_theme, login_status, user
                 except Exception as e:
                     return f"Error saving portfolio: {str(e)}", False
         else:
-            return dash.no_update, True
+            return dash.no_update, True  # Show the login overlay when not logged in
     return dash.no_update, False
 
 
