@@ -290,6 +290,13 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
+                 dcc.Tab(label='❤️ Analyst Recommendations', children=[
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.Div(id='analyst-recommendations-content', className='mt-4')
+                        ])
+                    )
+                ]),
             ]),
         ], width=12, md=8)
     ], className='mb-4'),
@@ -419,6 +426,91 @@ def fetch_news(api_key, symbols):
     
     # Wrap the news_content in a Row
     return dbc.Row(news_content, className="news-row")
+
+def fetch_analyst_recommendations(symbol):
+    ticker = yf.Ticker(symbol)
+    rec = ticker.recommendations
+    if rec is not None and not rec.empty:
+        return rec.tail(10)  # Fetch the latest 10 recommendations
+    return pd.DataFrame()  # Return an empty DataFrame if no data
+
+
+
+def generate_recommendations_heatmap(dataframe):
+    # Ensure the periods and recommendations are in the correct order
+    periods_order = ['-3m', '-2m', '-1m', '0m']  # Adjust according to your actual periods
+    recommendations_order = ['strongBuy', 'buy', 'hold', 'sell', 'strongSell']
+    
+    # Reshape the DataFrame to have the recommendations types as rows and the periods as columns
+    df_melted = dataframe.melt(id_vars=['period'], 
+                                value_vars=recommendations_order,
+                                var_name='Recommendation', 
+                                value_name='Count')
+    
+    # Ensure the period and recommendation type columns are categorical with a fixed order
+    df_melted['period'] = pd.Categorical(df_melted['period'], categories=periods_order, ordered=True)
+    df_melted['Recommendation'] = pd.Categorical(df_melted['Recommendation'], categories=recommendations_order, ordered=True)
+
+    # Pivot the DataFrame to get the correct format for the heatmap
+    df_pivot = df_melted.pivot(index='Recommendation', columns='period', values='Count')
+
+    # Create the heatmap using plotly.graph_objects to add text
+    fig = go.Figure(data=go.Heatmap(
+        z=df_pivot.values,
+        x=df_pivot.columns,
+        y=df_pivot.index,
+        colorscale='RdYlGn',  # Green for high, Red for low
+        reversescale=False,
+        text=df_pivot.values,  # Show numbers within the cells
+        texttemplate="%{text}",  # Format the text to show as is
+        hoverinfo="z",
+        showscale=False  # Disable the color scale
+    ))
+
+    # Update layout for better visuals, ensuring labels and grid lines are visible
+    fig.update_layout(
+        title=None,
+        autosize=True,  # Automatically adjust the size based on the container
+        xaxis_title="Period",
+        yaxis_title=None,
+        height=300,
+    
+        xaxis=dict(
+            autorange=False,
+            ticks="",
+            showticklabels=True,
+            automargin=True,  # Automatically adjust margins to fit labels
+            constrain='domain',  # Keep the heatmap within the plot area
+            domain=[0,0.85]
+        ),
+        template='plotly_white',
+        margin=dict(l=0, r=0, t=0, b=0),  # Increase left and top margins to avoid cutting off
+    )
+
+    return fig
+
+
+@app.callback(
+    Output('analyst-recommendations-content', 'children'),
+    Input('individual-stocks-store', 'data')
+)
+def update_analyst_recommendations(stock_symbols):
+    if not stock_symbols:
+        return html.P("Please select stocks to view their analyst recommendations.")
+    
+    recommendations_content = []
+    
+    for symbol in stock_symbols:
+        df = fetch_analyst_recommendations(symbol)
+        if not df.empty:
+            fig = generate_recommendations_heatmap(df)
+            recommendations_content.append(html.H4(f"{symbol}", className='mt-3'))
+            recommendations_content.append(dcc.Graph(figure=fig))
+        else:
+            recommendations_content.append(html.P(f"No analyst recommendations found for {symbol}."))
+    
+    return recommendations_content
+
 
 @app.callback(
     Output('register-output', 'children'),
