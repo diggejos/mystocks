@@ -16,6 +16,7 @@ from flask_bcrypt import Bcrypt
 import json
 from flask_migrate import Migrate
 import psycopg2
+from prophet import Prophet
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
