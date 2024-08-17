@@ -572,9 +572,9 @@ def update_recommendations_visibility(login_status):
 def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plotly_theme):
     if n_clicks and selected_stocks:
         forecast_figures = []
-
-        # Determine the date range for display based on predefined_range
         today = pd.to_datetime('today')
+        
+        # Determine the date range for display based on predefined_range
         if predefined_range == 'YTD':
             display_start_date = datetime(today.year, 1, 1)
         elif predefined_range == '1M':
@@ -591,57 +591,73 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plo
             display_start_date = today - timedelta(days=3650)
         else:
             display_start_date = pd.to_datetime('2023-01-01')
-
+        
         for symbol in selected_stocks:
-            df = yf.download(symbol, period='5y')
-            df.reset_index(inplace=True)
+            try:
+                # Try downloading the stock data
+                df = yf.download(symbol, period='5y')
+                
+                if df.empty:
+                    raise ValueError(f"No data found for {symbol}")
 
-            # Prepare the data for Prophet
-            df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
-            model = Prophet()
-            model.fit(df_prophet)
+                df.reset_index(inplace=True)
 
-            # Make the forecast
-            future = model.make_future_dataframe(periods=horizon)
-            forecast = model.predict(future)
+                # Prepare the data for Prophet
+                df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+                model = Prophet()
+                model.fit(df_prophet)
 
-            # Filter the forecast and historical data based on the selected display range
-            forecast_filtered = forecast[forecast['ds'] >= display_start_date]
-            df_filtered = df[df['Date'] >= display_start_date]
+                # Make the forecast
+                future = model.make_future_dataframe(periods=horizon)
+                forecast = model.predict(future)
 
-            # Create individual plots for each stock
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=forecast_filtered['ds'], 
-                y=forecast_filtered['yhat'], 
-                mode='lines', 
-                name=f'{symbol} Forecast',
-                line=dict(color='blue')
-            ))
-            fig.add_trace(go.Scatter(
-                x=forecast_filtered['ds'], 
-                y=forecast_filtered['yhat_lower'], 
-                fill=None,
-                mode='lines', 
-                line=dict(color='lightblue'),
-                showlegend=False
-            ))
-            fig.add_trace(go.Scatter(
-                x=forecast_filtered['ds'], 
-                y=forecast_filtered['yhat_upper'], 
-                fill='tonexty', 
-                mode='lines', 
-                line=dict(color='lightblue'),
-                name=f'{symbol} Forecast Range'
-            ))
-            fig.add_trace(go.Scatter(
-                x=df_filtered['Date'], 
-                y=df_filtered['Close'], 
-                mode='lines', 
-                name=f'{symbol} Historical',
-                line=dict(color='green')
-            ))
-            forecast_figures.append(fig)
+                # Filter the forecast and historical data based on the selected display range
+                forecast_filtered = forecast[forecast['ds'] >= display_start_date]
+                df_filtered = df[df['Date'] >= display_start_date]
+
+                # Create individual plots for each stock
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=forecast_filtered['ds'], 
+                    y=forecast_filtered['yhat'], 
+                    mode='lines', 
+                    name=f'{symbol} Forecast',
+                    line=dict(color='blue')
+                ))
+                fig.add_trace(go.Scatter(
+                    x=forecast_filtered['ds'], 
+                    y=forecast_filtered['yhat_lower'], 
+                    fill=None,
+                    mode='lines', 
+                    line=dict(color='lightblue'),
+                    showlegend=False
+                ))
+                fig.add_trace(go.Scatter(
+                    x=forecast_filtered['ds'], 
+                    y=forecast_filtered['yhat_upper'], 
+                    fill='tonexty', 
+                    mode='lines', 
+                    line=dict(color='lightblue'),
+                    name=f'{symbol} Forecast Range'
+                ))
+                fig.add_trace(go.Scatter(
+                    x=df_filtered['Date'], 
+                    y=df_filtered['Close'], 
+                    mode='lines', 
+                    name=f'{symbol} Historical',
+                    line=dict(color='green')
+                ))
+                forecast_figures.append(fig)
+            
+            except Exception as e:
+                print(f"Error generating forecast for {symbol}: {e}")
+                # You could also add a message in the figure to indicate the error
+                fig = go.Figure()
+                fig.add_annotation(text=f"Could not generate forecast for {symbol}: {e}", showarrow=False)
+                forecast_figures.append(fig)
+
+        if not forecast_figures:
+            return dash.no_update, dash.no_update
 
         # Combine all forecasts into subplots
         combined_fig = make_subplots(
@@ -657,13 +673,15 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plo
         combined_fig.update_layout(
             title=f"Stock Price Forecasts for {', '.join(selected_stocks)}",
             template=plotly_theme,
-            height=400 * len(selected_stocks),
+            height=400 * len(forecast_figures),
             showlegend=False
         )
 
         # Save the figure to the store and also return it for immediate display
         return combined_fig, combined_fig
+    
     return dash.no_update, dash.no_update
+
 
 
 @app.callback(
