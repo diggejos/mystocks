@@ -1,0 +1,67 @@
+
+
+.grayed-out {
+    background-color: #d3d3d3; /* Light gray background */
+    color: #a9a9a9;            /* Dark gray text color */
+    border-color: #a9a9a9;     /* Dark gray border color */
+    /*cursor: not-allowed;       /* Change cursor to indicate "disabled" */
+    /*pointer-events: none;      /* Prevent interaction */
+    opacity: 0.5;             /* Slightly transparent */
+}
+
+
+
+.navbar {
+    padding: 1rem 1rem;
+}
+
+.navbar-nav .nav-item {
+    margin-left: 1rem;
+}
+
+.navbar-logo {
+    height: 10%; /* Adjust this percentage as needed */
+    max-height: 60px; /* Set a max-height to prevent it from growing too large */
+    object-fit: contain; /* Ensure the image maintains its aspect ratio */
+}
+
+.blinking-dot {
+    height: 20px;
+    width: 20px;
+    background-color: red;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink-animation 1s steps(5, start) infinite;
+}
+
+@keyframes blink-animation {
+    to {
+        visibility: hidden;
+    }
+}
+
+.tab-stock-prices .tab-label::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f201"; /* FontAwesome icon for chart-line */
+    margin-right: 8px;
+}
+
+.tab-stock-news .tab-label::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f1ea"; /* FontAwesome icon for newspaper */
+    margin-right: 8px;
+}
+
+.tab-indexed-comparison .tab-label::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f24e"; /* FontAwesome icon for balance-scale */
+    margin-right: 8px;
+}
+
+.tab-investment-simulation .tab-label::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f1ec"; /* FontAwesome icon for calculator */
+    margin-right: 8px;
+}
+
+
