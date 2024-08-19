@@ -6,6 +6,7 @@ This application allows users to:
 - simulate stock profit/loss
 - get analyst recommendations on stocks
 - time series forecast on stocks
+- Register and save your own watchlist 
   
 Check the application here: 
 https://mystocks-m9xp.onrender.com/
