@@ -4,6 +4,8 @@ This application allows users to:
 - indexed comparison of stock prices and compare it to e.g. NASDAQ100
 - get recent news of selected stocks
 - simulate stock profit/loss
+- get analyst recommendations on stocks
+- time series forecast on stocks
   
 Check the application here: 
 https://mystocks-m9xp.onrender.com/
