@@ -167,9 +167,10 @@ dashboard_layout = dbc.Container([
                                 labelStyle={"margin-right": "20px"}
                             )
                         ], className='mb-3'),
-                        
-                        html.Div(id='watchlist-summary', className='mb-3', style={'font-weight': 'bold'}),
-
+                       html.Div([
+                            html.Span("Current Watchlist: ", style={'font-weight': 'bold'}),  # Bold text for "Current Watchlist:"
+                            html.Span(id='watchlist-symbols', style={'font-weight': 'normal'})  # Regular text for the stock symbols
+                        ], id='watchlist-summary', className='mb-3')
                     ])
                 ]), 
                 id="filters-collapse", 
@@ -890,14 +891,14 @@ def style_save_button(login_status):
     return ''  # No class when logged in
 
 @app.callback(
-    Output('watchlist-summary', 'children'),
+    Output('watchlist-symbols', 'children'),
     Input('individual-stocks-store', 'data')
 )
-def update_watchlist_summary(individual_stocks):
+def update_watchlist_symbols(individual_stocks):
     if not individual_stocks:
-        return "Current Watchlist: None"
+        return "None"
     
-    return f"Current Watchlist: {', '.join(individual_stocks)}"
+    return ', '.join(individual_stocks)
 
 @app.callback(
     [Output('save-portfolio-button', 'children'),
@@ -1010,7 +1011,11 @@ def update_individual_stocks_store(add_n_clicks, reset_n_clicks, new_stock, indi
      Input('chart-type', 'value')]
 )
 def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type):
-    if not individual_stocks:
+    # Ensure benchmark is not processed as an individual stock
+    if benchmark_selection in individual_stocks:
+        individual_stocks.remove(benchmark_selection)
+    
+    if not individual_stocks and benchmark_selection == 'None':
         return (
             px.line(title="Please add at least one stock symbol.", template=plotly_theme),
             {'height': '400px'},
@@ -1050,7 +1055,7 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
             df['100D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=100, min_periods=1).mean())
             data.append(df)
 
-    if not data:
+    if not data and benchmark_selection == 'None':
         return (
             px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
             {'height': '400px'},
@@ -1058,13 +1063,70 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
             px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme)
         )
 
-    df_all = pd.concat(data)
+    df_all = pd.concat(data) if data else pd.DataFrame()
 
-    # Determine the number of rows needed for the graph
+    # Create an index for each stock
+    indexed_data = {}
+    for symbol in individual_stocks:
+        if symbol in df_all['Stock'].unique():
+            df_stock = df_all[df_all['Stock'] == symbol].copy()
+            df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
+            indexed_data[symbol] = df_stock[['Index']].rename(columns={"Index": symbol})
+
+    # Add benchmark index to the indexed data if selected
+    if benchmark_selection != 'None':
+        benchmark_data = yf.download(benchmark_selection, start=start_date, end=end_date)
+        if not benchmark_data.empty:
+            benchmark_data.reset_index(inplace=True)
+            benchmark_data['Index'] = benchmark_data['Close'] / benchmark_data['Close'].iloc[0] * 100
+            indexed_data[benchmark_selection] = benchmark_data[['Index']].rename(columns={"Index": benchmark_selection})
+
+    # Combine all indexed data
+    if indexed_data:
+        df_indexed = pd.concat(indexed_data, axis=1)
+        df_indexed.reset_index(inplace=True)
+        df_indexed.columns = ['Date'] + [symbol for symbol in indexed_data.keys()]
+
+        # Create indexed comparison figure
+        fig_indexed = px.line(df_indexed, x='Date', y=[symbol for symbol in indexed_data.keys()], template=plotly_theme)
+        fig_indexed.update_yaxes(matches=None, title_text=None)
+        fig_indexed.update_xaxes(title_text=None)
+        fig_indexed.update_layout(legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            font=dict(size=10)
+        ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
+
+        fig_indexed.add_shape(
+            type='line',
+            x0=df_indexed['Date'].min(),
+            y0=100,
+            x1=df_indexed['Date'].max(),
+            y1=100,
+            line=dict(
+                color="Black",
+                width=2,
+                dash="dot"
+            )
+        )
+
+        # Remove the duplicate benchmark if it exists
+        fig_indexed.data = [trace for trace in fig_indexed.data if trace.name != benchmark_selection]
+
+        # Add benchmark line as dotted if selected
+        if benchmark_selection != 'None':
+            fig_indexed.add_scatter(x=df_indexed['Date'], y=df_indexed[benchmark_selection], mode='lines', name=benchmark_selection, line=dict(dash='dot'))
+
+    else:
+        fig_indexed = px.line(title="No data available.", template=plotly_theme)
+
+    # Determine the number of rows needed for the stock graph
     num_stocks = len(individual_stocks)
     graph_height = 400 * num_stocks  # Each facet should be 400px in height
 
-    # Create the subplot with fixed margins
+    # Create the stock graph with the correct layout
     fig_stock = make_subplots(
         rows=num_stocks, 
         cols=1, 
@@ -1150,67 +1212,12 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
-    df_all['Date'] = pd.to_datetime(df_all['Date'])
-    df_all.set_index('Date', inplace=True)
-
-    # Create an index for each stock
-    indexed_data = {}
-    for symbol in individual_stocks:
-        df_stock = df_all[df_all['Stock'] == symbol].copy()
-        df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
-        indexed_data[symbol] = df_stock[['Index']]
-
-    # Add benchmark data if selected
-    if benchmark_selection != 'None':
-        benchmark_data = yf.download(benchmark_selection, start=start_date, end=end_date)
-        if not benchmark_data.empty:
-            benchmark_data.reset_index(inplace=True)
-            benchmark_data['Index'] = benchmark_data['Close'] / benchmark_data['Close'].iloc[0] * 100
-            benchmark_data.set_index('Date', inplace=True)
-            indexed_data[benchmark_selection] = benchmark_data[['Index']]
-
-    # Combine all indexed data
-    df_indexed = pd.concat(indexed_data, axis=1)
-    df_indexed.reset_index(inplace=True)
-    df_indexed.columns = ['Date'] + [symbol for symbol in indexed_data.keys()]
-
-    fig_indexed = px.line(df_indexed, x='Date', y=[symbol for symbol in indexed_data.keys()], template=plotly_theme)
-    fig_indexed.update_yaxes(matches=None, title_text=None)
-    fig_indexed.update_xaxes(title_text=None)
-    fig_indexed.update_layout(legend=dict(
-        yanchor="top",
-        y=0.99,
-        xanchor="left",
-        x=0.01,
-        font=dict(size=10)
-    ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
-
-    fig_indexed.add_shape(
-        type='line',
-        x0=df_indexed['Date'].min(),
-        y0=100,
-        x1=df_indexed['Date'].max(),
-        y1=100,
-        line=dict(
-            color="Black",
-            width=2,
-            dash="dot"
-        )
-    )
-
-    # Add benchmark line as dotted if selected
-    if benchmark_selection != 'None':
-        fig_indexed.add_scatter(x=df_indexed['Date'], y=df_indexed[f'{benchmark_selection}_Index'], mode='lines', name=benchmark_selection, line=dict(dash='dot'))
-
-    fig_indexed.update_layout(template=plotly_theme)
-
     load_dotenv()
     api_key = os.getenv('API_KEY')
 
     news_content = fetch_news(api_key, individual_stocks)
 
     return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed
-
 
 @app.callback(Output('simulation-result', 'children'),
               Input('simulate-button', 'n_clicks'),
