@@ -132,31 +132,18 @@ dashboard_layout = dbc.Container([
                 dbc.Card([  
                     dbc.CardBody([
                         html.Div([
-                            html.Label("Stock Symbols:", className="font-weight-bold"),
-                            dcc.Dropdown(
-                                id='stock-input',
-                                options=[
-                                    {'label': 'Apple (AAPL)', 'value': 'AAPL'},
-                                    {'label': 'Microsoft (MSFT)', 'value': 'MSFT'},
-                                ],
-                                value=[],
-                                multi=True,
-                                className='form-control'
-                            ),
-                        ], className='mb-3'),
-                        html.Div([
-                            html.Label("Add Individual Stock:", className="font-weight-bold"),
+                            html.Label("Add Stock Symbol:", className="font-weight-bold"),
                             dcc.Input(
                                 id='individual-stock-input',
                                 type='text',
-                                placeholder='Enter stock symbol',
+                                placeholder='e.g. AAPL',
                                 debounce=True,
                                 className='form-control'
                             ),
                             dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
                             dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
                             dbc.Button("Save Portfolio and Theme", id='save-portfolio-button', color='primary', className='',
-                                       disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
+                                        disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
 
                         ], className='mb-3'),
                         
@@ -180,11 +167,14 @@ dashboard_layout = dbc.Container([
                                 labelStyle={"margin-right": "20px"}
                             )
                         ], className='mb-3'),
+                        
+                        html.Div(id='watchlist-summary', className='mb-3', style={'font-weight': 'bold'}),
+
                     ])
                 ]), 
                 id="filters-collapse", 
                 is_open=True,  # Start with the card open
-             style={"margin-top": "20px"}), 
+              style={"margin-top": "20px"}), 
         ], width=12, md=3, style={"margin-top": "-25px"} ),
         dbc.Col([
             dcc.Tabs(id='tabs', value='📈 Prices', children=[
@@ -251,6 +241,15 @@ dashboard_layout = dbc.Container([
                     dbc.Card(
                         dbc.CardBody([
                             html.Div([
+                                html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
+                                dcc.Dropdown(
+                                    id='forecast-stock-input',
+                                    options=[],  # Options will be populated dynamically
+                                    value=[],  # Default selected stocks
+                                    multi=True,
+                                    className='form-control',
+                                ),
+                                html.Div(id='forecast-stock-warning', style={'color': 'red'}),
                                 html.Label("Forecast Horizon (days):", className="font-weight-bold"),
                                 dcc.Input(
                                     id='forecast-horizon-input',
@@ -262,12 +261,19 @@ dashboard_layout = dbc.Container([
                                 ),
                                 dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
                             ], className='mb-3'),
+                            dcc.Markdown('''
+                                **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
+                                While this tool is useful for identifying potential trends based on historical data, stock markets are influenced by 
+                                a wide range of unpredictable factors. These predictions should be considered with caution and should not be used 
+                                as financial advice. Always conduct your own research or consult with a financial advisor before making investment decisions.
+                            ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
+                            
                             dcc.Loading(
                                 id="loading-forecast",
                                 type="default",
                                 children=[dcc.Graph(id='forecast-graph')]
                             ),
-                            # Add the blur overlay here
+                            # Blur overlay for the Forecast tab
                             html.Div(id='forecast-blur-overlay', style={
                                 'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
                                 'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
@@ -307,13 +313,46 @@ dashboard_layout = dbc.Container([
                             ])
                         ], style={'position': 'relative'})
                     )
-                ])
-
+                ]),
+                dcc.Tab(label='📊 Investment Simulation', children=[
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.Div([
+                                html.Label("Stock Symbol:", className="font-weight-bold"),
+                                dcc.Dropdown(
+                                    id='simulation-stock-input',
+                                    options=[],
+                                    value=[],
+                                    className='form-control',
+                                ),
+                            ], className='mb-3'),
+                            html.Div([
+                                html.Label("Investment Amount ($):", className="font-weight-bold"),
+                                dcc.Input(
+                                    id='investment-amount',
+                                    type='number',
+                                    placeholder='enter Amount',
+                                    value=1000,
+                                    className='form-control',
+                                ),
+                            ], className='mb-3'),
+                            html.Div([
+                                html.Label("Investment Date:", className="font-weight-bold"),
+                                dcc.DatePickerSingle(
+                                    id='investment-date',
+                                    date=pd.to_datetime('2024-01-01'),
+                                    className='form-control'
+                                ),
+                            ], className='mb-3'),
+                            dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
+                            html.Div(id='simulation-result', className='mt-4')
+                        ])
+                    )
+                ]),
             ]),
         ], width=12, md=8)
     ], className='mb-4'),
 ], fluid=True)
-
 
 # Layout for Registration page
 register_layout = dbc.Container([
@@ -354,7 +393,6 @@ login_layout = dbc.Container([
         ], width=12, md=6, className="mx-auto")
     ])
 ], fluid=True)
-
 
 # Layout for the About page
 about_layout = dbc.Container([
@@ -423,7 +461,7 @@ def fetch_news(api_key, symbols):
                     dbc.Card(
                         dbc.CardBody([
                             html.H5(html.A(article['title'], href=article['url'], target="_blank")),
-                            html.Img(src=article['urlToImage'], style={"width": "300px", "height": "auto"})
+                            html.Img(src=article['urlToImage'], style={"width": "250px", "height": "auto"})
                             if article['urlToImage'] else html.Div(),
                             html.P(article.get('description', 'No summary available')),
                             html.Footer(
@@ -561,62 +599,71 @@ def update_recommendations_visibility(login_status):
     return blur_style, content_style
 
 @app.callback(
-    [Output('forecast-data-store', 'data'),
-     Output('forecast-graph', 'figure')],
-    [Input('generate-forecast-button', 'n_clicks')],
-    [State('individual-stocks-store', 'data'),
-     State('forecast-horizon-input', 'value'),
-     State('predefined-ranges', 'value'),
-     State('plotly-theme-store', 'data')]
+    [Output('forecast-stock-input', 'options'),
+      Output('simulation-stock-input', 'options')],
+    Input('individual-stocks-store', 'data')
 )
-def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plotly_theme):
+def update_forecast_simulation_dropdown(individual_stocks):
+    if not individual_stocks:
+        return [], []
+    
+    options = [{'label': stock, 'value': stock} for stock in individual_stocks]
+    return options, options
+
+
+@app.callback(
+    [Output('forecast-graph', 'figure'),
+      Output('forecast-stock-warning', 'children'),
+      Output('forecast-data-store', 'data')],
+    [Input('generate-forecast-button', 'n_clicks')],
+    [State('forecast-stock-input', 'value'),
+      State('forecast-horizon-input', 'value'),
+      State('predefined-ranges', 'value')]  # Added predefined-ranges state
+)
+def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range):
     if n_clicks and selected_stocks:
+        if len(selected_stocks) > 3:
+            return dash.no_update, "Please select up to 3 stocks only.", dash.no_update
+
         forecast_figures = []
         today = pd.to_datetime('today')
-        
-        # Determine the date range for display based on predefined_range
-        if predefined_range == 'YTD':
-            display_start_date = datetime(today.year, 1, 1)
-        elif predefined_range == '1M':
-            display_start_date = today - timedelta(days=30)
-        elif predefined_range == '3M':
-            display_start_date = today - timedelta(days=3 * 30)
-        elif predefined_range == '12M':
-            display_start_date = today - timedelta(days=365)
-        elif predefined_range == '24M':
-            display_start_date = today - timedelta(days=730)
-        elif predefined_range == '5Y':
-            display_start_date = today - timedelta(days=1825)
-        elif predefined_range == '10Y':
-            display_start_date = today - timedelta(days=3650)
-        else:
-            display_start_date = pd.to_datetime('2023-01-01')
-        
+
         for symbol in selected_stocks:
             try:
-                # Try downloading the stock data
-                df = yf.download(symbol, period='5y')
-                
+                df = yf.download(symbol, period='5y')  # Extended the window to 5 years
                 if df.empty:
                     raise ValueError(f"No data found for {symbol}")
 
                 df.reset_index(inplace=True)
-
-                # Prepare the data for Prophet
                 df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
                 model = Prophet()
                 model.fit(df_prophet)
 
-                # Make the forecast
                 future = model.make_future_dataframe(periods=horizon)
                 forecast = model.predict(future)
 
-                # Filter the forecast and historical data based on the selected display range
-                forecast_filtered = forecast[forecast['ds'] >= display_start_date]
-                df_filtered = df[df['Date'] >= display_start_date]
+                # Filtering based on predefined-range for display
+                if predefined_range == 'YTD':
+                    start_date = datetime(today.year, 1, 1)
+                elif predefined_range == '1M':
+                    start_date = today - timedelta(days=30)
+                elif predefined_range == '3M':
+                    start_date = today - timedelta(days=3*30)
+                elif predefined_range == '12M':
+                    start_date = today - timedelta(days=365)
+                elif predefined_range == '24M':
+                    start_date = today - timedelta(days=730)
+                elif predefined_range == '5Y':
+                    start_date = today - timedelta(days=1825)
+                else:
+                    start_date = pd.to_datetime('2023-01-01')  # Default range if no match
 
-                # Create individual plots for each stock
+                df_filtered = df[df['Date'] >= start_date]
+                forecast_filtered = forecast[forecast['ds'] >= start_date]
+
                 fig = go.Figure()
+
+                # Add forecast mean line
                 fig.add_trace(go.Scatter(
                     x=forecast_filtered['ds'], 
                     y=forecast_filtered['yhat'], 
@@ -624,22 +671,29 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plo
                     name=f'{symbol} Forecast',
                     line=dict(color='blue')
                 ))
+
+                # Add the confidence interval (bandwidth)
                 fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'], 
-                    y=forecast_filtered['yhat_lower'], 
-                    fill=None,
-                    mode='lines', 
-                    line=dict(color='lightblue'),
+                    x=forecast_filtered['ds'],
+                    y=forecast_filtered['yhat_upper'],
+                    mode='lines',
+                    name='Upper Bound',
+                    line=dict(width=0),
                     showlegend=False
                 ))
+
                 fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'], 
-                    y=forecast_filtered['yhat_upper'], 
-                    fill='tonexty', 
-                    mode='lines', 
-                    line=dict(color='lightblue'),
-                    name=f'{symbol} Forecast Range'
+                    x=forecast_filtered['ds'],
+                    y=forecast_filtered['yhat_lower'],
+                    fill='tonexty',  # Fill to the next trace (yhat_upper)
+                    mode='lines',
+                    name='Lower Bound',
+                    line=dict(width=0),
+                    fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
+                    showlegend=False
                 ))
+
+                # Add historical data
                 fig.add_trace(go.Scatter(
                     x=df_filtered['Date'], 
                     y=df_filtered['Close'], 
@@ -647,17 +701,26 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plo
                     name=f'{symbol} Historical',
                     line=dict(color='green')
                 ))
+
+                # Update layout for the plotly_white theme
+                fig.update_layout(
+                    template='plotly_white',
+                    title=f"Stock Price Forecast for {symbol}",
+                    xaxis_title="Date",
+                    yaxis_title="Price",
+                    height=600,
+                    showlegend=False
+                )
+
                 forecast_figures.append(fig)
-            
+
             except Exception as e:
-                print(f"Error generating forecast for {symbol}: {e}")
-                # You could also add a message in the figure to indicate the error
                 fig = go.Figure()
                 fig.add_annotation(text=f"Could not generate forecast for {symbol}: {e}", showarrow=False)
                 forecast_figures.append(fig)
 
         if not forecast_figures:
-            return dash.no_update, dash.no_update
+            return dash.no_update, dash.no_update, dash.no_update
 
         # Combine all forecasts into subplots
         combined_fig = make_subplots(
@@ -669,23 +732,21 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range, plo
         for i, fig in enumerate(forecast_figures):
             for trace in fig['data']:
                 combined_fig.add_trace(trace, row=i+1, col=1)
-        
+
         combined_fig.update_layout(
-            title=f"Stock Price Forecasts for {', '.join(selected_stocks)}",
-            template=plotly_theme,
+            template='plotly_white',
+            title=None,
             height=400 * len(forecast_figures),
-            showlegend=False
+            showlegend=False,
+            margin=dict(l=40, r=40, t=40, b=40)
         )
 
-        # Save the figure to the store and also return it for immediate display
-        return combined_fig, combined_fig
-    
-    return dash.no_update, dash.no_update
+        return combined_fig, "", combined_fig
 
-
+    return go.Figure(), "", dash.no_update
 
 @app.callback(
-    Output('forecast-graph', 'figure',allow_duplicate=True),
+    Output('forecast-graph', 'figure', allow_duplicate=True),
     [Input('active-tab', 'data')],
     [State('forecast-data-store', 'data')],
     prevent_initial_call=True
@@ -694,7 +755,6 @@ def display_stored_forecast(active_tab, stored_forecast):
     if active_tab == '🌡️ Forecast' and stored_forecast:
         return stored_forecast
     return dash.no_update
-
 
 @app.callback(
     [Output('forecast-blur-overlay', 'style'),
@@ -795,7 +855,6 @@ def handle_logout(logout_clicks):
     return dash.no_update, dash.no_update, dash.no_update
 
 
-
 @app.callback(
     Output('theme-dropdown', 'disabled'),
     Input('login-status', 'data')
@@ -832,22 +891,41 @@ def style_save_button(login_status):
     return ''  # No class when logged in
 
 @app.callback(
+    Output('save-portfolio-button', 'className'),
+    Input('login-status', 'data')
+)
+def style_save_button(login_status):
+    if not login_status:
+        return 'grayed-out'  # Apply the grayed-out class when logged out
+    return ''  # No class when logged in
+
+@app.callback(
+    Output('watchlist-summary', 'children'),
+    Input('individual-stocks-store', 'data')
+)
+def update_watchlist_summary(individual_stocks):
+    if not individual_stocks:
+        return "Current Watchlist: None"
+    
+    return f"Current Watchlist: {', '.join(individual_stocks)}"
+
+@app.callback(
     [Output('save-portfolio-button', 'children'),
      Output('login-overlay', 'is_open', allow_duplicate=True)],
     Input('save-portfolio-button', 'n_clicks'),
-    State('individual-stocks-store', 'data'),
-    State('theme-store', 'data'),
-    State('login-status', 'data'),
-    State('login-username-store', 'data'),
+    [State('individual-stocks-store', 'data'),
+     State('theme-store', 'data'),
+     State('login-status', 'data'),
+     State('login-username-store', 'data')],
     prevent_initial_call=True
 )
-def save_portfolio(n_clicks, selected_stocks, selected_theme, login_status, username):
+def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, username):
     if n_clicks:
         if login_status and username:
             user = User.query.filter_by(username=username).first()
             if user:
                 try:
-                    user.watchlist = json.dumps(selected_stocks)
+                    user.watchlist = json.dumps(individual_stocks)
                     user.theme = selected_theme  # Save the selected theme
                     db.session.commit()
                     return "Portfolio and Theme Saved!", False
@@ -858,6 +936,27 @@ def save_portfolio(n_clicks, selected_stocks, selected_theme, login_status, user
     return dash.no_update, False
 
 
+@app.callback(
+    Output('individual-stocks-store', 'data', allow_duplicate=True),
+    [Input('add-stock-button', 'n_clicks'),
+     Input('reset-stocks-button', 'n_clicks')],
+    [State('individual-stock-input', 'value'),
+     State('individual-stocks-store', 'data')],
+    prevent_initial_call=True
+)
+def update_stocks_and_dropdown(add_n_clicks, reset_n_clicks, new_stock, individual_stocks):
+    ctx = dash.callback_context
+    trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if trigger == 'add-stock-button' and new_stock:
+        new_stock = new_stock.upper().strip()
+        if new_stock and new_stock not in individual_stocks:
+            individual_stocks.append(new_stock)
+    
+    if trigger == 'reset-stocks-button':
+        individual_stocks = []
+    
+    return individual_stocks
 
 @app.callback(
     Output('individual-stocks-store', 'data', allow_duplicate=True),
@@ -885,30 +984,17 @@ def load_user_theme(login_status, username):
             return user.theme
     return 'MATERIA'  # Default theme if none is found
 
-
 @app.callback(
-    [Output('stock-graph', 'figure'),
-     Output('stock-graph', 'style'),
-     Output('stock-news', 'children'),
-     Output('indexed-comparison-graph', 'figure'),
-     Output('individual-stocks-store', 'data')],
+    [Output('individual-stocks-store', 'data'),
+     Output('individual-stock-input', 'value')],  # Clear the input field after adding a stock
     [Input('add-stock-button', 'n_clicks'),
-     Input('reset-stocks-button', 'n_clicks'),
-     Input('stock-input', 'value'),
-     Input('predefined-ranges', 'value'),
-     Input('movag_input', 'value'),
-     Input('benchmark-selection', 'value'),
-     Input('plotly-theme-store', 'data'),
-     Input('chart-type', 'value')],
+     Input('reset-stocks-button', 'n_clicks')],
     [State('individual-stock-input', 'value'),
-     State('individual-stocks-store', 'data'),
-     State('stock-input', 'value')]
+     State('individual-stocks-store', 'data')],
+    prevent_initial_call=True
 )
-def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type, new_stock, individual_stocks, selected_stocks):
+def update_individual_stocks_store(add_n_clicks, reset_n_clicks, new_stock, individual_stocks):
     ctx = dash.callback_context
-    if not ctx.triggered:
-        selected_stocks = ['AAPL']
-    
     trigger = ctx.triggered[0]['prop_id'].split('.')[0]
     
     if trigger == 'add-stock-button' and new_stock:
@@ -919,16 +1005,32 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
     if trigger == 'reset-stocks-button':
         individual_stocks = []
     
-    selected_stocks = list(set(selected_stocks + individual_stocks))
-    
-    if not selected_stocks:
-        return (px.line(title="Please select at least one stock symbol.", template=plotly_theme),
-                {'height': '400px'},
-                html.Div("Please select at least one stock symbol."),
-                px.line(title="Please select at least one stock symbol.", template=plotly_theme),
-                individual_stocks)
-    
+    return individual_stocks, ""  # Return the updated store and clear the input field
+
+@app.callback(
+    [Output('stock-graph', 'figure'),
+     Output('stock-graph', 'style'),
+     Output('stock-news', 'children'),
+     Output('indexed-comparison-graph', 'figure')],
+    [Input('individual-stocks-store', 'data'),
+     Input('predefined-ranges', 'value'),
+     Input('movag_input', 'value'),
+     Input('benchmark-selection', 'value'),
+     Input('plotly-theme-store', 'data'),
+     Input('chart-type', 'value')]
+)
+def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type):
+    if not individual_stocks:
+        return (
+            px.line(title="Please add at least one stock symbol.", template=plotly_theme),
+            {'height': '400px'},
+            html.Div("Please add at least one stock symbol."),
+            px.line(title="Please add at least one stock symbol.", template=plotly_theme)
+        )
+
     today = pd.to_datetime('today')
+
+    # Determine the start date based on the selected predefined range
     if predefined_range == 'YTD':
         start_date = datetime(today.year, 1, 1)
     elif predefined_range == '1M':
@@ -945,11 +1047,11 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
         start_date = today - timedelta(days=3650)
     else:
         start_date = pd.to_datetime('2023-01-01')
-    
+
     end_date = today
-    
+
     data = []
-    for symbol in selected_stocks:
+    for symbol in individual_stocks:
         df = yf.download(symbol, start=start_date, end=end_date)
         if not df.empty:
             df.reset_index(inplace=True)
@@ -957,42 +1059,43 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
             df['30D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=30, min_periods=1).mean())
             df['100D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=100, min_periods=1).mean())
             data.append(df)
-    
+
     if not data:
-        return (px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
-                {'height': '400px'},
-                html.Div("No news found for the given stock symbols."),
-                px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
-                individual_stocks)
-    
+        return (
+            px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
+            {'height': '400px'},
+            html.Div("No news found for the given stock symbols."),
+            px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme)
+        )
+
     df_all = pd.concat(data)
-    
+
     # Determine the number of rows needed for the graph
-    num_stocks = len(selected_stocks)
+    num_stocks = len(individual_stocks)
     graph_height = 400 * num_stocks  # Each facet should be 400px in height
-    
+
     # Create the subplot with fixed margins
     fig_stock = make_subplots(
         rows=num_stocks, 
         cols=1, 
         shared_xaxes=True, 
         vertical_spacing=0.02,  # Keep this small to maintain consistent spacing
-        subplot_titles=selected_stocks, 
+        subplot_titles=individual_stocks, 
         row_heights=[1]*num_stocks, 
         specs=[[{"secondary_y": True}]]*num_stocks
     )
-    
-    for i, symbol in enumerate(selected_stocks):
+
+    for i, symbol in enumerate(individual_stocks):
         df_stock = df_all[df_all['Stock'] == symbol]
-        
+
         if chart_type == 'line':
             fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['Close'], name=f'{symbol} Close', line=dict(color='blue')), row=i+1, col=1)
-            
+
             # Get the most recent price and percentage change
             last_close = df_stock['Close'].iloc[-2]
             latest_close = df_stock['Close'].iloc[-1]
             change_percent = ((latest_close - last_close) / last_close) * 100
-            
+
             # Add the last available data point as a marker
             fig_stock.add_trace(go.Scatter(
                 x=[df_stock['Date'].iloc[-1]],
@@ -1001,7 +1104,7 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
                 marker=dict(color='red', size=10),
                 name=f'{symbol} Last Price'
             ), row=i+1, col=1)
-            
+
             # Add annotations for the latest price and percentage change
             latest_timestamp = df_stock['Date'].iloc[-1]
             fig_stock.add_annotation(
@@ -1017,7 +1120,7 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
                 font=dict(color="blue", size=12),
                 bgcolor='white'
             )
-            
+
             fig_stock.add_shape(
                 type="line",
                 x0=df_stock['Date'].min(),
@@ -1040,33 +1143,33 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
                 low=df_stock['Low'],
                 close=df_stock['Close'],    
                 name=f'{symbol} Candlestick'), row=i+1, col=1)
-            
+
             fig_stock.update_xaxes(rangeslider={'visible': False}, row=i+1, col=1)
-            
+
         if 'Volume' in movag_input:
             fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
             fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
-                
+
         if '30D_MA' in movag_input:
             fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['30D_MA'], name=f'{symbol} 30D MA', line=dict(color='green')), row=i+1, col=1)
-                
+
         if '100D_MA' in movag_input:
             fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['100D_MA'], name=f'{symbol} 100D MA', line=dict(color='red')), row=i+1, col=1)
-                
+
     fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, margin=dict(l=40, r=40, t=40, b=40))
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
-    
+
     df_all['Date'] = pd.to_datetime(df_all['Date'])
     df_all.set_index('Date', inplace=True)
-    
+
     # Create an index for each stock
     indexed_data = {}
-    for symbol in selected_stocks:
+    for symbol in individual_stocks:
         df_stock = df_all[df_all['Stock'] == symbol].copy()
         df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
         indexed_data[symbol] = df_stock[['Index']]
-    
+
     # Add benchmark data if selected
     if benchmark_selection != 'None':
         benchmark_data = yf.download(benchmark_selection, start=start_date, end=end_date)
@@ -1075,13 +1178,12 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
             benchmark_data['Index'] = benchmark_data['Close'] / benchmark_data['Close'].iloc[0] * 100
             benchmark_data.set_index('Date', inplace=True)
             indexed_data[benchmark_selection] = benchmark_data[['Index']]
-    
+
     # Combine all indexed data
     df_indexed = pd.concat(indexed_data, axis=1)
     df_indexed.reset_index(inplace=True)
     df_indexed.columns = ['Date'] + [symbol for symbol in indexed_data.keys()]
 
-    # Create the line chart with updated column names
     fig_indexed = px.line(df_indexed, x='Date', y=[symbol for symbol in indexed_data.keys()], template=plotly_theme)
     fig_indexed.update_yaxes(matches=None, title_text=None)
     fig_indexed.update_xaxes(title_text=None)
@@ -1092,7 +1194,7 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
         x=0.01,
         font=dict(size=10)
     ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
-    
+
     fig_indexed.add_shape(
         type='line',
         x0=df_indexed['Date'].min(),
@@ -1105,19 +1207,19 @@ def update_content(add_n_clicks, reset_n_clicks, stock_input, predefined_range, 
             dash="dot"
         )
     )
-    
+
     # Add benchmark line as dotted if selected
     if benchmark_selection != 'None':
         fig_indexed.add_scatter(x=df_indexed['Date'], y=df_indexed[f'{benchmark_selection}_Index'], mode='lines', name=benchmark_selection, line=dict(dash='dot'))
-    
+
     fig_indexed.update_layout(template=plotly_theme)
-    
+
     load_dotenv()
     api_key = os.getenv('API_KEY')
-    
-    news_content = fetch_news(api_key, selected_stocks)
-    
-    return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, individual_stocks
+
+    news_content = fetch_news(api_key, individual_stocks)
+
+    return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed
 
 
 @app.callback(Output('simulation-result', 'children'),
