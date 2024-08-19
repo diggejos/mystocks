@@ -854,7 +854,6 @@ def handle_logout(logout_clicks):
         return False, {"display": "block"}, {"display": "none"}
     return dash.no_update, dash.no_update, dash.no_update
 
-
 @app.callback(
     Output('theme-dropdown', 'disabled'),
     Input('login-status', 'data')
@@ -880,15 +879,6 @@ def show_overlay_if_logged_out(theme_n_clicks, save_n_clicks, login_status):
     if (theme_n_clicks > 0 or save_n_clicks > 0) and not login_status:
         return True  # Show overlay
     return False  # Don't show overlay
-
-@app.callback(
-    Output('save-portfolio-button', 'className'),
-    Input('login-status', 'data')
-)
-def style_save_button(login_status):
-    if not login_status:
-        return 'grayed-out'  # Apply the grayed-out class when logged out
-    return ''  # No class when logged in
 
 @app.callback(
     Output('save-portfolio-button', 'className'),
