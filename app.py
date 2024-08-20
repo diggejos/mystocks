@@ -17,6 +17,8 @@ import json
 from flask_migrate import Migrate
 import psycopg2
 from prophet import Prophet
+import re
+from dash.dependencies import Input, Output, State, ALL
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
@@ -167,10 +169,7 @@ dashboard_layout = dbc.Container([
                                 labelStyle={"margin-right": "20px"}
                             )
                         ], className='mb-3'),
-                       html.Div([
-                            html.Span("Current Watchlist: ", style={'font-weight': 'bold'}),  # Bold text for "Current Watchlist:"
-                            html.Span(id='watchlist-symbols', style={'font-weight': 'normal'})  # Regular text for the stock symbols
-                        ], id='watchlist-summary', className='mb-3')
+                        html.Div(id='watchlist-summary', className='mb-3')
                     ])
                 ]), 
                 id="filters-collapse", 
@@ -365,6 +364,13 @@ register_layout = dbc.Container([
                     dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
                     dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
                     dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
+                    html.Ul([
+                        html.Li("At least 8 characters", id='req-length', className='text-muted'),
+                        html.Li("At least one uppercase letter", id='req-uppercase', className='text-muted'),
+                        html.Li("At least one lowercase letter", id='req-lowercase', className='text-muted'),
+                        html.Li("At least one digit", id='req-digit', className='text-muted'),
+                        html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='req-special', className='text-muted')
+                    ], className='mb-3'),
                     dcc.Input(id='confirm_password', type='password', placeholder='Confirm Password', className='form-control mb-3'),
                     dbc.Button("Register", id='register-button', color='primary', className='mt-2'),
                     html.Div(id='register-output', className='mt-3')
@@ -777,14 +783,13 @@ def update_forecast_visibility(login_status):
     
     return blur_style, content_style
 
-
 @app.callback(
     Output('register-output', 'children'),
     [Input('register-button', 'n_clicks')],
     [State('username', 'value'),
-      State('email', 'value'),
-      State('password', 'value'),
-      State('confirm_password', 'value')]
+     State('email', 'value'),
+     State('password', 'value'),
+     State('confirm_password', 'value')]
 )
 def register_user(n_clicks, username, email, password, confirm_password):
     if n_clicks:
@@ -796,7 +801,13 @@ def register_user(n_clicks, username, email, password, confirm_password):
             return dbc.Alert("Password is required.", color="danger")
         if password != confirm_password:
             return dbc.Alert("Passwords do not match.", color="danger")
+        
+        # Validate the password
+        password_error = validate_password(password)
+        if password_error:
+            return dbc.Alert(password_error, color="danger")
 
+        # If validation passes, hash the password and save the user
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         new_user = User(username=username, email=email, password=hashed_password)
 
@@ -808,6 +819,50 @@ def register_user(n_clicks, username, email, password, confirm_password):
             return dbc.Alert(f"Error: {str(e)}", color="danger")
     return dash.no_update
 
+@app.callback(
+    [Output('req-length', 'className'),
+     Output('req-uppercase', 'className'),
+     Output('req-lowercase', 'className'),
+     Output('req-digit', 'className'),
+     Output('req-special', 'className')],
+    Input('password', 'value')
+)
+def update_password_requirements(password):
+    if password is None:
+        password = ""
+
+    length_class = 'text-muted' if len(password) < 8 else 'text-success'
+    uppercase_class = 'text-muted' if not re.search(r"[A-Z]", password) else 'text-success'
+    lowercase_class = 'text-muted' if not re.search(r"[a-z]", password) else 'text-success'
+    digit_class = 'text-muted' if not re.search(r"\d", password) else 'text-success'
+    special_class = 'text-muted' if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password) else 'text-success'
+
+    return length_class, uppercase_class, lowercase_class, digit_class, special_class
+
+
+def validate_password(password):
+    # Check for minimum length
+    if len(password) < 8:
+        return "Password must be at least 8 characters long."
+    
+    # Check for at least one uppercase letter
+    if not re.search(r"[A-Z]", password):
+        return "Password must contain at least one uppercase letter."
+    
+    # Check for at least one lowercase letter
+    if not re.search(r"[a-z]", password):
+        return "Password must contain at least one lowercase letter."
+    
+    # Check for at least one digit
+    if not re.search(r"\d", password):
+        return "Password must contain at least one digit."
+    
+    # Check for at least one special character
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password):
+        return "Password must contain at least one special character."
+    
+    # If all conditions are met
+    return None
 
 @app.callback(
     [Output('login-output', 'children'),
@@ -890,15 +945,93 @@ def style_save_button(login_status):
         return 'grayed-out'  # Apply the grayed-out class when logged out
     return ''  # No class when logged in
 
-@app.callback(
-    Output('watchlist-symbols', 'children'),
-    Input('individual-stocks-store', 'data')
-)
-def update_watchlist_symbols(individual_stocks):
-    if not individual_stocks:
-        return "None"
+
+def fetch_stock_data_watchlist(symbol):
+    """Fetch latest stock data for a given symbol."""
+    try:
+        stock = yf.Ticker(symbol)
+        hist = stock.history(period="5d")
+        if len(hist) < 2:
+            return None, None, None
+        latest_close = hist['Close'].iloc[-1]
+        previous_close = hist['Close'].iloc[-2]
+        change_percent = ((latest_close - previous_close) / previous_close) * 100
+        return previous_close, latest_close, change_percent
+    except Exception as e:
+        print(f"Error fetching data for {symbol}: {e}")
+        return None, None, None
     
-    return ', '.join(individual_stocks)
+
+def generate_watchlist_table(watchlist):
+    rows = []
+    for i, stock in enumerate(watchlist):
+        prev_close, latest_close, change_percent = fetch_stock_data_watchlist(stock)
+        if prev_close is not None:
+            rows.append(
+                html.Tr([
+                    html.Td(stock),
+                    html.Td(f"{prev_close:.2f}"),
+                    html.Td(f"{latest_close:.2f}"),
+                    html.Td(f"{change_percent:.2f}%"),
+                    html.Td(dbc.Button("Remove", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                ])
+            )
+        else:
+            rows.append(
+                html.Tr([
+                    html.Td(stock),
+                    html.Td("N/A"),
+                    html.Td("N/A"),
+                    html.Td("N/A"),
+                    html.Td(dbc.Button("Remove", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                ])
+            )
+
+    return dbc.Table(
+        children=[
+            html.Thead(html.Tr([html.Th("Stock Symbol"), html.Th("Previous Close"), html.Th("Latest Close"), html.Th("Change (%)"), html.Th("Action")])),
+            html.Tbody(rows)
+        ],
+        bordered=True,
+        hover=True,
+        responsive=True,
+        striped=True,
+        size="sm",
+    )
+
+@app.callback(
+    [Output('individual-stocks-store', 'data',allow_duplicate=True),
+     Output('watchlist-summary', 'children')],
+    [Input('add-stock-button', 'n_clicks'),
+     Input('reset-stocks-button', 'n_clicks'),
+     Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks')],
+    [State('individual-stock-input', 'value'),
+     State('individual-stocks-store', 'data')],
+    prevent_initial_call=True
+)
+def update_watchlist(add_n_clicks, reset_n_clicks, remove_clicks, new_stock, individual_stocks):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    trigger = ctx.triggered[0]['prop_id']
+
+    if 'add-stock-button' in trigger and new_stock:
+        new_stock = new_stock.upper().strip()
+        if new_stock and new_stock not in individual_stocks:
+            individual_stocks.append(new_stock)
+
+    elif 'reset-stocks-button' in trigger:
+        individual_stocks = []
+
+    elif 'remove-stock' in trigger:
+        index_to_remove = json.loads(trigger.split('.')[0])['index']
+        if 0 <= index_to_remove < len(individual_stocks):
+            individual_stocks.pop(index_to_remove)
+
+    # Update the watchlist table
+    return individual_stocks, generate_watchlist_table(individual_stocks)
 
 @app.callback(
     [Output('save-portfolio-button', 'children'),
@@ -1342,6 +1475,14 @@ app.index_string = '''
     <head>
         {%metas%}
         <title>Josua's Stock Dashboard</title>
+        <meta name="description" content="Track and forecast stock prices, visualize trends, and get the latest stock news with MyStock's Stock Dashboard.">
+        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news">
+        <meta name="author" content="myStock">
+        <meta property="og:title" content="myStock Dashboard" />
+        <meta property="og:description" content="Get the latest stock news, forecasts, and more." />
+        <meta property="og:image" content="https://mystocks-m9xp.onrender.com/assets/og-image.png" />
+        <meta property="og:url" content="https://mystocks-m9xp.onrender.com/" />
+        <meta name="twitter:card" content="summary_large_image" />
         {%favicon%}
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
@@ -1368,6 +1509,7 @@ app.index_string = '''
     </body>
 </html>
 '''
+
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
