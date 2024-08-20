@@ -997,6 +997,7 @@ def generate_watchlist_table(watchlist):
         responsive=True,
         striped=True,
         size="sm",
+        style={"fontSize": "12px"}
     )
 
 @app.callback(
