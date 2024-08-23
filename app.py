@@ -982,12 +982,13 @@ def generate_watchlist_table(watchlist):
     for i, stock in enumerate(watchlist):
         prev_close, latest_close, change_percent = fetch_stock_data_watchlist(stock)
         if prev_close is not None:
+            # Determine the color based on the change percentage
+            color = 'green' if change_percent > 0 else 'red' if change_percent < 0 else 'black'
             rows.append(
                 html.Tr([
                     html.Td(stock),
-                    html.Td(f"{prev_close:.2f}"),
                     html.Td(f"{latest_close:.2f}"),
-                    html.Td(f"{change_percent:.2f}%"),
+                    html.Td(f"{change_percent:.2f}%", style={"color": color}),  # Apply the color styling here
                     html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
                 ])
             )
@@ -997,14 +998,16 @@ def generate_watchlist_table(watchlist):
                     html.Td(stock),
                     html.Td("N/A"),
                     html.Td("N/A"),
-                    html.Td("N/A"),
-                    html.Td(dbc.Button("", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
                 ])
             )
 
     return dbc.Table(
         children=[
-            html.Thead(html.Tr([html.Th("Stock Symbol"), html.Th("Previous Close"), html.Th("Latest"), html.Th("Change (%)"), html.Th("")])),
+            html.Thead(html.Tr([html.Th("Stock Symbol"), 
+                                html.Th("Latest"), 
+                                html.Th("Change (%)"), 
+                                html.Th("")])),
             html.Tbody(rows)
         ],
         bordered=True,
