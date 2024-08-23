@@ -442,7 +442,7 @@ about_layout = dbc.Container([
     ]),
     dbc.Row([
         dbc.Col(html.Figure([
-            html.Img(src='/assets/gif.gif', className="mt-4",style={"max-width": "100%", "height": "auto"}),
+            html.Img(src='/assets/gif.gif', className="img-fluid mt-4", style={"width": "50%", "height": "auto"}),  # Ensure the GIF is responsive
             html.Figcaption("Get latest Stock news", className="text-center mt-2")
         ], className="text-center"))
     ]),
