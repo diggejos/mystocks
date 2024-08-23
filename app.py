@@ -21,6 +21,7 @@ import re
 from dash.dependencies import Input, Output, State, ALL
 
 
+
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
     'YETI': {'dbc': dbc.themes.YETI, 'plotly': 'simple_white'},
@@ -169,6 +170,7 @@ dashboard_layout = dbc.Container([
                                 labelStyle={"margin-right": "20px"}
                             )
                         ], className='mb-3'),
+                        
                         html.Div(id='watchlist-summary', className='mb-3')
                     ])
                 ]), 
@@ -219,6 +221,17 @@ dashboard_layout = dbc.Container([
                 dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
                     dbc.Card(
                         dbc.CardBody([
+                            html.Div([
+                                html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
+                                dcc.Dropdown(
+                                    id='indexed-comparison-stock-dropdown',
+                                    options=[],  # This will be populated dynamically
+                                    value=[],  # Default selected stocks
+                                    multi=True,
+                                    className='form-control',
+                                    maxHeight=200,
+                                ),
+                            ], className='mb-3'),
                             dcc.RadioItems(
                                 id='benchmark-selection',
                                 options=[
@@ -237,6 +250,7 @@ dashboard_layout = dbc.Container([
                         ])
                     )
                 ]),
+
                 dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
                     dbc.Card(
                         dbc.CardBody([
@@ -353,6 +367,7 @@ dashboard_layout = dbc.Container([
         ], width=12, md=8)
     ], className='mb-4'),
 ], fluid=True)
+
 
 # Layout for Registration page
 register_layout = dbc.Container([
@@ -973,7 +988,7 @@ def generate_watchlist_table(watchlist):
                     html.Td(f"{prev_close:.2f}"),
                     html.Td(f"{latest_close:.2f}"),
                     html.Td(f"{change_percent:.2f}%"),
-                    html.Td(dbc.Button("Remove", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
                 ])
             )
         else:
@@ -983,13 +998,13 @@ def generate_watchlist_table(watchlist):
                     html.Td("N/A"),
                     html.Td("N/A"),
                     html.Td("N/A"),
-                    html.Td(dbc.Button("Remove", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                    html.Td(dbc.Button("", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
                 ])
             )
 
     return dbc.Table(
         children=[
-            html.Thead(html.Tr([html.Th("Stock Symbol"), html.Th("Previous Close"), html.Th("Latest Close"), html.Th("Change (%)"), html.Th("Action")])),
+            html.Thead(html.Tr([html.Th("Stock Symbol"), html.Th("Previous Close"), html.Th("Latest"), html.Th("Change (%)"), html.Th("")])),
             html.Tbody(rows)
         ],
         bordered=True,
@@ -997,51 +1012,17 @@ def generate_watchlist_table(watchlist):
         responsive=True,
         striped=True,
         size="sm",
-        style={"fontSize": "12px"}
     )
 
-@app.callback(
-    [Output('individual-stocks-store', 'data',allow_duplicate=True),
-     Output('watchlist-summary', 'children')],
-    [Input('add-stock-button', 'n_clicks'),
-     Input('reset-stocks-button', 'n_clicks'),
-     Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks')],
-    [State('individual-stock-input', 'value'),
-     State('individual-stocks-store', 'data')],
-    prevent_initial_call=True
-)
-def update_watchlist(add_n_clicks, reset_n_clicks, remove_clicks, new_stock, individual_stocks):
-    ctx = dash.callback_context
-
-    if not ctx.triggered:
-        return dash.no_update, dash.no_update
-
-    trigger = ctx.triggered[0]['prop_id']
-
-    if 'add-stock-button' in trigger and new_stock:
-        new_stock = new_stock.upper().strip()
-        if new_stock and new_stock not in individual_stocks:
-            individual_stocks.append(new_stock)
-
-    elif 'reset-stocks-button' in trigger:
-        individual_stocks = []
-
-    elif 'remove-stock' in trigger:
-        index_to_remove = json.loads(trigger.split('.')[0])['index']
-        if 0 <= index_to_remove < len(individual_stocks):
-            individual_stocks.pop(index_to_remove)
-
-    # Update the watchlist table
-    return individual_stocks, generate_watchlist_table(individual_stocks)
 
 @app.callback(
     [Output('save-portfolio-button', 'children'),
-     Output('login-overlay', 'is_open', allow_duplicate=True)],
+      Output('login-overlay', 'is_open', allow_duplicate=True)],
     Input('save-portfolio-button', 'n_clicks'),
     [State('individual-stocks-store', 'data'),
-     State('theme-store', 'data'),
-     State('login-status', 'data'),
-     State('login-username-store', 'data')],
+      State('theme-store', 'data'),
+      State('login-status', 'data'),
+      State('login-username-store', 'data')],
     prevent_initial_call=True
 )
 def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, username):
@@ -1061,27 +1042,6 @@ def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, us
     return dash.no_update, False
 
 
-@app.callback(
-    Output('individual-stocks-store', 'data', allow_duplicate=True),
-    [Input('add-stock-button', 'n_clicks'),
-     Input('reset-stocks-button', 'n_clicks')],
-    [State('individual-stock-input', 'value'),
-     State('individual-stocks-store', 'data')],
-    prevent_initial_call=True
-)
-def update_stocks_and_dropdown(add_n_clicks, reset_n_clicks, new_stock, individual_stocks):
-    ctx = dash.callback_context
-    trigger = ctx.triggered[0]['prop_id'].split('.')[0]
-    
-    if trigger == 'add-stock-button' and new_stock:
-        new_stock = new_stock.upper().strip()
-        if new_stock and new_stock not in individual_stocks:
-            individual_stocks.append(new_stock)
-    
-    if trigger == 'reset-stocks-button':
-        individual_stocks = []
-    
-    return individual_stocks
 
 @app.callback(
     Output('individual-stocks-store', 'data', allow_duplicate=True),
@@ -1111,50 +1071,67 @@ def load_user_theme(login_status, username):
 
 @app.callback(
     [Output('individual-stocks-store', 'data'),
-     Output('individual-stock-input', 'value')],  # Clear the input field after adding a stock
+     Output('watchlist-summary', 'children'),
+     Output('stock-graph', 'figure'),
+     Output('stock-graph', 'style'),
+     Output('stock-news', 'children'),
+     Output('indexed-comparison-graph', 'figure'),
+     Output('indexed-comparison-stock-dropdown', 'options'),
+     Output('indexed-comparison-stock-dropdown', 'value'),
+     Output('individual-stock-input', 'value')],
     [Input('add-stock-button', 'n_clicks'),
-     Input('reset-stocks-button', 'n_clicks')],
+     Input('reset-stocks-button', 'n_clicks'),
+     Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks'),
+     Input('chart-type', 'value'),
+     Input('movag_input', 'value'),
+     Input('benchmark-selection', 'value'),
+     Input('predefined-ranges', 'value'),
+     Input('indexed-comparison-stock-dropdown', 'value')],
     [State('individual-stock-input', 'value'),
-     State('individual-stocks-store', 'data')],
+     State('individual-stocks-store', 'data'),
+     State('plotly-theme-store', 'data')],
     prevent_initial_call=True
 )
-def update_individual_stocks_store(add_n_clicks, reset_n_clicks, new_stock, individual_stocks):
+def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, new_stock, individual_stocks, plotly_theme):
     ctx = dash.callback_context
-    trigger = ctx.triggered[0]['prop_id'].split('.')[0]
-    
-    if trigger == 'add-stock-button' and new_stock:
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    trigger = ctx.triggered[0]['prop_id']
+
+    if 'add-stock-button' in trigger and new_stock:
         new_stock = new_stock.upper().strip()
         if new_stock and new_stock not in individual_stocks:
             individual_stocks.append(new_stock)
-    
-    if trigger == 'reset-stocks-button':
+    elif 'reset-stocks-button' in trigger:
         individual_stocks = []
-    
-    return individual_stocks, ""  # Return the updated store and clear the input field
+    elif 'remove-stock' in trigger:
+        index_to_remove = json.loads(trigger.split('.')[0])['index']
+        if 0 <= index_to_remove < len(individual_stocks):
+            individual_stocks.pop(index_to_remove)
 
-@app.callback(
-    [Output('stock-graph', 'figure'),
-     Output('stock-graph', 'style'),
-     Output('stock-news', 'children'),
-     Output('indexed-comparison-graph', 'figure')],
-    [Input('individual-stocks-store', 'data'),
-     Input('predefined-ranges', 'value'),
-     Input('movag_input', 'value'),
-     Input('benchmark-selection', 'value'),
-     Input('plotly-theme-store', 'data'),
-     Input('chart-type', 'value')]
-)
-def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_selection, plotly_theme, chart_type):
-    # Ensure benchmark is not processed as an individual stock
+    # Ensure benchmark is not treated as an individual stock
     if benchmark_selection in individual_stocks:
         individual_stocks.remove(benchmark_selection)
-    
+
+    # Update dropdown options and values
+    options = [{'label': stock, 'value': stock} for stock in individual_stocks]
+    if selected_comparison_stocks:
+        selected_comparison_stocks = [stock for stock in selected_comparison_stocks if stock in individual_stocks]
+    else:
+        selected_comparison_stocks = individual_stocks[:5]  # Select up to 5 stocks by default
+
     if not individual_stocks and benchmark_selection == 'None':
         return (
+            individual_stocks,
+            generate_watchlist_table(individual_stocks),
             px.line(title="Please add at least one stock symbol.", template=plotly_theme),
             {'height': '400px'},
             html.Div("Please add at least one stock symbol."),
-            px.line(title="Please add at least one stock symbol.", template=plotly_theme)
+            px.line(title="Please add at least one stock symbol.", template=plotly_theme),
+            options,
+            selected_comparison_stocks,
+            ""
         )
 
     today = pd.to_datetime('today')
@@ -1165,7 +1142,7 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
     elif predefined_range == '1M':
         start_date = today - timedelta(days=30)
     elif predefined_range == '3M':
-        start_date = today - timedelta(days=3*30)
+        start_date = today - timedelta(days=3 * 30)
     elif predefined_range == '12M':
         start_date = today - timedelta(days=365)
     elif predefined_range == '24M':
@@ -1175,7 +1152,7 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
     elif predefined_range == '10Y':
         start_date = today - timedelta(days=3650)
     else:
-        start_date = pd.to_datetime('2023-01-01')
+        start_date = pd.to_datetime('2024-01-01')
 
     end_date = today
 
@@ -1184,6 +1161,9 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
         df = yf.download(symbol, start=start_date, end=end_date)
         if not df.empty:
             df.reset_index(inplace=True)
+            df['Date'] = pd.to_datetime(df['Date'])  # Ensure Date is in datetime format
+            df.set_index('Date', inplace=True)
+            df = df.tz_localize(None)  # Drop any timezone info if not needed
             df['Stock'] = symbol
             df['30D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=30, min_periods=1).mean())
             df['100D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=100, min_periods=1).mean())
@@ -1191,10 +1171,15 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
 
     if not data and benchmark_selection == 'None':
         return (
+            individual_stocks,
+            generate_watchlist_table(individual_stocks),
             px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
             {'height': '400px'},
             html.Div("No news found for the given stock symbols."),
-            px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme)
+            px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
+            options,
+            selected_comparison_stocks,
+            ""
         )
 
     df_all = pd.concat(data) if data else pd.DataFrame()
@@ -1213,16 +1198,19 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
         if not benchmark_data.empty:
             benchmark_data.reset_index(inplace=True)
             benchmark_data['Index'] = benchmark_data['Close'] / benchmark_data['Close'].iloc[0] * 100
-            indexed_data[benchmark_selection] = benchmark_data[['Index']].rename(columns={"Index": benchmark_selection})
 
     # Combine all indexed data
     if indexed_data:
         df_indexed = pd.concat(indexed_data, axis=1)
         df_indexed.reset_index(inplace=True)
         df_indexed.columns = ['Date'] + [symbol for symbol in indexed_data.keys()]
+        df_indexed['Date'] = pd.to_datetime(df_indexed['Date'], errors='coerce')
+
+        # Filter the data based on selected stocks from the dropdown
+        df_indexed_filtered = df_indexed[['Date'] + selected_comparison_stocks]
 
         # Create indexed comparison figure
-        fig_indexed = px.line(df_indexed, x='Date', y=[symbol for symbol in indexed_data.keys()], template=plotly_theme)
+        fig_indexed = px.line(df_indexed_filtered, x='Date', y=selected_comparison_stocks, template=plotly_theme)
         fig_indexed.update_yaxes(matches=None, title_text=None)
         fig_indexed.update_xaxes(title_text=None)
         fig_indexed.update_layout(legend=dict(
@@ -1246,12 +1234,10 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
             )
         )
 
-        # Remove the duplicate benchmark if it exists
-        fig_indexed.data = [trace for trace in fig_indexed.data if trace.name != benchmark_selection]
-
         # Add benchmark line as dotted if selected
         if benchmark_selection != 'None':
-            fig_indexed.add_scatter(x=df_indexed['Date'], y=df_indexed[benchmark_selection], mode='lines', name=benchmark_selection, line=dict(dash='dot'))
+            fig_indexed.add_scatter(x=benchmark_data['Date'], y=benchmark_data['Index'], mode='lines',
+                                    name=benchmark_selection, line=dict(dash='dot'))
 
     else:
         fig_indexed = px.line(title="No data available.", template=plotly_theme)
@@ -1262,20 +1248,21 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
 
     # Create the stock graph with the correct layout
     fig_stock = make_subplots(
-        rows=num_stocks, 
-        cols=1, 
-        shared_xaxes=True, 
+        rows=num_stocks,
+        cols=1,
+        shared_xaxes=True,
         vertical_spacing=0.02,  # Keep this small to maintain consistent spacing
-        subplot_titles=individual_stocks, 
-        row_heights=[1]*num_stocks, 
-        specs=[[{"secondary_y": True}]]*num_stocks
+        subplot_titles=individual_stocks,
+        row_heights=[1] * num_stocks,
+        specs=[[{"secondary_y": True}]] * num_stocks
     )
 
     for i, symbol in enumerate(individual_stocks):
         df_stock = df_all[df_all['Stock'] == symbol]
 
         if chart_type == 'line':
-            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['Close'], name=f'{symbol} Close', line=dict(color='blue')), row=i+1, col=1)
+            fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
+                                           line=dict(color='blue')), row=i + 1, col=1)
 
             # Get the most recent price and percentage change
             last_close = df_stock['Close'].iloc[-2]
@@ -1284,15 +1271,15 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
 
             # Add the last available data point as a marker
             fig_stock.add_trace(go.Scatter(
-                x=[df_stock['Date'].iloc[-1]],
+                x=[df_stock.index[-1]],
                 y=[latest_close],
                 mode='markers',
                 marker=dict(color='red', size=10),
                 name=f'{symbol} Last Price'
-            ), row=i+1, col=1)
+            ), row=i + 1, col=1)
 
             # Add annotations for the latest price and percentage change
-            latest_timestamp = df_stock['Date'].iloc[-1]
+            latest_timestamp = df_stock.index[-1]
             fig_stock.add_annotation(
                 x=latest_timestamp,
                 y=latest_close,
@@ -1301,7 +1288,7 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
                 arrowhead=None,
                 ax=20,  # Adjusted to position the annotation to the right
                 ay=-40,
-                row=i+1,
+                row=i + 1,
                 col=1,
                 font=dict(color="blue", size=12),
                 bgcolor='white'
@@ -1309,8 +1296,8 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
 
             fig_stock.add_shape(
                 type="line",
-                x0=df_stock['Date'].min(),
-                x1=df_stock['Date'].max(),
+                x0=df_stock.index.min(),
+                x1=df_stock.index.max(),
                 y0=latest_close,
                 y1=latest_close,
                 line=dict(
@@ -1318,31 +1305,34 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
                     width=2,
                     dash="dot"
                 ),
-                row=i+1,
-                col=1
+                row=i + 1, col=1
             )
         elif chart_type == 'candlestick':
             fig_stock.add_trace(go.Candlestick(
-                x=df_stock['Date'],
+                x=df_stock.index,
                 open=df_stock['Open'],
                 high=df_stock['High'],
                 low=df_stock['Low'],
-                close=df_stock['Close'],    
-                name=f'{symbol} Candlestick'), row=i+1, col=1)
+                close=df_stock['Close'],
+                name=f'{symbol} Candlestick'), row=i + 1, col=1)
 
-            fig_stock.update_xaxes(rangeslider={'visible': False}, row=i+1, col=1)
+            fig_stock.update_xaxes(rangeslider={'visible': False}, row=i + 1, col=1)
 
         if 'Volume' in movag_input:
-            fig_stock.add_trace(go.Bar(x=df_stock['Date'], y=df_stock['Volume'], name=f'{symbol} Volume', marker=dict(color='gray'), opacity=0.3), row=i+1, col=1, secondary_y=True)
-            fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i+1, col=1)
+            fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
+                                       marker=dict(color='gray'), opacity=0.3), row=i + 1, col=1, secondary_y=True)
+            fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i + 1, col=1)
 
         if '30D_MA' in movag_input:
-            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['30D_MA'], name=f'{symbol} 30D MA', line=dict(color='green')), row=i+1, col=1)
+            fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
+                                           line=dict(color='green')), row=i + 1, col=1)
 
         if '100D_MA' in movag_input:
-            fig_stock.add_trace(go.Scatter(x=df_stock['Date'], y=df_stock['100D_MA'], name=f'{symbol} 100D MA', line=dict(color='red')), row=i+1, col=1)
+            fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
+                                           line=dict(color='red')), row=i + 1, col=1)
 
-    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, margin=dict(l=40, r=40, t=40, b=40))
+    fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False,
+                            margin=dict(l=40, r=40, t=40, b=40))
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
@@ -1351,7 +1341,8 @@ def update_graphs(individual_stocks, predefined_range, movag_input, benchmark_se
 
     news_content = fetch_news(api_key, individual_stocks)
 
-    return fig_stock, {'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed
+    return individual_stocks, generate_watchlist_table(individual_stocks), fig_stock, {
+        'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, options, selected_comparison_stocks, ""
 
 @app.callback(Output('simulation-result', 'children'),
               Input('simulate-button', 'n_clicks'),
