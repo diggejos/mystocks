@@ -143,9 +143,10 @@ dashboard_layout = dbc.Container([
                                 debounce=True,
                                 className='form-control'
                             ),
-                            dbc.Button("Add Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
-                            dbc.Button("Reset Stocks", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
-                            dbc.Button("Save Portfolio and Theme", id='save-portfolio-button', color='primary', className='',
+                            dbc.Button("➕ Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
+                            dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
+                            html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '24px'}, className='mt-2 me-2'),  # Refresh icon
+                            dbc.Button("💾 Watchlist", id='save-portfolio-button', color='primary', className='',
                                         disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
 
                         ], className='mb-3'),
@@ -367,7 +368,6 @@ dashboard_layout = dbc.Container([
         ], width=12, md=8)
     ], className='mb-4'),
 ], fluid=True)
-
 
 # Layout for Registration page
 register_layout = dbc.Container([
@@ -1018,6 +1018,7 @@ def generate_watchlist_table(watchlist):
     )
 
 
+
 @app.callback(
     [Output('save-portfolio-button', 'children'),
       Output('login-overlay', 'is_open', allow_duplicate=True)],
@@ -1084,6 +1085,7 @@ def load_user_theme(login_status, username):
      Output('individual-stock-input', 'value')],
     [Input('add-stock-button', 'n_clicks'),
      Input('reset-stocks-button', 'n_clicks'),
+     Input('refresh-data-icon', 'n_clicks'),  # New input for refresh button
      Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks'),
      Input('chart-type', 'value'),
      Input('movag_input', 'value'),
@@ -1095,7 +1097,7 @@ def load_user_theme(login_status, username):
      State('plotly-theme-store', 'data')],
     prevent_initial_call=True
 )
-def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, new_stock, individual_stocks, plotly_theme):
+def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, new_stock, individual_stocks, plotly_theme):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -1108,6 +1110,11 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, remove_clicks, cha
             individual_stocks.append(new_stock)
     elif 'reset-stocks-button' in trigger:
         individual_stocks = []
+        
+    elif 'refresh-data-button' in trigger:
+        # Refresh button clicked, so just update the data
+        pass
+    
     elif 'remove-stock' in trigger:
         index_to_remove = json.loads(trigger.split('.')[0])['index']
         if 0 <= index_to_remove < len(individual_stocks):
@@ -1346,6 +1353,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, remove_clicks, cha
 
     return individual_stocks, generate_watchlist_table(individual_stocks), fig_stock, {
         'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, options, selected_comparison_stocks, ""
+
 
 @app.callback(Output('simulation-result', 'children'),
               Input('simulate-button', 'n_clicks'),
