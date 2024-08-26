@@ -387,7 +387,6 @@ dashboard_layout = dbc.Container([
 chatbot_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            # html.H2("🤖 Financial Advisor", className="text-center mt-3"),
             html.Div(id='chatbot-conversation', 
                      style={'border': '1px solid #ccc', 'border-radius': '10px', 'padding': '10px', 
                             'height': '400px', 'overflow-y': 'scroll', 'background-color': '#f8f9fa', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
