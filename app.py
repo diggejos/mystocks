@@ -19,7 +19,10 @@ import psycopg2
 from prophet import Prophet
 import re
 from dash.dependencies import Input, Output, State, ALL
-
+from dash.exceptions import PreventUpdate
+from dash_extensions import DeferScript
+from flask import session
+from flask_session import Session
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
@@ -45,6 +48,13 @@ server = app.server
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configure the session
+load_dotenv()
+app.server.config['SECRET_KEY'] =  os.getenv('FLASK_SECRET_KEY') # Use a strong, unique secret key
+app.server.config['SESSION_TYPE'] = 'filesystem' 
+
+Session(app.server)
 
 db = SQLAlchemy(server)
 # Initialize Bcrypt for password hashing
@@ -74,16 +84,17 @@ with server.app_context():
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
+        dbc.NavItem(dbc.NavLink("🤖 Financial Advisor", href="/chatbot", active="exact")),
         dbc.NavItem(dbc.NavLink("ℹ️ About", href="/about", active="exact")),
         dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
         dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
-        dbc.NavItem(dbc.Button("↪ Logout", id='logout-button', color='secondary', style={"display": "none"})),
+        dbc.NavItem(dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"})),
         html.Div([
             dbc.DropdownMenu(
                 children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
                 nav=True,
                 in_navbar=True,
-                label="🎨Select Theme",
+                label="🎨 Select Theme",
                 id='theme-dropdown',
             )
         ], id='theme-dropdown-wrapper', n_clicks=0),
@@ -111,6 +122,7 @@ overlay = dbc.Modal(
 )
 
 app.layout = html.Div([
+    dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=[]),
     dcc.Store(id='theme-store', data=dbc.themes.MATERIA),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
@@ -123,7 +135,10 @@ app.layout = html.Div([
     dbc.Container(id='page-content', fluid=True),
     dcc.Store(id='active-tab', data='📈 Prices'), 
     dcc.Store(id='forecast-data-store'),
+    dcc.Location(id='url-refresh', refresh=True),
+    DeferScript(src='assets/script.js')
 ])
+
 
 dashboard_layout = dbc.Container([
     dbc.Row([
@@ -369,6 +384,26 @@ dashboard_layout = dbc.Container([
     ], className='mb-4'),
 ], fluid=True)
 
+chatbot_layout = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            # html.H2("🤖 Financial Advisor", className="text-center mt-3"),
+            html.Div(id='chatbot-conversation', 
+                     style={'border': '1px solid #ccc', 'border-radius': '10px', 'padding': '10px', 
+                            'height': '400px', 'overflow-y': 'scroll', 'background-color': '#f8f9fa', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
+            dcc.Textarea(id='chatbot-input', 
+                         placeholder='Ask your financial question...', 
+                         style={'width': '100%', 'height': '100px', 'border-radius': '10px', 'border': '1px solid #ccc', 
+                                'padding': '10px', 'margin-top': '10px', 'resize': 'none', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
+            dbc.Button("Send", id='send-button', color='primary', className='mt-2'),
+            dbc.Button("Clear Conversation", id='clear-button', color='danger', className='mt-2 ms-2'),  # Add the Clear Conversation button
+        ], width=12, md=8, className="mx-auto")
+    ]),
+    dcc.Location(id='url-refresh', refresh=True)
+], fluid=True)
+
+
+
 # Layout for Registration page
 register_layout = dbc.Container([
     dbc.Row([
@@ -569,6 +604,76 @@ def generate_recommendations_heatmap(dataframe):
 def update_active_tab(value):
     return value
 
+
+@app.callback(
+    [Output('conversation-store', 'data'),
+      Output('chatbot-conversation', 'children'),
+      Output('chatbot-input', 'value'),
+      Output('url-refresh', 'href')],
+    [Input('send-button', 'n_clicks'),
+      Input('clear-button', 'n_clicks'),
+      Input('url', 'pathname')],
+    [State('chatbot-input', 'value'),
+      State('conversation-store', 'data')],
+    prevent_initial_call=True
+)
+def manage_chatbot_interaction(send_clicks, clear_clicks, pathname, user_input, conversation_history):
+    from openai import OpenAI
+    from dotenv import load_dotenv
+    import os
+    # Load environment variables from .env file
+    load_dotenv()
+    open_api_key = os.getenv('OPEN_API_KEY')
+
+    # Set up the OpenAI API client
+    client = OpenAI(api_key=open_api_key)
+
+    # Define the system message
+    system_message = {"role": "system", "content": "You are a helpful stock financial advisor."}
+
+    # Initialize conversation if not exists
+    if conversation_history is None or not conversation_history:
+        conversation_history = [system_message]
+        introduction_message = "Hello! I am your financial advisor bot. How can I assist you today with your stock queries?"
+        conversation_history.append({"role": "assistant", "content": introduction_message})
+
+    # Handle clearing the conversation
+    if clear_clicks and clear_clicks > 0:
+        # Trigger a page reload by updating the href
+        return dash.no_update, dash.no_update, "", "/chatbot"
+
+    # Handle sending a message
+    if send_clicks and send_clicks > 0 and user_input:
+        # Append the user's message to the conversation history
+        conversation_history.append({"role": "user", "content": user_input})
+
+        # Call the OpenAI API to get the chatbot's response
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=conversation_history,  # Use the entire conversation history
+        )
+
+        chatbot_response = completion.choices[0].message.content
+        # Append the chatbot's response to the conversation history
+        conversation_history.append({"role": "assistant", "content": chatbot_response})
+
+    # Create a visual representation of the conversation
+    conversation_display = []
+    for message in conversation_history:
+        if message["role"] == "user":
+            conversation_display.append(html.P(f"YOU: {message['content']}", className='user'))
+        elif message["role"] == "assistant":
+            conversation_display.append(
+                html.Div(
+                    [
+                        html.Span("🤖", className="robot-avatar", style={"margin-right": "10px"}),
+                        html.Span(f"{message['content']}", className='chatbot-text'),
+                    ],
+                    className="chatbot-response fade-in"
+                )
+            )
+
+    return conversation_history, conversation_display, "", dash.no_update  # Don't trigger reload here
 
 @app.callback(
     Output('analyst-recommendations-content', 'children'),
@@ -884,46 +989,68 @@ def validate_password(password):
      Output('login-status', 'data', allow_duplicate=True),
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
-     Output('login-username-store', 'data'),  # Store the username
+     Output('login-username-store', 'data', allow_duplicate=True),
      Output('login-password', 'value')],
-    [Input('login-button', 'n_clicks'),
-     Input('url', 'pathname')],
-    [State('login-username', 'value'),
+    [Input('login-button', 'n_clicks')],
+    [State('url', 'pathname'),
+     State('login-username', 'value'),
      State('login-password', 'value')],
     prevent_initial_call=True
 )
 def handle_login(login_clicks, pathname, username, password):
-    if pathname == '/login':  # Ensure this callback only runs on the login page
-        if login_clicks:
-            user = User.query.filter_by(username=username).first()
-            if user and bcrypt.check_password_hash(user.password, password):
-                return (dbc.Alert("Login successful!", color="success"),
-                        True,
-                        {"display": "none"},
-                        {"display": "block"},
-                        username,  # Save the username in the store
-                        None)  # Clear password input
-            else:
-                return (dbc.Alert("Invalid username or password.", color="danger"),
-                        False,
-                        {"display": "block"},
-                        {"display": "none"},
-                        dash.no_update,
-                        None)
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    if pathname != '/login':
+        raise PreventUpdate  # Prevent the callback from running if not on the login page
 
+    if login_clicks:
+        user = User.query.filter_by(username=username).first()
+        if user and bcrypt.check_password_hash(user.password, password):
+            session['logged_in'] = True  # Store login status in session
+            session['username'] = username  # Store username in session
+            return (dbc.Alert("Login successful!", color="success"),
+                    True,
+                    {"display": "none"},
+                    {"display": "block"},
+                    username,  # Save the username in the store
+                    None)  # Clear password input
+        else:
+            return (dbc.Alert("Invalid username or password.", color="danger"),
+                    False,
+                    {"display": "block"},
+                    {"display": "none"},
+                    dash.no_update,
+                    None)
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
-      Output('login-link', 'style', allow_duplicate=True),
-      Output('logout-button', 'style', allow_duplicate=True)],
+     Output('login-link', 'style', allow_duplicate=True),
+     Output('logout-button', 'style', allow_duplicate=True)],
     [Input('logout-button', 'n_clicks')],
-    prevent_initial_call='initial_duplicate'  # Prevent initial call for duplicates
+    prevent_initial_call=True
 )
 def handle_logout(logout_clicks):
     if logout_clicks:
+        session.pop('logged_in', None)  # Remove login status from session
+        session.pop('username', None)  # Remove username from session
         return False, {"display": "block"}, {"display": "none"}
     return dash.no_update, dash.no_update, dash.no_update
+
+@app.callback(
+    [Output('login-status', 'data'),
+     Output('login-username-store', 'data'),
+     Output('login-link', 'style'),
+     Output('logout-button', 'style')],
+    [Input('url', 'pathname')]
+)
+def check_session(pathname):
+    logged_in = session.get('logged_in', False)
+    username = session.get('username', None)
+
+    if logged_in and username:
+        return True, username, {"display": "none"}, {"display": "block"}
+    else:
+        return False, None, {"display": "block"}, {"display": "none"}
+
 
 @app.callback(
     Output('theme-dropdown', 'disabled'),
@@ -1412,9 +1539,9 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
 
 @app.callback(
     [Output('page-content', 'children'),
-      Output('register-link', 'style')],
+     Output('register-link', 'style')],
     [Input('url', 'pathname'),
-      Input('login-status', 'data')]
+     Input('login-status', 'data')]
 )
 def display_page(pathname, login_status):
     if pathname == '/about':
@@ -1423,8 +1550,11 @@ def display_page(pathname, login_status):
         return register_layout, {"display": "block"} if not login_status else {"display": "none"}
     elif pathname == '/login' and not login_status:
         return login_layout, {"display": "block"} if not login_status else {"display": "none"}
+    elif pathname == '/chatbot':  # New routing for chatbot page
+        return chatbot_layout, {"display": "block"} if not login_status else {"display": "none"}
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}
+
 
 @app.callback(
     [Output('theme-store', 'data'),
@@ -1477,9 +1607,9 @@ app.index_string = '''
 <html>
     <head>
         {%metas%}
-        <title>Josua's Stock Dashboard</title>
+        <title>MyStocks Dashboard</title>
         <meta name="description" content="Track and forecast stock prices, visualize trends, and get the latest stock news with MyStock's Stock Dashboard.">
-        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news">
+        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, stock recommendations, stock prices">
         <meta name="author" content="myStock">
         <meta property="og:title" content="myStock Dashboard" />
         <meta property="og:description" content="Get the latest stock news, forecasts, and more." />
@@ -1503,6 +1633,7 @@ app.index_string = '''
         </style>
     </head>
     <body>
+    <script src="/assets/script.js"></script>
         {%app_entry%}
         <footer>
             {%config%}
