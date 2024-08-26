@@ -1171,8 +1171,6 @@ def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, us
             return dash.no_update, True  # Show the login overlay when not logged in
     return dash.no_update, False
 
-
-
 @app.callback(
     Output('individual-stocks-store', 'data', allow_duplicate=True),
     Input('login-status', 'data'),
