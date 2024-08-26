@@ -14,3 +14,4 @@ flask_migrate
 prophet
 dash_extensions
 flask_session
+openai
