@@ -12,4 +12,4 @@ flask_bcrypt
 psycopg2
 flask_migrate
 prophet
-
+dash_extensions
