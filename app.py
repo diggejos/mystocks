@@ -1262,7 +1262,7 @@ def generate_watchlist_table(watchlist):
     )
 
 
-@@app.callback(
+@app.callback(
     [Output('save-portfolio-button', 'children'),
      Output('login-overlay', 'is_open', allow_duplicate=True)],
     Input('save-portfolio-button', 'n_clicks'),
