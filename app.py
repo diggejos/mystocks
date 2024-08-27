@@ -84,7 +84,6 @@ with server.app_context():
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
-        dbc.NavItem(dbc.NavLink("🤖 Financial Advisor", href="/chatbot", active="exact")),
         dbc.NavItem(dbc.NavLink("ℹ️ About", href="/about", active="exact")),
         dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
         dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
@@ -121,6 +120,36 @@ overlay = dbc.Modal(
     is_open=False,  # Initially closed
 )
 
+floating_chatbot_button = html.Div(
+    dbc.Button("💬 Chat with Financio", id="open-chatbot-button", color="primary", className="chatbot-button"),
+    style={
+        "position": "fixed",
+        "bottom": "20px",
+        "right": "20px",
+        "z-index": "999",
+    }
+)
+
+chatbot_modal = dbc.Modal(
+    [
+        dbc.ModalHeader(dbc.ModalTitle("🤖 Financio")),
+        dbc.ModalBody([
+            html.Div(id='chatbot-conversation',
+                     style={'border': '1px solid #ccc', 'border-radius': '10px', 'padding': '10px',
+                            'height': '400px', 'overflow-y': 'scroll', 'background-color': '#f8f9fa', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
+            dcc.Textarea(id='chatbot-input',
+                         placeholder='Ask your financial question...',
+                         style={'width': '100%', 'height': '100px', 'border-radius': '10px', 'border': '1px solid #ccc',
+                                'padding': '10px', 'margin-top': '10px', 'resize': 'none', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
+            dbc.Button("Send", id='send-button', color='primary', className='mt-2'),
+            dbc.Button("Clear Conversation", id='clear-button', color='danger', className='mt-2 ms-2'),
+        ])
+    ],
+    id="chatbot-modal",
+    size="lg",
+    is_open=False,  # Start closed
+)
+
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=[]),
@@ -136,7 +165,9 @@ app.layout = html.Div([
     dcc.Store(id='active-tab', data='📈 Prices'), 
     dcc.Store(id='forecast-data-store'),
     dcc.Location(id='url-refresh', refresh=True),
-    DeferScript(src='assets/script.js')
+    DeferScript(src='assets/script.js'),
+    floating_chatbot_button,  
+    chatbot_modal 
 ])
 
 
@@ -384,25 +415,6 @@ dashboard_layout = dbc.Container([
     ], className='mb-4'),
 ], fluid=True)
 
-chatbot_layout = dbc.Container([
-    dbc.Row([
-        dbc.Col([
-            html.Div(id='chatbot-conversation', 
-                     style={'border': '1px solid #ccc', 'border-radius': '10px', 'padding': '10px', 
-                            'height': '400px', 'overflow-y': 'scroll', 'background-color': '#f8f9fa', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
-            dcc.Textarea(id='chatbot-input', 
-                         placeholder='Ask your financial question...', 
-                         style={'width': '100%', 'height': '100px', 'border-radius': '10px', 'border': '1px solid #ccc', 
-                                'padding': '10px', 'margin-top': '10px', 'resize': 'none', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
-            dbc.Button("Send", id='send-button', color='primary', className='mt-2'),
-            dbc.Button("Clear Conversation", id='clear-button', color='danger', className='mt-2 ms-2'),  # Add the Clear Conversation button
-        ], width=12, md=8, className="mx-auto")
-    ]),
-    dcc.Location(id='url-refresh', refresh=True)
-], fluid=True)
-
-
-
 # Layout for Registration page
 register_layout = dbc.Container([
     dbc.Row([
@@ -603,76 +615,182 @@ def generate_recommendations_heatmap(dataframe):
 def update_active_tab(value):
     return value
 
+def get_stock_performance(symbols):
+    performance_data = {}
+    for symbol in symbols:
+        ticker = yf.Ticker(symbol)
+        # Fetch historical data
+        hist = ticker.history(period="1y")
+        # Fetch analyst recommendations (for internal use)
+        recs = ticker.recommendations
+
+        if recs is not None and not recs.empty:
+            latest_rec = recs.iloc[0]  # Latest recommendations
+            recommendation_summary = (
+                f"Strong Buy: {latest_rec['strongBuy']}, "
+                f"Buy: {latest_rec['buy']}, "
+                f"Hold: {latest_rec['hold']}, "
+                f"Sell: {latest_rec['sell']}, "
+                f"Strong Sell: {latest_rec['strongSell']}"
+            )
+        else:
+            recommendation_summary = "No recent recommendations available"
+
+        # Store in performance data dictionary
+        performance_data[symbol] = {
+            "price_history": hist,
+            "latest_close": hist['Close'].iloc[-1] if not hist.empty else None,
+            "one_year_return": (hist['Close'].iloc[-1] / hist['Close'].iloc[0] - 1) * 100 if not hist.empty else None,
+            "recommendations": recommendation_summary  # For chatbot's internal use only
+        }
+    return performance_data
+
+
+@app.callback(
+    [Output("chatbot-modal", "is_open"),
+     Output("conversation-store", "data", allow_duplicate=True),
+     Output("chatbot-conversation", "children", allow_duplicate=True)],
+    [Input("open-chatbot-button", "n_clicks"),
+     Input("clear-button", "n_clicks")],
+    [State("chatbot-modal", "is_open"),
+     State('conversation-store', 'data'),
+     State('login-username-store', 'data')],
+    prevent_initial_call=True
+)
+def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_history, username):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return is_open, conversation_history, dash.no_update
+
+    # Check if the chatbot was toggled open or the conversation was cleared
+    if ctx.triggered[0]["prop_id"] in ["open-chatbot-button.n_clicks", "clear-button.n_clicks"]:
+        if ctx.triggered[0]["prop_id"] == "open-chatbot-button.n_clicks" and is_open:
+            # If already open, just close without resetting
+            return not is_open, conversation_history, dash.no_update
+
+        # Fetch the user's watchlist and performance data if logged in
+        watchlist_message = ""
+        personalized_greeting = "Hello! My name is Financio and I'm your financial advisor 🤖."
+        if username:
+            user = User.query.filter_by(username=username).first()
+            if user and user.watchlist:
+                watchlist = json.loads(user.watchlist)
+                if watchlist:
+                    performance_data = get_stock_performance(watchlist)
+                    # Create a message with performance summaries
+                    performance_summaries = []
+                    for symbol, data in performance_data.items():
+                        summary = (f"{symbol}: Latest Close - ${data['latest_close']:.2f}, "
+                                    f"1-Year Return - {data['one_year_return']:.2f}%")
+                        performance_summaries.append(summary)
+                    watchlist_message = f"Here are the stocks on your watchlist and their performance: {'; '.join(performance_summaries)}."
+                else:
+                    watchlist_message = "You currently don't have any stocks on your watchlist."
+            else:
+                watchlist_message = "You currently don't have any stocks on your watchlist."
+
+            # Personalize the greeting with the username
+            personalized_greeting = f"Hello, {username}! My name is Financio and I'm your financial advisor 🤖."
+        else:
+            watchlist_message = "You're not logged in, so I don't have access to your watchlist."
+
+        # Initialize the conversation with a personalized welcome message
+        conversation_history = [{"role": "system", "content": "You are a helpful stock financial advisor."}]
+        introduction_message = f"{personalized_greeting} How can I assist you today with your stock queries? {watchlist_message}"
+        conversation_history.append({"role": "assistant", "content": introduction_message})
+
+        conversation_display = [
+            html.Div(
+                [
+                    html.Span("🤖", className="robot-avatar", style={"margin-right": "10px"}),
+                    html.Span(f"{introduction_message}", className='chatbot-text'),
+                ],
+                className="chatbot-response fade-in"
+            )
+        ]
+        return True, conversation_history, conversation_display
+
+    return is_open, conversation_history, dash.no_update  # Just toggle the modal without changing the conversation
 
 @app.callback(
     [Output('conversation-store', 'data'),
-      Output('chatbot-conversation', 'children'),
-      Output('chatbot-input', 'value'),
-      Output('url-refresh', 'href')],
-    [Input('send-button', 'n_clicks'),
-      Input('clear-button', 'n_clicks'),
-      Input('url', 'pathname')],
+     Output('chatbot-conversation', 'children'),
+     Output('chatbot-input', 'value')],
+    [Input('send-button', 'n_clicks')],
     [State('chatbot-input', 'value'),
-      State('conversation-store', 'data')],
+     State('conversation-store', 'data'),
+     State('login-username-store', 'data')],
     prevent_initial_call=True
 )
-def manage_chatbot_interaction(send_clicks, clear_clicks, pathname, user_input, conversation_history):
+def manage_chatbot_interaction(send_clicks, user_input, conversation_history, username):
     from openai import OpenAI
     from dotenv import load_dotenv
     import os
-    # Load environment variables from .env file
     load_dotenv()
     open_api_key = os.getenv('OPEN_API_KEY')
 
-    # Set up the OpenAI API client
     client = OpenAI(api_key=open_api_key)
 
     # Define the system message
     system_message = {"role": "system", "content": "You are a helpful stock financial advisor."}
 
-    # Initialize conversation if not exists
-    if conversation_history is None or not conversation_history:
+    # Initialize the conversation history if not already present
+    if conversation_history is None:
         conversation_history = [system_message]
-        introduction_message = "Hello! I am your financial advisor bot. How can I assist you today with your stock queries?"
-        conversation_history.append({"role": "assistant", "content": introduction_message})
-
-    # Handle clearing the conversation
-    if clear_clicks and clear_clicks > 0:
-        # Trigger a page reload by updating the href
-        return dash.no_update, dash.no_update, "", "/chatbot"
 
     # Handle sending a message
     if send_clicks and send_clicks > 0 and user_input:
         # Append the user's message to the conversation history
         conversation_history.append({"role": "user", "content": user_input})
 
-        # Call the OpenAI API to get the chatbot's response
-        completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=conversation_history,  # Use the entire conversation history
-        )
-
-        chatbot_response = completion.choices[0].message.content
-        # Append the chatbot's response to the conversation history
-        conversation_history.append({"role": "assistant", "content": chatbot_response})
-
-    # Create a visual representation of the conversation
-    conversation_display = []
-    for message in conversation_history:
-        if message["role"] == "user":
-            conversation_display.append(html.P(f"YOU: {message['content']}", className='user'))
-        elif message["role"] == "assistant":
-            conversation_display.append(
-                html.Div(
-                    [
-                        html.Span("🤖", className="robot-avatar", style={"margin-right": "10px"}),
-                        html.Span(f"{message['content']}", className='chatbot-text'),
-                    ],
-                    className="chatbot-response fade-in"
-                )
+        # Respond with stock performance data if asked
+        if "performance" in user_input.lower() and username:
+            user = User.query.filter_by(username=username).first()
+            if user and user.watchlist:
+                watchlist = json.loads(user.watchlist)
+                if watchlist:
+                    performance_data = get_stock_performance(watchlist)
+                    performance_summaries = []
+                    for symbol, data in performance_data.items():
+                        summary = (f"{symbol}: Latest Close - ${data['latest_close']:.2f}, "
+                                   f"1-Year Return - {data['one_year_return']:.2f}%")
+                        performance_summaries.append(summary)
+                    response = f"Here is the performance data for the stocks on your watchlist: {'; '.join(performance_summaries)}."
+                else:
+                    response = "You don't have any stocks in your watchlist to show performance data."
+            else:
+                response = "I couldn't find your watchlist data."
+        else:
+            # Call the OpenAI API to get the chatbot's general response
+            completion = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=conversation_history,  # Use the entire conversation history
             )
+            response = completion.choices[0].message.content
 
-    return conversation_history, conversation_display, "", dash.no_update  # Don't trigger reload here
+        # Append the chatbot's response to the conversation history
+        conversation_history.append({"role": "assistant", "content": response})
+
+        # Update the conversation display
+        conversation_display = []
+        for message in conversation_history:
+            if message["role"] == "user":
+                conversation_display.append(html.P(f"YOU: {message['content']}", className='user'))
+            elif message["role"] == "assistant":
+                conversation_display.append(
+                    html.Div(
+                        [
+                            html.Span("🤖", className="robot-avatar", style={"margin-right": "10px"}),
+                            html.Span(f"{message['content']}", className='chatbot-text'),
+                        ],
+                        className="chatbot-response fade-in"
+                    )
+                )
+
+        return conversation_history, conversation_display, ""  # Clear the input box after
+
+    return conversation_history, dash.no_update, dash.no_update  # No change to conversation history or input
+
 
 @app.callback(
     Output('analyst-recommendations-content', 'children'),
@@ -1144,15 +1262,14 @@ def generate_watchlist_table(watchlist):
     )
 
 
-
-@app.callback(
+@@app.callback(
     [Output('save-portfolio-button', 'children'),
-      Output('login-overlay', 'is_open', allow_duplicate=True)],
+     Output('login-overlay', 'is_open', allow_duplicate=True)],
     Input('save-portfolio-button', 'n_clicks'),
     [State('individual-stocks-store', 'data'),
-      State('theme-store', 'data'),
-      State('login-status', 'data'),
-      State('login-username-store', 'data')],
+     State('theme-store', 'data'),
+     State('login-status', 'data'),
+     State('login-username-store', 'data')],
     prevent_initial_call=True
 )
 def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, username):
@@ -1172,12 +1289,26 @@ def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, us
     return dash.no_update, False
 
 @app.callback(
-    Output('individual-stocks-store', 'data', allow_duplicate=True),
-    Input('login-status', 'data'),
-    State('login-username', 'value'),
-    prevent_initial_call='initial_duplicate'
+    Output('individual-stocks-store', 'data',allow_duplicate=True),
+    [Input('login-status', 'data')],
+    [State('login-username-store', 'data')],
+    prevent_initial_call=True  # Ensure this is triggered only after login-status is available
 )
 def load_watchlist(login_status, username):
+    if login_status and username:
+        user = User.query.filter_by(username=username).first()
+        if user and user.watchlist:
+            return json.loads(user.watchlist)  # Load the watchlist from the database
+    return []
+
+@app.callback(
+    Output('individual-stocks-store', 'data',allow_duplicate=True),
+    [Input('url', 'pathname'),  # Triggers when the page is loaded/refreshed
+     Input('login-status', 'data')],
+    [State('login-username-store', 'data')],
+    prevent_initial_call=True
+)
+def load_watchlist_on_page_load(pathname, login_status, username):
     if login_status and username:
         user = User.query.filter_by(username=username).first()
         if user and user.watchlist:
@@ -1547,8 +1678,6 @@ def display_page(pathname, login_status):
         return register_layout, {"display": "block"} if not login_status else {"display": "none"}
     elif pathname == '/login' and not login_status:
         return login_layout, {"display": "block"} if not login_status else {"display": "none"}
-    elif pathname == '/chatbot':  # New routing for chatbot page
-        return chatbot_layout, {"display": "block"} if not login_status else {"display": "none"}
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}
 
