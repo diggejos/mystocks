@@ -6,7 +6,8 @@ This application allows users to:
 - simulate stock profit/loss
 - get analyst recommendations on stocks
 - time series forecast on stocks
-- Register and save your own watchlist 
+- Register and save your own watchlist
+- intelligent financial Chatbot (OpenAI, gpt-3.5-turbo) 
   
 Check the application here: 
 https://mystocks-m9xp.onrender.com/
