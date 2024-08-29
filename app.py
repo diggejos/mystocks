@@ -182,7 +182,8 @@ app.layout = html.Div([
     dcc.Location(id='url-refresh', refresh=True),
     DeferScript(src='assets/script.js'),
     floating_chatbot_button,  
-    chatbot_modal 
+    chatbot_modal,
+    financials_modal
 ])
 
 dashboard_layout = dbc.Container([
