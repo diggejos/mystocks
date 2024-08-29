@@ -170,7 +170,6 @@ app.layout = html.Div([
     chatbot_modal 
 ])
 
-
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -199,22 +198,19 @@ dashboard_layout = dbc.Container([
                         
                         html.Div([
                             html.Label("Select Date Range:", className="font-weight-bold"),
-                            dcc.RadioItems(
+                            dcc.Dropdown(
                                 id='predefined-ranges',
                                 options=[
                                     {'label': 'Year to Date', 'value': 'YTD'},
-                                    {'label': 'last Month', 'value': '1M'},
-                                    {'label': 'last 3 Months', 'value': '3M'},
+                                    {'label': 'Last Month', 'value': '1M'},
+                                    {'label': 'Last 3 Months', 'value': '3M'},
                                     {'label': 'Last 12 Months', 'value': '12M'},
                                     {'label': 'Last 24 Months', 'value': '24M'},
                                     {'label': 'Last 5 Years', 'value': '5Y'},
                                     {'label': 'Last 10 Years', 'value': '10Y'}
                                 ],
                                 value='12M',
-                                inline=True,
                                 className='form-control',
-                                inputStyle={"margin-right": "10px"},
-                                labelStyle={"margin-right": "20px"}
                             )
                         ], className='mb-3'),
                         
@@ -223,197 +219,209 @@ dashboard_layout = dbc.Container([
                 ]), 
                 id="filters-collapse", 
                 is_open=True,  # Start with the card open
-              style={"margin-top": "20px"}), 
+                style={"margin-top": "20px"}), 
         ], width=12, md=3, style={"margin-top": "-25px"} ),
         dbc.Col([
-            dcc.Tabs(id='tabs', value='📈 Prices', children=[
-                dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
-                    dbc.Card(
-                        dbc.CardBody([
-                            dcc.RadioItems(
-                                id='chart-type',
-                                options=[
-                                    {'label': 'Line Chart', 'value': 'line'},
-                                    {'label': 'Candlestick Chart', 'value': 'candlestick'}
-                                ],
-                                value='line',
-                                inline=True,
-                                className='form-control',
-                                inputStyle={"margin-right": "10px"},
-                                labelStyle={"margin-right": "20px"}
-                            ),
-                            dcc.Checklist(
-                                id='movag_input',
-                                options=[
-                                    {'label': '30D Moving Average', 'value': '30D_MA'},
-                                    {'label': '100D Moving Average', 'value': '100D_MA'},
-                                    {'label': 'Volume', 'value': 'Volume'}
-                                ],
-                                value=[],
-                                inline=True,
-                                inputStyle={"margin-right": "10px"},
-                                labelStyle={"margin-right": "20px"}
-                            ),
-                            dcc.Graph(id='stock-graph')
-                        ])
-                    )
-                ]),
-                dcc.Tab(label='📰 News', value='📰 News', children=[
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.Div(id='stock-news', className='news-container')
-                        ])
-                    )
-                ]),
-                dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.Div([
-                                html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
-                                dcc.Dropdown(
-                                    id='indexed-comparison-stock-dropdown',
-                                    options=[],  # This will be populated dynamically
-                                    value=[],  # Default selected stocks
-                                    multi=True,
+            dcc.Tabs(
+                id='tabs',
+                value='📈 Prices',
+                children=[
+                    dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                dcc.RadioItems(
+                                    id='chart-type',
+                                    options=[
+                                        {'label': 'Line Chart', 'value': 'line'},
+                                        {'label': 'Candlestick Chart', 'value': 'candlestick'}
+                                    ],
+                                    value='line',
+                                    inline=True,
                                     className='form-control',
-                                    maxHeight=200,
+                                    inputStyle={"margin-right": "10px"},
+                                    labelStyle={"margin-right": "20px"}
                                 ),
-                            ], className='mb-3'),
-                            dcc.RadioItems(
-                                id='benchmark-selection',
-                                options=[
-                                    {'label': 'None', 'value': 'None'},
-                                    {'label': 'S&P 500', 'value': '^GSPC'},
-                                    {'label': 'NASDAQ 100', 'value': '^NDX'},
-                                    {'label': 'SMI', 'value': '^SSMI'}
-                                ],
-                                value='None',
-                                inline=True,
-                                className='form-control',
-                                inputStyle={"margin-right": "10px"},
-                                labelStyle={"margin-right": "20px"}
-                            ),
-                            dcc.Graph(id='indexed-comparison-graph')
-                        ])
-                    )
-                ]),
-
-                dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.Div([
-                                html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
-                                dcc.Dropdown(
-                                    id='forecast-stock-input',
-                                    options=[],  # Options will be populated dynamically
-                                    value=[],  # Default selected stocks
-                                    multi=True,
-                                    className='form-control',
-                                ),
-                                html.Div(id='forecast-stock-warning', style={'color': 'red'}),
-                                html.Label("Forecast Horizon (days):", className="font-weight-bold"),
-                                dcc.Input(
-                                    id='forecast-horizon-input',
-                                    type='number',
-                                    value=90,
-                                    className='form-control',
-                                    min=1,
-                                    max=365
-                                ),
-                                dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
-                            ], className='mb-3'),
-                            dcc.Markdown('''
-                                **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
-                                While this tool is useful for identifying potential trends based on historical data, stock markets are influenced by 
-                                a wide range of unpredictable factors. These predictions should be considered with caution and should not be used 
-                                as financial advice. Always conduct your own research or consult with a financial advisor before making investment decisions.
-                            ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
-                            
-                            dcc.Loading(
-                                id="loading-forecast",
-                                type="default",
-                                children=[dcc.Graph(id='forecast-graph')]
-                            ),
-                            # Blur overlay for the Forecast tab
-                            html.Div(id='forecast-blur-overlay', style={
-                                'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                'backdrop-filter': 'blur(5px)'
-                            }, children=[
-                                html.Div([
-                                    html.P("Please ", style={'display': 'inline'}),
-                                    html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
-                                    html.P(" to view this content.", style={'display': 'inline'}),
-                                ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
-                            ])
-                        ], style={'position': 'relative'})
-                    )
-                ]),
-                dcc.Tab(label='❤️ Analyst Recommendations', value='❤️ Analyst Recommendations', children=[
-                    dbc.Card(
-                        dbc.CardBody([
-                            dcc.Loading(
-                                id="loading-analyst-recommendations",
-                                children=[
-                                    html.Div(id='analyst-recommendations-content', className='mt-4')
-                                ],
-                                type="default"
-                            ),
-                            html.Div(id='blur-overlay', style={
-                                'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                'backdrop-filter': 'blur(5px)'
-                            }, children=[
-                                html.Div([
-                                    html.P("Please ", style={'display': 'inline'}),
-                                    html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
-                                    html.P(" to view this content.", style={'display': 'inline'}),
-                                ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
-                            ])
-                        ], style={'position': 'relative'})
-                    )
-                ]),
-                dcc.Tab(label='📊 Investment Simulation', children=[
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.Div([
-                                html.Label("Stock Symbol:", className="font-weight-bold"),
-                                dcc.Dropdown(
-                                    id='simulation-stock-input',
-                                    options=[],
+                                dcc.Checklist(
+                                    id='movag_input',
+                                    options=[
+                                        {'label': '30D Moving Average', 'value': '30D_MA'},
+                                        {'label': '100D Moving Average', 'value': '100D_MA'},
+                                        {'label': 'Volume', 'value': 'Volume'}
+                                    ],
                                     value=[],
+                                    inline=True,
+                                    inputStyle={"margin-right": "10px"},
+                                    labelStyle={"margin-right": "20px"}
+                                ),
+                                dcc.Graph(id='stock-graph', style={'height': '500px'})
+                            ])
+                        )
+                    ]),
+                    dcc.Tab(label='📰 News', value='📰 News', children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.Div(id='stock-news', className='news-container')
+                            ])
+                        )
+                    ]),
+                    dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.Div([
+                                    html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
+                                    dcc.Dropdown(
+                                        id='indexed-comparison-stock-dropdown',
+                                        options=[],  # This will be populated dynamically
+                                        value=[],  # Default selected stocks
+                                        multi=True,
+                                        className='form-control',
+                                        maxHeight=200,
+                                    ),
+                                ], className='mb-3'),
+                                dcc.RadioItems(
+                                    id='benchmark-selection',
+                                    options=[
+                                        {'label': 'None', 'value': 'None'},
+                                        {'label': 'S&P 500', 'value': '^GSPC'},
+                                        {'label': 'NASDAQ 100', 'value': '^NDX'},
+                                        {'label': 'SMI', 'value': '^SSMI'}
+                                    ],
+                                    value='None',
+                                    inline=True,
                                     className='form-control',
+                                    inputStyle={"margin-right": "10px"},
+                                    labelStyle={"margin-right": "20px"}
                                 ),
-                            ], className='mb-3'),
-                            html.Div([
-                                html.Label("Investment Amount ($):", className="font-weight-bold"),
-                                dcc.Input(
-                                    id='investment-amount',
-                                    type='number',
-                                    placeholder='enter Amount',
-                                    value=1000,
-                                    className='form-control',
+                                dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})
+                            ])
+                        )
+                    ]),
+
+                    dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.Div([
+                                    html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
+                                    dcc.Dropdown(
+                                        id='forecast-stock-input',
+                                        options=[],  # Options will be populated dynamically
+                                        value=[],  # Default selected stocks
+                                        multi=True,
+                                        className='form-control',
+                                    ),
+                                    html.Div(id='forecast-stock-warning', style={'color': 'red'}),
+                                    html.Label("Forecast Horizon (days):", className="font-weight-bold"),
+                                    dcc.Input(
+                                        id='forecast-horizon-input',
+                                        type='number',
+                                        value=90,
+                                        className='form-control',
+                                        min=1,
+                                        max=365
+                                    ),
+                                    dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
+                                ], className='mb-3'),
+                                dcc.Markdown('''
+                                    **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
+                                    While this tool is useful for identifying potential trends based on historical data, stock markets are influenced by 
+                                    a wide range of unpredictable factors. These predictions should be considered with caution and should not be used 
+                                    as financial advice. Always conduct your own research or consult with a financial advisor before making investment decisions.
+                                ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
+                                
+                                dcc.Loading(
+                                    id="loading-forecast",
+                                    type="default",
+                                    children=[dcc.Graph(id='forecast-graph', style={'height': '500px'})]
                                 ),
-                            ], className='mb-3'),
-                            html.Div([
-                                html.Label("Investment Date:", className="font-weight-bold"),
-                                dcc.DatePickerSingle(
-                                    id='investment-date',
-                                    date=pd.to_datetime('2024-01-01'),
-                                    className='form-control'
+                                # Blur overlay for the Forecast tab
+                                html.Div(id='forecast-blur-overlay', style={
+                                    'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+                                    'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
+                                    'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                                    'backdrop-filter': 'blur(5px)'
+                                }, children=[
+                                    html.Div([
+                                        html.P("Please ", style={'display': 'inline'}),
+                                        html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
+                                        html.P(" to view this content.", style={'display': 'inline'}),
+                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
+                                ])
+                            ], style={'position': 'relative'})
+                        )
+                    ]),
+                    dcc.Tab(label='❤️ Analyst Recommendations', value='❤️ Analyst Recommendations', children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                dcc.Loading(
+                                    id="loading-analyst-recommendations",
+                                    children=[
+                                        html.Div(id='analyst-recommendations-content', className='mt-4')
+                                    ],
+                                    type="default"
                                 ),
-                            ], className='mb-3'),
-                            dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
-                            html.Div(id='simulation-result', className='mt-4')
-                        ])
-                    )
-                ]),
-            ]),
-        ], width=12, md=8)
+                                html.Div(id='blur-overlay', style={
+                                    'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+                                    'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
+                                    'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                                    'backdrop-filter': 'blur(5px)'
+                                }, children=[
+                                    html.Div([
+                                        html.P("Please ", style={'display': 'inline'}),
+                                        html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
+                                        html.P(" to view this content.", style={'display': 'inline'}),
+                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
+                                ])
+                            ], style={'position': 'relative'})
+                        )
+                    ]),
+                    dcc.Tab(label='📊 Investment Simulation', children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.Div([
+                                    html.Label("Stock Symbol:", className="font-weight-bold"),
+                                    dcc.Dropdown(
+                                        id='simulation-stock-input',
+                                        options=[],
+                                        value=[],
+                                        className='form-control',
+                                    ),
+                                ], className='mb-3'),
+                                html.Div([
+                                    html.Label("Investment Amount ($):", className="font-weight-bold"),
+                                    dcc.Input(
+                                        id='investment-amount',
+                                        type='number',
+                                        placeholder='Enter Amount',
+                                        value=1000,
+                                        className='form-control',
+                                    ),
+                                ], className='mb-3'),
+                                html.Div([
+                                    html.Label("Investment Date:", className="font-weight-bold"),
+                                    dcc.DatePickerSingle(
+                                        id='investment-date',
+                                        date=pd.to_datetime('2024-01-01'),
+                                        className='form-control'
+                                    ),
+                                ], className='mb-3'),
+                                dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
+                                html.Div(id='simulation-result', className='mt-4')
+                            ])
+                        )
+                    ]),
+                ],
+                mobile_breakpoint=0,  # Force the tabs to be scrollable on mobile
+                colors={
+                    "border": "white",
+                    "primary": "blue",
+                    "background": "lightgray"
+                },
+                style={'overflowX': 'scroll', 'width': '100%'}  # Enable horizontal scroll for tabs
+            )
+        ], width=12, md=8,xs=12)
     ], className='mb-4'),
 ], fluid=True)
+
 
 # Layout for Registration page
 register_layout = dbc.Container([
@@ -614,6 +622,154 @@ def generate_recommendations_heatmap(dataframe):
 )
 def update_active_tab(value):
     return value
+import dash_table
+
+def format_number(value):
+    """Format the number into thousands (K), millions (M), or billions (B)."""
+    if pd.isnull(value):
+        return "N/A"
+    elif value >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    elif value <= -1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    elif value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    elif value <= -1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    elif value >= 100_000:
+        return f"{value / 1_000:.1f}K"
+    elif value <= -100_000:
+        return f"{value / 1_000:.1f}K"
+    else:
+        return f"{value:.0f}"
+
+def create_financials_table(data):
+    # Transpose the financials data
+    data = data.T
+    data.index = pd.to_datetime(data.index).year
+    
+    # Format numbers as thousands, millions, or billions
+    data = data.applymap(format_number)
+
+    # Transpose again to switch rows and columns, then reverse the rows
+    data = data.T.reset_index()
+    data.columns.name = None  # Remove the name of the index column
+    data = data.iloc[::-1]  # Reverse the order of the rows
+    
+    # Ensure all column names are strings
+    data.columns = data.columns.astype(str)
+    
+    # Limit to the latest 4 years
+    data = data.iloc[:, :5]  # [:, :5] to include the 'index' column plus 4 years
+
+    # Create Dash DataTable for displaying financial data
+    financials_table = dash_table.DataTable(
+        data=data.to_dict('records'),
+        columns=[{"name": str(i), "id": str(i)} for i in data.columns],
+        style_table={'overflowX': 'auto'},
+        style_cell={'textAlign': 'left', 'whiteSpace': 'normal', 'height': 'auto'},
+        style_header={'fontWeight': 'bold'},
+        style_data_conditional=[
+            {
+                'if': {'row_index': 'odd'},  # Apply this style to odd rows
+                'backgroundColor': 'rgb(248, 248, 248)'
+            }
+        ],
+    )
+
+    return dbc.Container([
+        html.Hr(),
+        financials_table
+    ])
+
+def create_company_info(info):
+    """Generate a simple table of company info."""
+    info_table = dbc.Table(
+        [
+            html.Tbody([
+                html.Tr([html.Th("Company Name"), html.Td(info.get("longName", "N/A"))]),
+                html.Tr([html.Th("Sector"), html.Td(info.get("sector", "N/A"))]),
+                html.Tr([html.Th("Industry"), html.Td(info.get("industry", "N/A"))]),
+                html.Tr([html.Th("Market Cap"), html.Td(format_number(info.get("marketCap", None)))]),
+                html.Tr([html.Th("Revenue"), html.Td(format_number(info.get("totalRevenue", None)))]),
+                html.Tr([html.Th("Gross Profits"), html.Td(format_number(info.get("grossProfits", None)))]),
+                html.Tr([html.Th("EBITDA"), html.Td(format_number(info.get("ebitda", None)))]),
+                html.Tr([html.Th("Net Income"), html.Td(format_number(info.get("netIncomeToCommon", None)))]),
+                html.Tr([html.Th("Dividend Yield"), html.Td(f"{info.get('dividendYield', 'N/A'):.2%}" if info.get("dividendYield") else "N/A")]),
+            ])
+        ],
+        bordered=True,
+        striped=True,
+        hover=True,
+    )
+
+    return dbc.Container([
+        # html.H5("Company Information"),
+        html.Hr(),
+        info_table
+    ])
+
+
+@app.callback(
+    [Output('financials-modal', 'is_open'),
+     Output('financials-modal-title', 'children'),
+     Output('financials-modal-body', 'children')],
+    [Input({'type': 'stock-symbol', 'index': ALL}, 'n_clicks')],
+    [State('individual-stocks-store', 'data'),
+     State('financials-modal', 'is_open')]
+)
+def display_financials_modal(n_clicks, watchlist, is_open):
+    ctx = dash.callback_context
+
+    # Prevent the modal from opening if no click or all n_clicks are None
+    if not ctx.triggered or not watchlist or not any(n_clicks):
+        raise PreventUpdate
+
+    # Get the ID of the triggered button
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    if 'stock-symbol' not in triggered_id:
+        raise PreventUpdate  # Ensure the modal only opens when a stock symbol is clicked
+
+    # Extract the index from the triggered ID
+    index = json.loads(triggered_id)['index']
+    stock_symbol = watchlist[index]
+
+    # Fetch financials data
+    ticker = yf.Ticker(stock_symbol)
+    financials = ticker.financials
+    balance_sheet = ticker.balance_sheet
+    cashflow = ticker.cashflow
+    info = ticker.info
+
+    if financials is not None and not financials.empty:
+        income_statement_content = create_financials_table(financials)
+        balance_sheet_content = create_financials_table(balance_sheet)
+        cashflow_content = create_financials_table(cashflow)
+        company_info_content = create_company_info(info)
+        
+        # Create tabs for the modal
+        modal_content = dbc.Tabs([
+            dbc.Tab(company_info_content, label="Company Info"),
+            dbc.Tab(balance_sheet_content, label="Balance Sheet"),
+            dbc.Tab(income_statement_content, label="Income Statement"),
+            dbc.Tab(cashflow_content, label="Cash Flow"),
+        ], active_tab="tab-0")  # Set the first tab as active by default
+    else:
+        modal_content = html.P("No financial data available for this stock.")
+
+    return True, f"Financials for {stock_symbol}", modal_content
+
+
+@app.callback(
+    Output('financials-modal', 'is_open', allow_duplicate=True),
+    [Input('close-financials-modal', 'n_clicks')],
+    [State('financials-modal', 'is_open')],
+    prevent_initial_call=True
+)
+def close_financials_modal(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
 
 def get_stock_performance(symbols):
     performance_data = {}
@@ -621,40 +777,33 @@ def get_stock_performance(symbols):
         ticker = yf.Ticker(symbol)
         # Fetch historical data
         hist = ticker.history(period="1y")
-        # Fetch analyst recommendations (for internal use)
-        recs = ticker.recommendations
-
-        if recs is not None and not recs.empty:
-            latest_rec = recs.iloc[0]  # Latest recommendations
-            recommendation_summary = (
-                f"Strong Buy: {latest_rec['strongBuy']}, "
-                f"Buy: {latest_rec['buy']}, "
-                f"Hold: {latest_rec['hold']}, "
-                f"Sell: {latest_rec['sell']}, "
-                f"Strong Sell: {latest_rec['strongSell']}"
-            )
-        else:
-            recommendation_summary = "No recent recommendations available"
-
-        # Store in performance data dictionary
+        # Fetch basic stock info
+        info = ticker.info
+        
+        # Fetch performance-related data
         performance_data[symbol] = {
-            "price_history": hist,
             "latest_close": hist['Close'].iloc[-1] if not hist.empty else None,
             "one_year_return": (hist['Close'].iloc[-1] / hist['Close'].iloc[0] - 1) * 100 if not hist.empty else None,
-            "recommendations": recommendation_summary  # For chatbot's internal use only
+            "52_week_high": info.get("fiftyTwoWeekHigh"),
+            "52_week_low": info.get("fiftyTwoWeekLow"),
+            "market_cap": info.get("marketCap"),
+            "pe_ratio": info.get("trailingPE"),
+            "dividend_yield": info.get("dividendYield"),
         }
+
     return performance_data
+
 
 
 @app.callback(
     [Output("chatbot-modal", "is_open"),
-     Output("conversation-store", "data", allow_duplicate=True),
-     Output("chatbot-conversation", "children", allow_duplicate=True)],
+      Output("conversation-store", "data", allow_duplicate=True),
+      Output("chatbot-conversation", "children", allow_duplicate=True)],
     [Input("open-chatbot-button", "n_clicks"),
-     Input("clear-button", "n_clicks")],
+      Input("clear-button", "n_clicks")],
     [State("chatbot-modal", "is_open"),
-     State('conversation-store', 'data'),
-     State('login-username-store', 'data')],
+      State('conversation-store', 'data'),
+      State('login-username-store', 'data')],
     prevent_initial_call=True
 )
 def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_history, username):
@@ -680,8 +829,7 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
                     # Create a message with performance summaries
                     performance_summaries = []
                     for symbol, data in performance_data.items():
-                        summary = (f"{symbol}: Latest Close - ${data['latest_close']:.2f}, "
-                                    f"1-Year Return - {data['one_year_return']:.2f}%")
+                        summary = (f"{symbol}: Latest - ${data['latest_close']:.2f}")
                         performance_summaries.append(summary)
                     watchlist_message = f"Here are the stocks on your watchlist and their performance: {'; '.join(performance_summaries)}."
                 else:
@@ -711,6 +859,7 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
         return True, conversation_history, conversation_display
 
     return is_open, conversation_history, dash.no_update  # Just toggle the modal without changing the conversation
+
 
 @app.callback(
     [Output('conversation-store', 'data'),
@@ -752,8 +901,27 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
                     performance_data = get_stock_performance(watchlist)
                     performance_summaries = []
                     for symbol, data in performance_data.items():
-                        summary = (f"{symbol}: Latest Close - ${data['latest_close']:.2f}, "
-                                   f"1-Year Return - {data['one_year_return']:.2f}%")
+                        summary = (
+                            f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data['latest_close'] is not None else f"{symbol}: Latest Close - N/A"
+                        )
+                        summary += (
+                            f", 1-Year Return - {data['one_year_return']:.2f}%" if data['one_year_return'] is not None else ", 1-Year Return - N/A"
+                        )
+                        summary += (
+                            f", 52-Week High - ${data['52_week_high']:.2f}" if data['52_week_high'] is not None else ", 52-Week High - N/A"
+                        )
+                        summary += (
+                            f", 52-Week Low - ${data['52_week_low']:.2f}" if data['52_week_low'] is not None else ", 52-Week Low - N/A"
+                        )
+                        summary += (
+                            f", Market Cap - ${data['market_cap']:,}" if data['market_cap'] is not None else ", Market Cap - N/A"
+                        )
+                        summary += (
+                            f", PE Ratio - {data['pe_ratio']:.2f}" if data['pe_ratio'] is not None else ", PE Ratio - N/A"
+                        )
+                        summary += (
+                            f", Dividend Yield - {data['dividend_yield']:.2%}" if data['dividend_yield'] is not None else ", Dividend Yield - N/A"
+                        )
                         performance_summaries.append(summary)
                     response = f"Here is the performance data for the stocks on your watchlist: {'; '.join(performance_summaries)}."
                 else:
@@ -789,8 +957,7 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
 
         return conversation_history, conversation_display, ""  # Clear the input box after
 
-    return conversation_history, dash.no_update, dash.no_update  # No change to conversation history or input
-
+    return conversation_history, dash.no_update, dash.no_update  # No change to conversation history or inpu
 
 @app.callback(
     Output('analyst-recommendations-content', 'children'),
@@ -1220,7 +1387,6 @@ def fetch_stock_data_watchlist(symbol):
         print(f"Error fetching data for {symbol}: {e}")
         return None, None, None
     
-
 def generate_watchlist_table(watchlist):
     rows = []
     for i, stock in enumerate(watchlist):
@@ -1230,9 +1396,9 @@ def generate_watchlist_table(watchlist):
             color = 'green' if change_percent > 0 else 'red' if change_percent < 0 else 'black'
             rows.append(
                 html.Tr([
-                    html.Td(stock),
+                    html.Td(dbc.Button(stock, id={'type': 'stock-symbol', 'index': i}, color="link")),
                     html.Td(f"{latest_close:.2f}"),
-                    html.Td(f"{change_percent:.2f}%", style={"color": color}),  # Apply the color styling here
+                    html.Td(f"{change_percent:.2f}%", style={"color": color}),
                     html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
                 ])
             )
@@ -1248,7 +1414,7 @@ def generate_watchlist_table(watchlist):
 
     return dbc.Table(
         children=[
-            html.Thead(html.Tr([html.Th("Stock Symbol"), 
+            html.Thead(html.Tr([html.Th("Symbol"), 
                                 html.Th("Latest"), 
                                 html.Th("Change (%)"), 
                                 html.Th("")])),
@@ -1260,7 +1426,6 @@ def generate_watchlist_table(watchlist):
         striped=True,
         size="sm",
     )
-
 
 @app.callback(
     [Output('save-portfolio-button', 'children'),
