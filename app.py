@@ -131,6 +131,20 @@ floating_chatbot_button = html.Div(
     }
 )
 
+financials_modal = dbc.Modal(
+    [
+        dbc.ModalHeader(dbc.ModalTitle(id="financials-modal-title")),
+        dbc.ModalBody(id="financials-modal-body"),
+        dbc.ModalFooter(
+            dbc.Button("Close", id="close-financials-modal", className="ms-auto", n_clicks=0)
+        ),
+    ],
+    id="financials-modal",
+    size="lg",
+    is_open=False,
+)
+
+
 chatbot_modal = dbc.Modal(
     [
         dbc.ModalHeader(dbc.ModalTitle("🤖 Financio")),
