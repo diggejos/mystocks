@@ -23,6 +23,7 @@ from dash.exceptions import PreventUpdate
 from dash_extensions import DeferScript
 from flask import session
 from flask_session import Session
+import dash_table
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
