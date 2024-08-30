@@ -24,6 +24,12 @@ from dash_extensions import DeferScript
 from flask import session
 from flask_session import Session
 import dash_table
+from flask import send_from_directory
+
+
+@server.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory(directory='static', path='sitemap.xml')
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
