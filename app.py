@@ -27,11 +27,6 @@ import dash_table
 from flask import send_from_directory
 
 
-@server.route('/sitemap.xml')
-def sitemap():
-    return send_from_directory(directory='static', path='sitemap.xml')
-
-
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
     'YETI': {'dbc': dbc.themes.YETI, 'plotly': 'simple_white'},
@@ -66,6 +61,10 @@ Session(app.server)
 db = SQLAlchemy(server)
 # Initialize Bcrypt for password hashing
 bcrypt = Bcrypt(server)
+
+@server.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory(directory='static', path='sitemap.xml')
 
 
 # Define User model
