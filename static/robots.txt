@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /private/
+Disallow: /admin/
+Disallow: /register
+Disallow: /login
+
+Sitemap: https://mystocksportfolio.io/sitemap.xml
