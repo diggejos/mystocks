@@ -66,6 +66,10 @@ bcrypt = Bcrypt(server)
 def sitemap():
     return send_from_directory(directory='static', path='sitemap.xml')
 
+@server.route('/robots.txt')
+def serve_robots():
+    return send_from_directory(project_root, 'robots.txt')
+
 
 # Define User model
 class User(db.Model):
