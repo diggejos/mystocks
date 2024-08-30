@@ -194,6 +194,7 @@ app.layout = html.Div([
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
+            html.H1("MyStock Dashboard",  style={"position": "absolute", "left": "-9999px"}),  # for SEO purpose (visually hidden)
             html.Div([
                 dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "10px"})
             ]),
@@ -450,7 +451,7 @@ register_layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H2("📝 Register", className="text-center"),
+                    html.H1("📝 Register", className="text-center"),
                     dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
                     dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
                     dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
@@ -476,7 +477,7 @@ login_layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H2("🔐 Login", className="text-center"),
+                    html.H1("🔐 Login", className="text-center"),
                     dcc.Input(id='login-username', type='text', placeholder='Username', className='form-control mb-3'),
                     dcc.Input(id='login-password', type='password', placeholder='Password', className='form-control mb-3'),
                     dbc.Button("Login", id='login-button', color='primary', className='mt-2 w-100'),
@@ -495,6 +496,7 @@ login_layout = dbc.Container([
 about_layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.Div([
+            html.H1("About MyStock Dashboard", className="text-center mt-4"),  # Main heading
             html.P([
                 "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:"
             ], className="text-center"),
