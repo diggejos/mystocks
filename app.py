@@ -198,7 +198,7 @@ app.layout = html.Div([
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H1("MyStock Dashboard",  style={"position": "absolute", "left": "-9999px"}),  # for SEO purpose (visually hidden)
+            html.H1("MyStock Dashboard - Monitoring stocks made easy",  style={"position": "absolute", "left": "-9999px"}),  # for SEO purpose (visually hidden)
             html.Div([
                 dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "10px"})
             ]),
@@ -1926,9 +1926,9 @@ app.index_string = '''
     <head>
         {%metas%}
         <title>MyStock Dashboard</title>
-        <meta name="description" content="Track and forecast stock prices, visualize trends, and get the latest stock news with MyStock's Stock Dashboard.">
-        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news">
-        <meta name="author" content="MyStock">
+        <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, chat with OpenAI powered financial advisor, save your watchlist and much more on mystocksportfolio.io.">
+        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, openAI">
+        <meta name="author" content="mystocksportfolio.io">
         <meta property="og:title" content="MyStock Dashboard" />
         <meta property="og:description" content="Get the latest stock news, forecasts, and more." />
         <meta property="og:image" content="https://mystocks-m9xp.onrender.com/assets/og-image.png" />
