@@ -10,6 +10,6 @@ This application allows users to:
 - intelligent financial Chatbot (OpenAI, gpt-3.5-turbo) 
   
 Check the application here: 
-https://mystocks-m9xp.onrender.com/
+https://mystocksportfolio.io
 
 ![gif](https://github.com/user-attachments/assets/6348e136-1e74-44ed-b53f-5141428287a7)
