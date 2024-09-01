@@ -1925,13 +1925,13 @@ app.index_string = '''
 <html>
     <head>
         {%metas%}
-        <title>MyStock Dashboard</title>
+        <title>Stocks monitoring and recommendation made easy - MyStocks</title>
         <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, chat with OpenAI powered financial advisor, save your watchlist and much more on mystocksportfolio.io.">
         <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, openAI">
         <meta name="author" content="mystocksportfolio.io">
-        <meta property="og:title" content="MyStock Dashboard" />
-        <meta property="og:description" content="Get the latest stock news, forecasts, and more." />
-        <meta property="og:image" content="https://mystocks-m9xp.onrender.com/assets/og-image.png" />
+        <meta property="og:title" content="Stocks monitoring and recommendation made easy - MyStocks" />
+        <meta property="og:description" content="Stocks monitoring, recommendations, news and more" />
+        <meta property="og:image" content="https://github.com/diggejos/mystocks/assets/logo_with_transparent_background.png" />
         <meta property="og:url" content="https://mystocks-m9xp.onrender.com/" />
         <meta name="twitter:card" content="summary_large_image" />
         {%favicon%}
