@@ -505,26 +505,30 @@ about_layout = dbc.Container([
                 "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:"
             ], className="text-center"),
             html.Ul([
-                html.Li("Track stock prices for multiple companies simultaneously."),
-                html.Li("Add individual stock symbols manually."),
-                html.Li("View stock prices over a specified date range."),
-                html.Li("Fetch and display the latest news articles related to the selected stocks."),
-                html.Li("Visualize stock prices with interactive graphs."),
-                html.Li("Compare stock performance using indexed comparison graphs."),
+                html.Li("Historical Stock Price Tracking and Comparison Track and compare stock prices over historical periods. Perform indexed comparisons of stock prices against major indices, such as the NASDAQ100."),
+                html.Li("Stock Market News Stay updated with the latest news for your selected stocks. Get news articles and updates from reliable financial sources directly within the app."),
+                html.Li("Stock Profit/Loss Simulation Simulate potential profit and loss scenarios for stocks in your watchlist. Evaluate investment strategies by simulating trades based on historical data."),
+                html.Li("Analyst Recommendations Access analyst recommendations for stocks in your portfolio. View buy, sell, and hold ratings from industry experts to make informed decisions."),
+                html.Li("Time Series Forecasting Use advanced time series forecasting models to predict future stock prices. Make data-driven investment decisions based on forecasted trends."),
+                html.Li("Personalized Watchlist Management Register and save your personalized stock watchlist. Monitor your favorite stocks and receive tailored insights."),
                 html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
-                html.Li("Responsive design for use on different devices.")
+                html.Li("Intelligent Financial Chatbot advisor Interact with our intelligent financial chatbot powered by OpenAI's GPT-3.5-turbo. Get instant answers to your stock-related queries and financial advice within the app.")
             ], className="text-left"),
             html.P([
-                "It is built using Dash and Plotly for interactive data visualization. For more information, visit ",
+                "It is built using Python Dash and Plotly for interactive data visualization. For more information, visit ",
                 html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
                 "."
             ], className="text-center")
         ], className="mx-auto", style={"max-width": "600px"}))
     ]),
+    html.H2("Why choose MyStocks?", className="text-center mt-4"), 
+     html.P([
+                "Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. Real-Time Updates: Stay informed with up-to-date news and market data."
+            ], className="text-center"),
     dbc.Row([
         dbc.Col(html.Figure([
-            html.Img(src='/assets/gif.gif', className="img-fluid mt-4", style={"max-width": "50%", "height": "auto", "display": "block", "margin-left": "auto", "margin-right": "auto"}),  # Center the image
-            html.Figcaption("Get latest Stock news", className="text-center mt-2")
+            html.Img(src='/assets/gif.gif', className="img-fluid mt-4", style={"max-width": "80%", "height": "auto", "display": "block", "margin-left": "auto", "margin-right": "auto"}),  # Center the image
+            html.Figcaption("MyStocks live Demo", className="text-center mt-2")
         ], className="text-center"), width=12)  # Take full width on all screens
     ]),
     dbc.Row([
