@@ -1106,25 +1106,25 @@ def update_analyst_recommendations(stock_symbols):
     
     recommendations_content = []
     
+    # Add the text to be displayed at the top
+    recommendations_content.append(
+        html.P([
+            "For more information on how to interpret these ratings, please visit ",
+            html.A("this article", href="https://finance.yahoo.com/news/buy-sell-hold-stock-analyst-180414724.html", target="_blank"),
+            "."
+        ], className='mt-2')
+    )
+    
     for symbol in stock_symbols:
         df = fetch_analyst_recommendations(symbol)
         if not df.empty:
             fig = generate_recommendations_heatmap(df)
             recommendations_content.append(html.H4(f"{symbol}", className='mt-3'))
             recommendations_content.append(dcc.Graph(figure=fig))
-            # Adding the link to the article on how to interpret the ratings
-            recommendations_content.append(
-                html.P([
-                    "For more information on how to interpret these ratings, please visit ",
-                    html.A("this article", href="https://finance.yahoo.com/news/buy-sell-hold-stock-analyst-180414724.html", target="_blank"),
-                    "."
-                ], className='mt-2')
-            )
         else:
             recommendations_content.append(html.P(f"No analyst recommendations found for {symbol}."))
     
     return recommendations_content
-
 
 @app.callback(
     [Output('blur-overlay', 'style'),
