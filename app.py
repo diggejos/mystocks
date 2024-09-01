@@ -95,6 +95,7 @@ navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
         dbc.NavItem(dbc.NavLink("ℹ️ About", href="/about", active="exact")),
+        dbc.NavItem(dbc.NavLink("👤 Profile", href="/profile", active="exact", id='profile-link', style={"display": "none"})),  # New profile link
         dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
         dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
         dbc.NavItem(dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"})),
@@ -131,7 +132,7 @@ overlay = dbc.Modal(
 )
 
 floating_chatbot_button = html.Div(
-    dbc.Button("💬 Chat with Financio", id="open-chatbot-button", color="primary", className="chatbot-button"),
+    dbc.Button("💬 with Financio", id="open-chatbot-button", color="primary", className="chatbot-button"),
     style={
         "position": "fixed",
         "bottom": "20px",
@@ -198,7 +199,7 @@ app.layout = html.Div([
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H1("MyStock Dashboard - Monitoring stocks made easy",  style={"position": "absolute", "left": "-9999px"}),  # for SEO purpose (visually hidden)
+            html.H1("MyStock Dashboard",  style={"position": "absolute", "left": "-9999px"}),  # for SEO purpose (visually hidden)
             html.Div([
                 dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "10px"})
             ]),
@@ -252,9 +253,19 @@ dashboard_layout = dbc.Container([
                 id='tabs',
                 value='📈 Prices',
                 children=[
+                    
                     dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                dcc.Dropdown(
+                                    id='prices-stock-dropdown',
+                                    options=[],  # This will be populated dynamically
+                                    value=[],  # Default selected stocks (up to 5)
+                                    multi=True,
+                                    placeholder="Select stocks to display",
+                                    className='form-control',
+                                    maxHeight=200,
+                                ),
                                 dcc.RadioItems(
                                     id='chart-type',
                                     options=[
@@ -283,6 +294,7 @@ dashboard_layout = dbc.Container([
                             ])
                         )
                     ]),
+
                     dcc.Tab(label='📰 News', value='📰 News', children=[
                         dbc.Card(
                             dbc.CardBody([
@@ -448,6 +460,53 @@ dashboard_layout = dbc.Container([
     ], className='mb-4'),
 ], fluid=True)
 
+profile_layout = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H1("👤 User Profile", className="text-center"),
+
+                    # Username field
+                    dbc.Label("Username"),
+                    dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
+
+                    # Email field
+                    dbc.Label("Email"),
+                    dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
+
+                    # Current Password field (Required to change the password)
+                    dbc.Label("Current Password"),
+                    dcc.Input(id='profile-current-password', type='password', disabled=True, placeholder="Enter current password", className='form-control mb-3'),
+
+                    # New Password field
+                    dbc.Label("New Password"),
+                    dcc.Input(id='profile-password', type='password', disabled=True, placeholder="Enter new password", className='form-control mb-3'),
+
+                    html.Ul([
+                        html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
+                        html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
+                        html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
+                        html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
+                        html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
+                    ], className='mb-3', style={"display": "none"}),  # Initially hidden
+
+                    # Confirm New Password field
+                    dbc.Label("Confirm New Password"),
+                    dcc.Input(id='profile-confirm-password', type='password', disabled=True, placeholder="Confirm new password", className='form-control mb-3'),
+
+                    # Edit and Save buttons
+                    dbc.Button("Edit", id='edit-profile-button', color='primary', className='mt-2'),
+                    dbc.Button("Save", id='save-profile-button', color='success', className='mt-2 ms-2', style={"display": "none"}),
+                    dbc.Button("Cancel", id='cancel-edit-button', color='danger', className='mt-2 ms-2', style={"display": "none"}),
+
+                    # Output area for messages
+                    html.Div(id='profile-output', className='mt-3')
+                ])
+            ])
+        ], width=12, md=6, className="mx-auto")
+    ])
+], fluid=True)
 
 # Layout for Registration page
 register_layout = dbc.Container([
@@ -497,53 +556,100 @@ login_layout = dbc.Container([
 ], fluid=True)
 
 # Layout for the About page
+# Enhanced Carousel Component
+carousel = dbc.Carousel(
+    items=[
+        {
+            "key": "1",
+            "src": "/assets/gif1.gif",
+            "alt": "Demo 1",
+            "header": "Analyse and Compare Stocks",
+            "caption": "Financial indicators, custom time windows, and more."
+        },
+        {
+            "key": "2",
+            "src": "/assets/gif4.gif",
+            "alt": "Demo 2",
+            "header": "Chatbot Advisor",
+            "caption": "Ask your personal Chatbot for advise"
+        },
+        {
+            "key": "3",
+            "src": "/assets/gif2.gif",
+            "alt": "Demo 3",
+            "header": "Custom Watchlist",
+            "caption": "Save your watchlist and get tailored news updates."
+        },
+        {
+            "key": "4",
+            "src": "/assets/gif3.gif",
+            "alt": "Demo 4",
+            "header": "Timeseries Forecast",
+            "caption": "Visualize forecasts and access analyst recommendations."
+        }
+        
+    ],
+    controls=True,
+    indicators=True,
+    interval=20000,  # Time in ms for each slide
+    ride="carousel",
+    className="carousel-fade",
+    id="custom-carousel"
+)
+
+# Modernized About Layout
 about_layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.Div([
-            html.H1("About MyStock Dashboard", className="text-center mt-4"),  # Main heading
-            html.P([
-                "This application provides a comprehensive platform for tracking stock market performance and related news. Here are some of the key features:"
-            ], className="text-center"),
-            html.Ul([
-                html.Li("Historical Stock Price Tracking and Comparison Track and compare stock prices over historical periods. Perform indexed comparisons of stock prices against major indices, such as the NASDAQ100."),
-                html.Li("Stock Market News Stay updated with the latest news for your selected stocks. Get news articles and updates from reliable financial sources directly within the app."),
-                html.Li("Stock Profit/Loss Simulation Simulate potential profit and loss scenarios for stocks in your watchlist. Evaluate investment strategies by simulating trades based on historical data."),
-                html.Li("Analyst Recommendations Access analyst recommendations for stocks in your portfolio. View buy, sell, and hold ratings from industry experts to make informed decisions."),
-                html.Li("Time Series Forecasting Use advanced time series forecasting models to predict future stock prices. Make data-driven investment decisions based on forecasted trends."),
-                html.Li("Personalized Watchlist Management Register and save your personalized stock watchlist. Monitor your favorite stocks and receive tailored insights."),
-                html.Li("Compare stock performance vs. NASDAQ100, S&P 500 or SMI (Swiss Market Index"),
-                html.Li("Intelligent Financial Chatbot advisor Interact with our intelligent financial chatbot powered by OpenAI's GPT-3.5-turbo. Get instant answers to your stock-related queries and financial advice within the app.")
-            ], className="text-left"),
-            html.P([
-                "It is built using Python Dash and Plotly for interactive data visualization. For more information, visit ",
-                html.A("Dash documentation", href="https://dash.plotly.com/", target="_blank"),
-                "."
-            ], className="text-center")
-        ], className="mx-auto", style={"max-width": "600px"}))
-    ]),
-    html.H2("Why choose MyStocks?", className="text-center mt-4"), 
-     html.P([
-                "Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. Real-Time Updates: Stay informed with up-to-date news and market data."
-            ], className="text-center"),
-    dbc.Row([
-        dbc.Col(html.Figure([
-            html.Img(src='/assets/gif.gif', className="img-fluid mt-4", style={"max-width": "80%", "height": "auto", "display": "block", "margin-left": "auto", "margin-right": "auto"}),  # Center the image
-            html.Figcaption("MyStocks live Demo", className="text-center mt-2")
-        ], className="text-center"), width=12)  # Take full width on all screens
-    ]),
-    dbc.Row([
-        dbc.Col(html.Div([
-            html.H2("About the Author"),
-            html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle mt-4", style={"max-width": "150px", "height": "auto"}),
-            html.P("Josua is a professional with 10+ years experience in pricing, marketing, data analysis and revenue management in the airline, consumer goods and publishing industries. He holds an executive master's in international business combined with a bachelor's degree in engineering and management and two executive certificates in data analysis and visualization. With his strong data-driven and business acumen, he strives to optimize performance and bring value to organizations."
-                    ),
-            html.A(
-            html.Img(src='/assets/linkedin.png', className="img-fluid", style={"max-width": "30px", "height": "auto"}),
-            href="https://www.linkedin.com/in/diggejos", target="_blank", className="mt-4"
-        )
-        ], className="text-center", style={"background-color": "#eeeeeeff", "padding": "10px", "border-radius": "10px"}))
-    ])
+            # Hidden H1 for SEO
+            html.H1("About MyStock Dashboard", className="text-center mt-4", style={"display": "none"}),
 
+            # Section: Why Choose MyStocks?
+            html.Div([
+                html.H2("Why Choose MyStocks?", className="text-center mt-5 mb-3"),
+                html.P("Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. "
+                       "User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. "
+                       "Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. "
+                       "Real-Time Updates: Stay informed with up-to-date news and market data.", className="lead text-center"),
+            ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px"}),
+
+            # Carousel
+            html.Div(carousel, className="mt-5"),
+
+            # Section: Key Features
+            html.Div([
+                html.H3("Key Features", className="text-center mt-5 mb-4"),
+                html.P("This application provides a comprehensive platform for tracking stock market performance and related news. "
+                       "Here are some of the key features:", className="text-center"),
+                html.Ul([
+                    html.Li("Historical Stock Price Tracking: Compare stock prices over historical periods. Perform indexed comparisons against major indices."),
+                    html.Li("Stock Market News: Stay updated with the latest news for your selected stocks from reliable sources."),
+                    html.Li("Profit/Loss Simulation: Simulate potential profit and loss scenarios for stocks in your watchlist."),
+                    html.Li("Analyst Recommendations: Access buy, sell, and hold ratings from industry experts."),
+                    html.Li("Time Series Forecasting: Predict future stock prices using advanced forecasting models."),
+                    html.Li("Personalized Watchlist: Register and save your stock watchlist to monitor your favorite stocks."),
+                    html.Li("Stock Performance Comparison: Compare stock performance vs. NASDAQ100, S&P 500, or SMI."),
+                    html.Li("Intelligent Financial Chatbot: Get instant answers to your stock-related queries."),
+                ], className="text-left lead"),
+            ], style={"padding": "20px", "background-color": "#ffffff", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
+
+            # Section: About the Author
+            html.Div([
+                html.H3("About the Author", className="text-center mt-5 mb-4"),
+                dbc.Row([
+                    dbc.Col(html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle shadow-sm", style={"max-width": "150px", "margin": "auto"}), width=12, lg=4),
+                    dbc.Col(html.Div([
+                        html.P("Josua is a professional with 10+ years of experience in pricing, marketing, data analysis, and revenue management. "
+                               "He holds an executive master's degree in international business and a bachelor's degree in engineering and management. "
+                               "He also has two executive certificates in data analysis and visualization. With a strong data-driven approach and business acumen, "
+                               "he strives to optimize performance and bring value to organizations.", className="lead"),
+                        html.A(html.Img(src='/assets/linkedin.png', style={"max-width": "30px", "margin-top": "10px"}),
+                               href="https://www.linkedin.com/in/diggejos", target="_blank"),
+                    ]), width=12, lg=8),
+                ], align="center", justify="center", className="mt-4 mb-4"),
+            ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
+        ], className="mx-auto", style={"max-width": "900px"}))
+    ]),
 ], fluid=True)
 
 def fetch_news(api_key, symbols):
@@ -1300,46 +1406,149 @@ def validate_password(password):
     return None
 
 @app.callback(
-    [Output('login-output', 'children'),
-     Output('login-status', 'data', allow_duplicate=True),
+    [Output('login-status', 'data', allow_duplicate=True),
+     Output('login-username-store', 'data', allow_duplicate=True),
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
-     Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-password', 'value')],
+     Output('profile-link', 'style', allow_duplicate=True)],  # Add output for profile link
     [Input('login-button', 'n_clicks')],
-    [State('url', 'pathname'),
-     State('login-username', 'value'),
+    [State('login-username', 'value'),
      State('login-password', 'value')],
     prevent_initial_call=True
 )
-def handle_login(login_clicks, pathname, username, password):
-    if pathname != '/login':
-        raise PreventUpdate  # Prevent the callback from running if not on the login page
-
+def handle_login(login_clicks, username, password):
     if login_clicks:
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password, password):
             session['logged_in'] = True  # Store login status in session
             session['username'] = username  # Store username in session
-            return (dbc.Alert("Login successful!", color="success"),
-                    True,
-                    {"display": "none"},
-                    {"display": "block"},
-                    username,  # Save the username in the store
-                    None)  # Clear password input
+            return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"})
         else:
-            return (dbc.Alert("Invalid username or password.", color="danger"),
-                    False,
-                    {"display": "block"},
-                    {"display": "none"},
-                    dash.no_update,
-                    None)
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"})
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+@app.callback(
+    [Output('profile-username', 'value'),
+     Output('profile-email', 'value')],
+    [Input('url', 'pathname')],
+    [State('login-status', 'data'),
+     State('login-username-store', 'data')]
+)
+def display_profile(pathname, login_status, username):
+    if pathname == '/profile' and login_status and username:
+        user = User.query.filter_by(username=username).first()
+        if user:
+            return user.username, user.email
+    raise PreventUpdate
+
+@app.callback(
+    [Output('profile-username', 'disabled'),
+     Output('profile-email', 'disabled'),
+     Output('profile-current-password', 'disabled'),
+     Output('profile-password', 'disabled'),
+     Output('profile-confirm-password', 'disabled'),
+     Output('edit-profile-button', 'style'),
+     Output('save-profile-button', 'style'),
+     Output('cancel-edit-button', 'style'),
+     Output('profile-req-length', 'style'),
+     Output('profile-req-uppercase', 'style'),
+     Output('profile-req-lowercase', 'style'),
+     Output('profile-req-digit', 'style'),
+     Output('profile-req-special', 'style'),
+     Output('profile-output', 'children')],
+    [Input('edit-profile-button', 'n_clicks'),
+     Input('save-profile-button', 'n_clicks'),
+     Input('cancel-edit-button', 'n_clicks')],
+    [State('profile-username', 'value'),
+     State('profile-email', 'value'),
+     State('profile-current-password', 'value'),
+     State('profile-password', 'value'),
+     State('profile-confirm-password', 'value'),
+     State('login-username-store', 'data')]
+)
+def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, email, current_password, new_password, confirm_password, current_username):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == 'edit-profile-button':
+        # Enable editing
+        return (False, False, False, False, False,
+                {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                "")
+
+    elif triggered_id == 'save-profile-button':
+        # Save logic
+        if not username or not email:
+            return (False, False, False, False, False,
+                    {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
+                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                    dbc.Alert("Username and Email are required.", color="danger"))
+        
+        # Verify the current password before allowing any password change
+        user = User.query.filter_by(username=current_username).first()
+        if user and not bcrypt.check_password_hash(user.password, current_password):
+            return (False, False, False, False, False,
+                    {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    dbc.Alert("Current password is incorrect.", color="danger"))
+
+        if new_password and new_password != confirm_password:
+            return (False, False, False, False, False,
+                    {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    dbc.Alert("New passwords do not match.", color="danger"))
+
+        # Validate the new password
+        if new_password:
+            password_error = validate_password(new_password)
+            if password_error:
+                return (False, False, False, False, False,
+                        {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                        {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                        dbc.Alert(password_error, color="danger"))
+        
+        # Update user information
+        if user:
+            user.username = username
+            user.email = email
+            if new_password:
+                user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+            db.session.commit()
+            session['username'] = username
+            return (True, True, True, True, True,
+                    {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
+                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                    dbc.Alert("Profile updated successfully!", color="success"))
+        
+    elif triggered_id == 'cancel-edit-button':
+        # Cancel editing
+        return (True, True, True, True, True,
+                {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
+                {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                "")
+
+    raise PreventUpdate
+
+@app.callback(
+    [Output('profile-req-length', 'className'),
+     Output('profile-req-uppercase', 'className'),
+     Output('profile-req-lowercase', 'className'),
+     Output('profile-req-digit', 'className'),
+     Output('profile-req-special', 'className')],
+    Input('profile-password', 'value')
+)
+def update_profile_password_requirements(password):
+    return update_password_requirements(password)
 
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
      Output('login-link', 'style', allow_duplicate=True),
-     Output('logout-button', 'style', allow_duplicate=True)],
+     Output('logout-button', 'style', allow_duplicate=True),
+     Output('profile-link', 'style', allow_duplicate=True)],  # Add output for profile link
     [Input('logout-button', 'n_clicks')],
     prevent_initial_call=True
 )
@@ -1347,14 +1556,16 @@ def handle_logout(logout_clicks):
     if logout_clicks:
         session.pop('logged_in', None)  # Remove login status from session
         session.pop('username', None)  # Remove username from session
-        return False, {"display": "block"}, {"display": "none"}
-    return dash.no_update, dash.no_update, dash.no_update
+        return False, {"display": "block"}, {"display": "none"}, {"display": "none"}
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
 
 @app.callback(
     [Output('login-status', 'data'),
      Output('login-username-store', 'data'),
      Output('login-link', 'style'),
-     Output('logout-button', 'style')],
+     Output('logout-button', 'style'),
+     Output('profile-link', 'style')],  # Add output for profile link
     [Input('url', 'pathname')]
 )
 def check_session(pathname):
@@ -1362,9 +1573,9 @@ def check_session(pathname):
     username = session.get('username', None)
 
     if logged_in and username:
-        return True, username, {"display": "none"}, {"display": "block"}
+        return True, username, {"display": "none"}, {"display": "block"}, {"display": "block"}  # Show profile link
     else:
-        return False, None, {"display": "block"}, {"display": "none"}
+        return False, None, {"display": "block"}, {"display": "none"}, {"display": "none"}  # Hide profile link
 
 
 @app.callback(
@@ -1458,6 +1669,7 @@ def generate_watchlist_table(watchlist):
         size="sm",
     )
 
+
 @app.callback(
     [Output('save-portfolio-button', 'children'),
      Output('login-overlay', 'is_open', allow_duplicate=True)],
@@ -1533,25 +1745,28 @@ def load_user_theme(login_status, username):
      Output('indexed-comparison-graph', 'figure'),
      Output('indexed-comparison-stock-dropdown', 'options'),
      Output('indexed-comparison-stock-dropdown', 'value'),
+     Output('prices-stock-dropdown', 'options'),  # Add output for prices dropdown
+     Output('prices-stock-dropdown', 'value'),    # Add output for prices dropdown
      Output('individual-stock-input', 'value')],
     [Input('add-stock-button', 'n_clicks'),
      Input('reset-stocks-button', 'n_clicks'),
-     Input('refresh-data-icon', 'n_clicks'),  # New input for refresh button
+     Input('refresh-data-icon', 'n_clicks'),
      Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks'),
      Input('chart-type', 'value'),
      Input('movag_input', 'value'),
      Input('benchmark-selection', 'value'),
      Input('predefined-ranges', 'value'),
-     Input('indexed-comparison-stock-dropdown', 'value')],
+     Input('indexed-comparison-stock-dropdown', 'value'),
+     Input('prices-stock-dropdown', 'value')],  # Add input for prices dropdown
     [State('individual-stock-input', 'value'),
      State('individual-stocks-store', 'data'),
      State('plotly-theme-store', 'data')],
     prevent_initial_call=True
 )
-def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, new_stock, individual_stocks, plotly_theme):
+def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, new_stock, individual_stocks, plotly_theme):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     trigger = ctx.triggered[0]['prop_id']
 
@@ -1582,6 +1797,11 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     else:
         selected_comparison_stocks = individual_stocks[:5]  # Select up to 5 stocks by default
 
+    if selected_prices_stocks:
+        selected_prices_stocks = [stock for stock in selected_prices_stocks if stock in individual_stocks]
+    else:
+        selected_prices_stocks = individual_stocks[:5]  # Select up to 5 stocks by default
+
     if not individual_stocks and benchmark_selection == 'None':
         return (
             individual_stocks,
@@ -1592,6 +1812,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             px.line(title="Please add at least one stock symbol.", template=plotly_theme),
             options,
             selected_comparison_stocks,
+            options,  # prices dropdown options
+            selected_prices_stocks,  # prices dropdown value
             ""
         )
 
@@ -1640,6 +1862,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
             options,
             selected_comparison_stocks,
+            options,  # prices dropdown options
+            selected_prices_stocks,  # prices dropdown value
             ""
         )
 
@@ -1703,8 +1927,9 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     else:
         fig_indexed = px.line(title="No data available.", template=plotly_theme)
 
-    # Determine the number of rows needed for the stock graph
-    num_stocks = len(individual_stocks)
+    # Filter for selected prices stocks
+    df_prices_filtered = df_all[df_all['Stock'].isin(selected_prices_stocks)]
+    num_stocks = len(selected_prices_stocks)
     graph_height = 400 * num_stocks  # Each facet should be 400px in height
 
     # Create the stock graph with the correct layout
@@ -1712,14 +1937,14 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         rows=num_stocks,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.02,  # Keep this small to maintain consistent spacing
-        subplot_titles=individual_stocks,
+        vertical_spacing=0.02,
+        subplot_titles=selected_prices_stocks,
         row_heights=[1] * num_stocks,
         specs=[[{"secondary_y": True}]] * num_stocks
     )
 
-    for i, symbol in enumerate(individual_stocks):
-        df_stock = df_all[df_all['Stock'] == symbol]
+    for i, symbol in enumerate(selected_prices_stocks):
+        df_stock = df_prices_filtered[df_prices_filtered['Stock'] == symbol]
 
         if chart_type == 'line':
             fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
@@ -1803,7 +2028,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     news_content = fetch_news(api_key, individual_stocks)
 
     return individual_stocks, generate_watchlist_table(individual_stocks), fig_stock, {
-        'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, options, selected_comparison_stocks, ""
+        'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, options, selected_comparison_stocks, options, selected_prices_stocks, ""
+
 
 
 @app.callback(Output('simulation-result', 'children'),
@@ -1860,7 +2086,6 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
             ])
     return dash.no_update
 
-
 @app.callback(
     [Output('page-content', 'children'),
      Output('register-link', 'style')],
@@ -1874,8 +2099,11 @@ def display_page(pathname, login_status):
         return register_layout, {"display": "block"} if not login_status else {"display": "none"}
     elif pathname == '/login' and not login_status:
         return login_layout, {"display": "block"} if not login_status else {"display": "none"}
+    elif pathname == '/profile' and login_status:
+        return profile_layout, {"display": "none"}
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}
+
 
 
 @app.callback(
