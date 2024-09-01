@@ -23,18 +23,13 @@ Monitor your favorite stocks and receive tailored insights.
 7. Intelligent Financial Chatbot advisor
 Interact with our intelligent financial chatbot powered by OpenAI's GPT-3.5-turbo.
 Get instant answers to your stock-related queries and financial advice within the app.
-Why Choose MyStocks?
+
+## Why Choose MyStocks?
 Comprehensive Data: Access to a wide range of financial data and tools for better decision-making.
 User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate.
 Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge.
 Real-Time Updates: Stay informed with up-to-date news and market data.
-Getting Started
-Installation: Instructions on how to install MyStocks on your system.
-Usage: A guide to using the different features of the application.
-Contributing: Information on how to contribute to the development of MyStocks.
-Support: Where to get help or report issues.
-License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+
 
 ## Keywords
 Stock Market Analysis
