@@ -1638,19 +1638,19 @@ def generate_watchlist_table(watchlist):
             color = 'green' if change_percent > 0 else 'red' if change_percent < 0 else 'black'
             rows.append(
                 html.Tr([
-                    html.Td(dbc.Button(stock, id={'type': 'stock-symbol', 'index': i}, color="link")),
-                    html.Td(f"{latest_close:.2f}"),
-                    html.Td(f"{change_percent:.2f}%", style={"color": color}),
-                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                    html.Td(dbc.Button(stock, id={'type': 'stock-symbol', 'index': i}, color="link"), style={"verticalAlign": "middle"}),
+                    html.Td(f"{latest_close:.2f}", style={"verticalAlign": "middle"}),
+                    html.Td(f"{change_percent:.2f}%", style={"color": color, "verticalAlign": "middle"}),
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}), style={"verticalAlign": "middle"})
                 ])
             )
         else:
             rows.append(
                 html.Tr([
-                    html.Td(stock),
-                    html.Td("N/A"),
-                    html.Td("N/A"),
-                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}))
+                    html.Td(stock, style={"verticalAlign": "middle"}),
+                    html.Td("N/A", style={"verticalAlign": "middle"}),
+                    html.Td("N/A", style={"verticalAlign": "middle"}),
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}), style={"verticalAlign": "middle"})
                 ])
             )
 
@@ -1658,7 +1658,7 @@ def generate_watchlist_table(watchlist):
         children=[
             html.Thead(html.Tr([html.Th("Symbol"), 
                                 html.Th("Latest"), 
-                                html.Th("Change (%)"), 
+                                html.Th("daily %"), 
                                 html.Th("")])),
             html.Tbody(rows)
         ],
@@ -1666,8 +1666,9 @@ def generate_watchlist_table(watchlist):
         hover=True,
         responsive=True,
         striped=True,
-        size="sm",
+        size="sm"
     )
+
 
 
 @app.callback(
