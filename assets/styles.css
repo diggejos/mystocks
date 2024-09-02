@@ -270,5 +270,25 @@
     text-align: center; /* Ensure copyright text is centered */
 }
 
+/* Style for the checkmark list */
+.checked-list {
+    list-style-type: none; /* Remove the default bullets */
+    padding-left: 0; /* Remove left padding */
+}
+
+.checked-list li {
+    position: relative; /* Position the checkmark */
+    padding-left: 25px; /* Add padding to the left for the checkmark */
+    margin-bottom: 10px; /* Space between items */
+}
+
+.checked-list li::before {
+    content: "✔"; /* Unicode for checkmark */
+    color: green; /* Set the color of the checkmark */
+    position: absolute; /* Position the checkmark absolutely */
+    left: 0; /* Align it to the left */
+    top: 0; /* Align it to the top */
+    font-size: 1.2em; /* Slightly larger checkmark */
+}
 
 
