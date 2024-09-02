@@ -181,6 +181,27 @@ chatbot_modal = dbc.Modal(
     is_open=False,  # Start closed
 )
 
+footer = html.Footer([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.H5("Direction", style={"display": "none"}),  # Hide the heading
+                html.Ul([
+                    html.Li(html.A("About MyStocks", href="/about", className="footer-link")),
+                    html.Li(html.A("Contact Us", href="mailto:diggelmann.josua@gmail.com?subject=mystocks%20request", className="footer-link")),
+                    html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
+                ], className="list-unstyled")
+            ], md=12, className="d-flex justify-content-center")  # Center the column
+        ]),
+        dbc.Row([
+            dbc.Col([
+                html.P("© 2024 MyStocks. All rights reserved.", className="text-center")
+            ], className="d-flex justify-content-center")
+        ])
+    ], fluid=True)
+], className="footer")
+
+
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=[]),
