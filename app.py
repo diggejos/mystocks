@@ -2167,7 +2167,7 @@ def toggle_filters_visibility(n_clicks, is_open):
 
 app.index_string = '''
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         {%metas%}
         <title>Stocks monitoring and recommendation made easy - MyStocks</title>
