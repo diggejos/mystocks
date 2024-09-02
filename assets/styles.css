@@ -187,76 +187,38 @@
 /* Custom CSS for carousel captions */
 /* General carousel caption styling */
 .custom-carousel .carousel-caption {
-    position: absolute;
-    bottom: 20px; /* Move the caption closer to the bottom of the image */
+    position: relative; /* Make the caption relative to its normal position */
+    bottom: 0; /* Align caption to the bottom */
     left: 50%;
     transform: translateX(-50%);
     width: 90%; /* Limit the width of the caption */
-    background-color: rgba(0, 0, 0, 0.1); /* Semi-transparent background for better readability */
+    background-color: rgba(0, 0, 0, 0.3); /* Semi-transparent background for better readability */
     padding: 10px; /* Padding inside the caption box */
     color: white;
     text-align: center;
     font-size: 1rem; /* Adjust font size */
+    margin-top: 10px; /* Add margin to space out the caption from the image */
 }
 
 /* Mobile-specific styling */
 @media (max-width: 768px) {
     .custom-carousel .carousel-caption {
-        font-size: 0.5rem; /* Slightly smaller font size on mobile */
-        bottom: 0px; /* Move caption closer to the bottom edge */
-        padding: 0px; /* Less padding on mobile */
+        position: relative;
+        bottom: 0; /* Ensure the caption is above the indicator */
+        margin-top: 0; /* Remove margin */
+        margin-bottom: 10px; /* Add margin below the caption */
+        font-size: 0.8rem; /* Slightly smaller font size on mobile */
+        padding: 5px; /* Less padding on mobile */
+    }
+
+    .custom-carousel .carousel-indicators {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
     }
 }
 
-/* Footer Container */
-.footer {
-    background-color: #f8f9fa; /* Light grey background color */
-    color: #343a40; /* Darker text color for readability */
-    padding: 20px 0; /* Reduce top and bottom padding */
-    font-size: 14px; /* Smaller font size */
-    text-align: center; /* Center text in the footer */
-}
-
-/* Links in the Footer */
-.footer a.footer-link {
-    color: #343a40; /* Darker text color for links */
-    text-decoration: none; /* Remove underline */
-    transition: color 0.3s ease; 
-}
-
-.footer a.footer-link:hover {
-    color: #007bff; /* Bootstrap primary color on hover */
-}
-
-/* Footer Headings */
-.footer h5 {
-    font-size: 16px; /* Slightly larger font for headings */
-    margin-bottom: 15px; /* Space below headings */
-    font-weight: bold; /* Make headings bold */
-    color: #343a40; /* Darker heading color */
-}
-
-/* Footer Lists */
-.footer ul {
-    padding: 0;
-    list-style-type: none; /* Remove list bullets */
-    display: inline-block; /* Make the list inline */
-    margin: 0 auto; /* Center the list */
-}
-
-/* Center List Items */
-.footer ul li {
-    margin-bottom: 8px; /* Reduce space between list items */
-    text-align: center; /* Center each list item */
-}
-
-/* Footer Bottom Row */
-.footer .text-center {
-    font-size: 13px; /* Small text for copyright */
-    margin-top: 15px; /* Space above the copyright text */
-    color: #6c757d; /* Muted grey color for copyright */
-    text-align: center; /* Ensure copyright text is centered */
-}
 
 /* Footer Container */
 .footer {
@@ -307,60 +269,6 @@
     color: #6c757d; /* Muted grey color for copyright */
     text-align: center; /* Ensure copyright text is centered */
 }
-
-/* Footer Container */
-.footer {
-    background-color: #f8f9fa; /* Light grey background color */
-    color: #343a40; /* Darker text color for readability */
-    padding: 20px 0; /* Reduce top and bottom padding */
-    font-size: 14px; /* Smaller font size */
-    text-align: center; /* Center text in the footer */
-}
-
-/* Links in the Footer */
-.footer a.footer-link {
-    color: #343a40; /* Darker text color for links */
-    text-decoration: none; /* Remove underline */
-    transition: color 0.3s ease; 
-}
-
-.footer a.footer-link:hover {
-    color: #007bff; /* Bootstrap primary color on hover */
-}
-
-/* Footer Headings */
-.footer h5 {
-    font-size: 16px; /* Slightly larger font for headings */
-    margin-bottom: 15px; /* Space below headings */
-    font-weight: bold; /* Make headings bold */
-    color: #343a40; /* Darker heading color */
-}
-
-/* Footer Lists */
-.footer ul {
-    padding: 0;
-    list-style-type: none; /* Remove list bullets */
-    display: inline-block; /* Make the list inline */
-    margin: 0 auto; /* Center the list */
-}
-
-/* Center List Items */
-.footer ul li {
-    margin-bottom: 8px; /* Reduce space between list items */
-    text-align: center; /* Center each list item */
-}
-
-/* Footer Bottom Row */
-.footer .text-center {
-    font-size: 13px; /* Small text for copyright */
-    margin-top: 15px; /* Space above the copyright text */
-    color: #6c757d; /* Muted grey color for copyright */
-    text-align: center; /* Ensure copyright text is centered */
-}
-
-
-
-
 
 
 
