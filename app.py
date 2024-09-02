@@ -220,7 +220,8 @@ app.layout = html.Div([
     DeferScript(src='assets/script.js'),
     floating_chatbot_button,  
     chatbot_modal,
-    financials_modal
+    financials_modal,
+    footer
 ])
 
 dashboard_layout = dbc.Container([
