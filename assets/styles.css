@@ -207,3 +207,160 @@
         padding: 0px; /* Less padding on mobile */
     }
 }
+
+/* Footer Container */
+.footer {
+    background-color: #f8f9fa; /* Light grey background color */
+    color: #343a40; /* Darker text color for readability */
+    padding: 20px 0; /* Reduce top and bottom padding */
+    font-size: 14px; /* Smaller font size */
+    text-align: center; /* Center text in the footer */
+}
+
+/* Links in the Footer */
+.footer a.footer-link {
+    color: #343a40; /* Darker text color for links */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.3s ease; 
+}
+
+.footer a.footer-link:hover {
+    color: #007bff; /* Bootstrap primary color on hover */
+}
+
+/* Footer Headings */
+.footer h5 {
+    font-size: 16px; /* Slightly larger font for headings */
+    margin-bottom: 15px; /* Space below headings */
+    font-weight: bold; /* Make headings bold */
+    color: #343a40; /* Darker heading color */
+}
+
+/* Footer Lists */
+.footer ul {
+    padding: 0;
+    list-style-type: none; /* Remove list bullets */
+    display: inline-block; /* Make the list inline */
+    margin: 0 auto; /* Center the list */
+}
+
+/* Center List Items */
+.footer ul li {
+    margin-bottom: 8px; /* Reduce space between list items */
+    text-align: center; /* Center each list item */
+}
+
+/* Footer Bottom Row */
+.footer .text-center {
+    font-size: 13px; /* Small text for copyright */
+    margin-top: 15px; /* Space above the copyright text */
+    color: #6c757d; /* Muted grey color for copyright */
+    text-align: center; /* Ensure copyright text is centered */
+}
+
+/* Footer Container */
+.footer {
+    background-color: #f8f9fa; /* Light grey background color */
+    color: #343a40; /* Darker text color for readability */
+    padding: 20px 0; /* Reduce top and bottom padding */
+    font-size: 14px; /* Smaller font size */
+    text-align: center; /* Center text in the footer */
+}
+
+/* Links in the Footer */
+.footer a.footer-link {
+    color: #343a40; /* Darker text color for links */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.3s ease; 
+}
+
+.footer a.footer-link:hover {
+    color: #007bff; /* Bootstrap primary color on hover */
+}
+
+/* Footer Headings */
+.footer h5 {
+    font-size: 16px; /* Slightly larger font for headings */
+    margin-bottom: 15px; /* Space below headings */
+    font-weight: bold; /* Make headings bold */
+    color: #343a40; /* Darker heading color */
+}
+
+/* Footer Lists */
+.footer ul {
+    padding: 0;
+    list-style-type: none; /* Remove list bullets */
+    display: inline-block; /* Make the list inline */
+    margin: 0 auto; /* Center the list */
+}
+
+/* Center List Items */
+.footer ul li {
+    margin-bottom: 8px; /* Reduce space between list items */
+    text-align: center; /* Center each list item */
+}
+
+/* Footer Bottom Row */
+.footer .text-center {
+    font-size: 13px; /* Small text for copyright */
+    margin-top: 15px; /* Space above the copyright text */
+    color: #6c757d; /* Muted grey color for copyright */
+    text-align: center; /* Ensure copyright text is centered */
+}
+
+/* Footer Container */
+.footer {
+    background-color: #f8f9fa; /* Light grey background color */
+    color: #343a40; /* Darker text color for readability */
+    padding: 20px 0; /* Reduce top and bottom padding */
+    font-size: 14px; /* Smaller font size */
+    text-align: center; /* Center text in the footer */
+}
+
+/* Links in the Footer */
+.footer a.footer-link {
+    color: #343a40; /* Darker text color for links */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.3s ease; 
+}
+
+.footer a.footer-link:hover {
+    color: #007bff; /* Bootstrap primary color on hover */
+}
+
+/* Footer Headings */
+.footer h5 {
+    font-size: 16px; /* Slightly larger font for headings */
+    margin-bottom: 15px; /* Space below headings */
+    font-weight: bold; /* Make headings bold */
+    color: #343a40; /* Darker heading color */
+}
+
+/* Footer Lists */
+.footer ul {
+    padding: 0;
+    list-style-type: none; /* Remove list bullets */
+    display: inline-block; /* Make the list inline */
+    margin: 0 auto; /* Center the list */
+}
+
+/* Center List Items */
+.footer ul li {
+    margin-bottom: 8px; /* Reduce space between list items */
+    text-align: center; /* Center each list item */
+}
+
+/* Footer Bottom Row */
+.footer .text-center {
+    font-size: 13px; /* Small text for copyright */
+    margin-top: 15px; /* Space above the copyright text */
+    color: #6c757d; /* Muted grey color for copyright */
+    text-align: center; /* Ensure copyright text is centered */
+}
+
+
+
+
+
+
+
