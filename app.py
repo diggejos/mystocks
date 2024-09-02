@@ -26,11 +26,6 @@ from flask_session import Session
 import dash_table
 from flask import send_from_directory
 
-# load robots.txt file for SEO
-@server.route('/robots.txt')
-def serve_robots_txt():
-    return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
-
 
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
@@ -52,6 +47,12 @@ themes = {
 # Initialize the Dash app with a default Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA])
 server = app.server
+
+# load robots.txt file for SEO
+@server.route('/robots.txt')
+def serve_robots_txt():
+    return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
+
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
