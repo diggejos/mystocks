@@ -257,18 +257,21 @@ dashboard_layout = dbc.Container([
                             dcc.Dropdown(
                                 id='predefined-ranges',
                                 options=[
-                                    {'label': 'Year to Date', 'value': 'YTD'},
+                                    {'label': 'Intraday', 'value': '1D_15m'},
+                                    {'label': 'Last 5D', 'value': '5D_15m'},
                                     {'label': 'Last Month', 'value': '1M'},
-                                    {'label': 'Last 3 Months', 'value': '3M'},
-                                    {'label': 'Last 12 Months', 'value': '12M'},
-                                    {'label': 'Last 24 Months', 'value': '24M'},
-                                    {'label': 'Last 5 Years', 'value': '5Y'},
-                                    {'label': 'Last 10 Years', 'value': '10Y'}
+                                    {'label': 'Last 3M', 'value': '3M'},
+                                    {'label': 'Year to Date', 'value': 'YTD'},
+                                    {'label': 'Last 12M', 'value': '12M'},
+                                    {'label': 'Last 24M', 'value': '24M'},
+                                    {'label': 'Last 5Y', 'value': '5Y'},
+                                    {'label': 'Last 10Y', 'value': '10Y'}
                                 ],
-                                value='12M',
+                                value='12M',  # Default selection
                                 className='form-control',
                             )
                         ], className='mb-3'),
+
                         
                         html.Div(id='watchlist-summary', className='mb-3')
                     ])
@@ -282,7 +285,6 @@ dashboard_layout = dbc.Container([
                 id='tabs',
                 value='📈 Prices',
                 children=[
-                    
                     dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
                         dbc.Card(
                             dbc.CardBody([
@@ -324,7 +326,6 @@ dashboard_layout = dbc.Container([
                             ])
                         )
                     ]),
-
                     dcc.Tab(label='📰 News', value='📰 News', children=[
                         dbc.Card(
                             dbc.CardBody([
@@ -493,6 +494,16 @@ dashboard_layout = dbc.Container([
             )
         ], width=12, md=8,xs=12)
     ], className='mb-4'),
+    dbc.Row([
+        dbc.Col([
+            html.H3("Welcome to Your Stock Monitoring Dashboard", className="text-center mb-4" ,style={"display": "none"}),
+            html.P([
+                "Track and analyze your favorite stocks with real-time data, forecasts, and personalized recommendations. ",
+                html.A("Learn more about the features.", href="/about", className="text-primary")
+            ], className="text-center")
+        ], width=12)
+    ], className="mb-4")
+                                   
 ], fluid=True)
 
 profile_layout = dbc.Container([
@@ -549,7 +560,8 @@ register_layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H1("📝 Register", className="text-center"),
+                    # New h3 paragraph with a sentence and link to the About page
+                    html.H1("📝 Register", className="text-center mt-4"),
                     dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
                     dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
                     dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
@@ -561,14 +573,22 @@ register_layout = dbc.Container([
                         html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='req-special', className='text-muted')
                     ], className='mb-3'),
                     dcc.Input(id='confirm_password', type='password', placeholder='Confirm Password', className='form-control mb-3'),
-                    dbc.Button("Register", id='register-button', color='primary', className='mt-2'),
-                    html.Div(id='register-output', className='mt-3')
+                    dbc.Button("Register", id='register-button', color='primary', className='mt-2 w-100'),
+                    html.Div(id='register-output', className='mt-3'),
                 ])
             ])
         ], width=12, md=6, className="mx-auto")
+    ]),
+    dbc.Row([
+        dbc.Col([
+            html.H3("Why Register?", className="text-center mt-5 mb-4"),  # Add mt-5 for space above
+            html.P([
+                "Registering allows you to save your stock watchlist, access personalized recommendations, and more. ",
+                html.A("Learn more on the About page.", href="/about", className="text-primary")
+            ], className="text-center")
+        ], width=12, md=6, className="mx-auto")
     ])
 ], fluid=True)
-
 # Layout for Login page
 login_layout = dbc.Container([
     dbc.Row([
@@ -587,10 +607,18 @@ login_layout = dbc.Container([
                 ])
             ])
         ], width=12, md=6, className="mx-auto")
+    ]),
+    dbc.Row([
+        dbc.Col([
+            html.H3("Welcome to MyStocks Dashboard", className="text-center mt-5 mb-4"),  # Add mt-5 for space above
+            html.P([
+                "Learn more about the application on the ",
+                html.A("About page.", href="/about", className="text-primary")
+            ], className="text-center")
+        ], width=12, md=6, className="mx-auto")
     ])
 ], fluid=True)
 
-# Layout for the About page
 # Enhanced Carousel Component
 carousel = dbc.Carousel(
     items=[
@@ -648,13 +676,13 @@ about_layout = dbc.Container([
             ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px"}),
 
             # Carousel
-            html.Div(carousel, className="mt-5"),
+            html.Div(carousel, className="mt-5 mb-3"),
 
             # Section: Key Features
             html.Div([
-                html.H3("Key Features", className="text-center mt-5 mb-4"),
+                html.H3("Key Features", className="text-center mt-5 mb-3"),
                 html.P("This application provides a comprehensive platform for tracking stock market performance and related news. "
-                       "Here are some of the key features:", className="text-center"),
+                       "Here are some of the key features:", className="text-center", style={"display": "none"}),
                 html.Ul([
                     html.Li("Historical Stock Price Tracking: Compare stock prices over historical periods. Perform indexed comparisons against major indices."),
                     html.Li("Stock Market News: Stay updated with the latest news for your selected stocks from reliable sources."),
@@ -664,24 +692,25 @@ about_layout = dbc.Container([
                     html.Li("Personalized Watchlist: Register and save your stock watchlist to monitor your favorite stocks."),
                     html.Li("Stock Performance Comparison: Compare stock performance vs. NASDAQ100, S&P 500, or SMI."),
                     html.Li("Intelligent Financial Chatbot: Get instant answers to your stock-related queries."),
-                ], className="text-left lead"),
+                    html.Li("Save and customize your personal watchlist."),
+                ], className="checked-list"),
             ], style={"padding": "20px", "background-color": "#ffffff", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
 
-            # Section: About the Author
-            html.Div([
-                html.H3("About the Author", className="text-center mt-5 mb-4"),
-                dbc.Row([
-                    dbc.Col(html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle shadow-sm", style={"max-width": "150px", "margin": "auto"}), width=12, lg=4),
-                    dbc.Col(html.Div([
-                        html.P("Josua is a professional with 10+ years of experience in pricing, marketing, data analysis, and revenue management. "
-                               "He holds an executive master's degree in international business and a bachelor's degree in engineering and management. "
-                               "He also has two executive certificates in data analysis and visualization. With a strong data-driven approach and business acumen, "
-                               "he strives to optimize performance and bring value to organizations.", className="lead"),
-                        html.A(html.Img(src='/assets/linkedin.png', style={"max-width": "30px", "margin-top": "10px"}),
-                               href="https://www.linkedin.com/in/diggejos", target="_blank"),
-                    ]), width=12, lg=8),
-                ], align="center", justify="center", className="mt-4 mb-4"),
-            ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
+            # # Section: About the Author
+            # html.Div([
+            #     html.H3("About the Author", className="text-center mt-5 mb-4"),
+            #     dbc.Row([
+            #         # dbc.Col(html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle shadow-sm", style={"max-width": "150px", "margin": "auto"}), width=12, lg=4),
+            #         dbc.Col(html.Div([
+            #             html.P("Josua is a professional with 10+ years of experience in pricing, marketing, data analysis, and revenue management. "
+            #                    "He holds an executive master's degree in international business and a bachelor's degree in engineering and management. "
+            #                    "He also has two executive certificates in data analysis and visualization. With a strong data-driven approach and business acumen, "
+            #                    "he strives to optimize performance and bring value to organizations.", className="lead"),
+            #             html.A(html.Img(src='/assets/linkedin.png', style={"max-width": "30px", "margin-top": "10px"}),
+            #                    href="https://www.linkedin.com/in/diggejos", target="_blank"),
+            #         ]), width=12, lg=8),
+            #     ], align="center", justify="center", className="mt-4 mb-4"),
+            # ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
         ], className="mx-auto", style={"max-width": "900px"}))
     ]),
 ], fluid=True)
@@ -1771,6 +1800,9 @@ def load_user_theme(login_status, username):
             return user.theme
     return 'MATERIA'  # Default theme if none is found
 
+from dash import dcc, html, Input, Output, State, callback_context, ALL
+from datetime import datetime, timedelta
+
 @app.callback(
     [Output('individual-stocks-store', 'data'),
      Output('watchlist-summary', 'children'),
@@ -1780,8 +1812,8 @@ def load_user_theme(login_status, username):
      Output('indexed-comparison-graph', 'figure'),
      Output('indexed-comparison-stock-dropdown', 'options'),
      Output('indexed-comparison-stock-dropdown', 'value'),
-     Output('prices-stock-dropdown', 'options'),  # Add output for prices dropdown
-     Output('prices-stock-dropdown', 'value'),    # Add output for prices dropdown
+     Output('prices-stock-dropdown', 'options'),
+     Output('prices-stock-dropdown', 'value'),
      Output('individual-stock-input', 'value')],
     [Input('add-stock-button', 'n_clicks'),
      Input('reset-stocks-button', 'n_clicks'),
@@ -1792,14 +1824,14 @@ def load_user_theme(login_status, username):
      Input('benchmark-selection', 'value'),
      Input('predefined-ranges', 'value'),
      Input('indexed-comparison-stock-dropdown', 'value'),
-     Input('prices-stock-dropdown', 'value')],  # Add input for prices dropdown
+     Input('prices-stock-dropdown', 'value')],
     [State('individual-stock-input', 'value'),
      State('individual-stocks-store', 'data'),
      State('plotly-theme-store', 'data')],
     prevent_initial_call=True
 )
 def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, new_stock, individual_stocks, plotly_theme):
-    ctx = dash.callback_context
+    ctx = callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
@@ -1811,31 +1843,26 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             individual_stocks.append(new_stock)
     elif 'reset-stocks-button' in trigger:
         individual_stocks = []
-        
-    elif 'refresh-data-button' in trigger:
-        # Refresh button clicked, so just update the data
+    elif 'refresh-data-icon' in trigger:
         pass
-    
     elif 'remove-stock' in trigger:
         index_to_remove = json.loads(trigger.split('.')[0])['index']
         if 0 <= index_to_remove < len(individual_stocks):
             individual_stocks.pop(index_to_remove)
 
-    # Ensure benchmark is not treated as an individual stock
     if benchmark_selection in individual_stocks:
         individual_stocks.remove(benchmark_selection)
 
-    # Update dropdown options and values
     options = [{'label': stock, 'value': stock} for stock in individual_stocks]
     if selected_comparison_stocks:
         selected_comparison_stocks = [stock for stock in selected_comparison_stocks if stock in individual_stocks]
     else:
-        selected_comparison_stocks = individual_stocks[:5]  # Select up to 5 stocks by default
+        selected_comparison_stocks = individual_stocks[:5]
 
     if selected_prices_stocks:
         selected_prices_stocks = [stock for stock in selected_prices_stocks if stock in individual_stocks]
     else:
-        selected_prices_stocks = individual_stocks[:5]  # Select up to 5 stocks by default
+        selected_prices_stocks = individual_stocks[:5]
 
     if not individual_stocks and benchmark_selection == 'None':
         return (
@@ -1847,41 +1874,59 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             px.line(title="Please add at least one stock symbol.", template=plotly_theme),
             options,
             selected_comparison_stocks,
-            options,  # prices dropdown options
-            selected_prices_stocks,  # prices dropdown value
+            options,
+            selected_prices_stocks,
             ""
         )
 
     today = pd.to_datetime('today')
 
-    # Determine the start date based on the selected predefined range
-    if predefined_range == 'YTD':
+    if predefined_range == '5D_15m':
+        start_date = today - timedelta(days=5)
+        interval = '15m'
+    elif predefined_range == '1D_15m':
+        start_date = today - timedelta(hours=24)
+        interval = '5m'
+    elif predefined_range == 'YTD':
         start_date = datetime(today.year, 1, 1)
+        interval = '1d'
     elif predefined_range == '1M':
         start_date = today - timedelta(days=30)
+        interval = '1d'
     elif predefined_range == '3M':
         start_date = today - timedelta(days=3 * 30)
+        interval = '1d'
     elif predefined_range == '12M':
         start_date = today - timedelta(days=365)
+        interval = '1d'
     elif predefined_range == '24M':
         start_date = today - timedelta(days=730)
+        interval = '1d'
     elif predefined_range == '5Y':
         start_date = today - timedelta(days=1825)
+        interval = '1d'
     elif predefined_range == '10Y':
         start_date = today - timedelta(days=3650)
+        interval = '1d'
     else:
         start_date = pd.to_datetime('2024-01-01')
+        interval = '1d'
 
     end_date = today
 
     data = []
     for symbol in individual_stocks:
-        df = yf.download(symbol, start=start_date, end=end_date)
+        df = yf.download(symbol, start=start_date, end=end_date, interval=interval)
         if not df.empty:
             df.reset_index(inplace=True)
-            df['Date'] = pd.to_datetime(df['Date'])  # Ensure Date is in datetime format
-            df.set_index('Date', inplace=True)
-            df = df.tz_localize(None)  # Drop any timezone info if not needed
+            if 'Date' in df.columns:
+                df['Date'] = pd.to_datetime(df['Date'])
+                df.set_index('Date', inplace=True)
+            else:
+                df['Datetime'] = pd.to_datetime(df['Datetime'])
+                df.set_index('Datetime', inplace=True)
+
+            df = df.tz_localize(None)
             df['Stock'] = symbol
             df['30D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=30, min_periods=1).mean())
             df['100D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=100, min_periods=1).mean())
@@ -1897,14 +1942,13 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
             options,
             selected_comparison_stocks,
-            options,  # prices dropdown options
-            selected_prices_stocks,  # prices dropdown value
+            options,
+            selected_prices_stocks,
             ""
         )
 
     df_all = pd.concat(data) if data else pd.DataFrame()
 
-    # Create an index for each stock
     indexed_data = {}
     for symbol in individual_stocks:
         if symbol in df_all['Stock'].unique():
@@ -1912,24 +1956,38 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
             indexed_data[symbol] = df_stock[['Index']].rename(columns={"Index": symbol})
 
-    # Add benchmark index to the indexed data if selected
     if benchmark_selection != 'None':
-        benchmark_data = yf.download(benchmark_selection, start=start_date, end=end_date)
+        benchmark_data = yf.download(benchmark_selection, start=start_date, end=end_date, interval=interval)
         if not benchmark_data.empty:
             benchmark_data.reset_index(inplace=True)
             benchmark_data['Index'] = benchmark_data['Close'] / benchmark_data['Close'].iloc[0] * 100
 
-    # Combine all indexed data
     if indexed_data:
         df_indexed = pd.concat(indexed_data, axis=1)
         df_indexed.reset_index(inplace=True)
         df_indexed.columns = ['Date'] + [symbol for symbol in indexed_data.keys()]
         df_indexed['Date'] = pd.to_datetime(df_indexed['Date'], errors='coerce')
+        
+        # Ensure selected_comparison_stocks are present in df_indexed columns
+        available_stocks = [stock for stock in selected_comparison_stocks if stock in df_indexed.columns]
+        if not available_stocks:
+            return (
+                individual_stocks,
+                generate_watchlist_table(individual_stocks),
+                px.line(title="Selected stocks are not available in the data.", template=plotly_theme),
+                {'height': '400px'},
+                html.Div("No data found for the selected comparison stocks."),
+                px.line(title="Selected stocks are not available in the data.", template=plotly_theme),
+                options,
+                selected_comparison_stocks,
+                options,  # prices dropdown options
+                selected_prices_stocks,  # prices dropdown value
+                ""
+            )
+        
 
-        # Filter the data based on selected stocks from the dropdown
-        df_indexed_filtered = df_indexed[['Date'] + selected_comparison_stocks]
+        df_indexed_filtered = df_indexed[['Date'] + available_stocks]
 
-        # Create indexed comparison figure
         fig_indexed = px.line(df_indexed_filtered, x='Date', y=selected_comparison_stocks, template=plotly_theme)
         fig_indexed.update_yaxes(matches=None, title_text=None)
         fig_indexed.update_xaxes(title_text=None)
@@ -1954,7 +2012,6 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             )
         )
 
-        # Add benchmark line as dotted if selected
         if benchmark_selection != 'None':
             fig_indexed.add_scatter(x=benchmark_data['Date'], y=benchmark_data['Index'], mode='lines',
                                     name=benchmark_selection, line=dict(dash='dot'))
@@ -1962,12 +2019,10 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     else:
         fig_indexed = px.line(title="No data available.", template=plotly_theme)
 
-    # Filter for selected prices stocks
     df_prices_filtered = df_all[df_all['Stock'].isin(selected_prices_stocks)]
     num_stocks = len(selected_prices_stocks)
-    graph_height = 400 * num_stocks  # Each facet should be 400px in height
+    graph_height = 400 * num_stocks
 
-    # Create the stock graph with the correct layout
     fig_stock = make_subplots(
         rows=num_stocks,
         cols=1,
@@ -1981,76 +2036,74 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     for i, symbol in enumerate(selected_prices_stocks):
         df_stock = df_prices_filtered[df_prices_filtered['Stock'] == symbol]
 
-        if chart_type == 'line':
-            fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
-                                           line=dict(color='blue')), row=i + 1, col=1)
+        if not df_stock.empty and len(df_stock) > 1:  # Ensure there's enough data
+            if chart_type == 'line':
+                fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
+                                               line=dict(color='blue')), row=i + 1, col=1)
 
-            # Get the most recent price and percentage change
-            last_close = df_stock['Close'].iloc[-2]
-            latest_close = df_stock['Close'].iloc[-1]
-            change_percent = ((latest_close - last_close) / last_close) * 100
+                last_close = df_stock['Close'].iloc[-2]
+                latest_close = df_stock['Close'].iloc[-1]
+                change_percent = ((latest_close - last_close) / last_close) * 100
 
-            # Add the last available data point as a marker
-            fig_stock.add_trace(go.Scatter(
-                x=[df_stock.index[-1]],
-                y=[latest_close],
-                mode='markers',
-                marker=dict(color='red', size=10),
-                name=f'{symbol} Last Price'
-            ), row=i + 1, col=1)
+                fig_stock.add_trace(go.Scatter(
+                    x=[df_stock.index[-1]],
+                    y=[latest_close],
+                    mode='markers',
+                    marker=dict(color='red', size=10),
+                    name=f'{symbol} Last Price'
+                ), row=i + 1, col=1)
 
-            # Add annotations for the latest price and percentage change
-            latest_timestamp = df_stock.index[-1]
-            fig_stock.add_annotation(
-                x=latest_timestamp,
-                y=latest_close,
-                text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
-                showarrow=True,
-                arrowhead=None,
-                ax=20,  # Adjusted to position the annotation to the right
-                ay=-40,
-                row=i + 1,
-                col=1,
-                font=dict(color="blue", size=12),
-                bgcolor='white'
-            )
+                latest_timestamp = df_stock.index[-1]
+                fig_stock.add_annotation(
+                    x=latest_timestamp,
+                    y=latest_close,
+                    text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
+                    showarrow=True,
+                    arrowhead=None,
+                    ax=20,
+                    ay=-40,
+                    row=i + 1,
+                    col=1,
+                    font=dict(color="blue", size=12),
+                    bgcolor='white'
+                )
 
-            fig_stock.add_shape(
-                type="line",
-                x0=df_stock.index.min(),
-                x1=df_stock.index.max(),
-                y0=latest_close,
-                y1=latest_close,
-                line=dict(
-                    color="red",
-                    width=2,
-                    dash="dot"
-                ),
-                row=i + 1, col=1
-            )
-        elif chart_type == 'candlestick':
-            fig_stock.add_trace(go.Candlestick(
-                x=df_stock.index,
-                open=df_stock['Open'],
-                high=df_stock['High'],
-                low=df_stock['Low'],
-                close=df_stock['Close'],
-                name=f'{symbol} Candlestick'), row=i + 1, col=1)
+                fig_stock.add_shape(
+                    type="line",
+                    x0=df_stock.index.min(),
+                    x1=df_stock.index.max(),
+                    y0=latest_close,
+                    y1=latest_close,
+                    line=dict(
+                        color="red",
+                        width=2,
+                        dash="dot"
+                    ),
+                    row=i + 1, col=1
+                )
+            elif chart_type == 'candlestick':
+                fig_stock.add_trace(go.Candlestick(
+                    x=df_stock.index,
+                    open=df_stock['Open'],
+                    high=df_stock['High'],
+                    low=df_stock['Low'],
+                    close=df_stock['Close'],
+                    name=f'{symbol} Candlestick'), row=i + 1, col=1)
 
-            fig_stock.update_xaxes(rangeslider={'visible': False}, row=i + 1, col=1)
+                fig_stock.update_xaxes(rangeslider={'visible': False}, row=i + 1, col=1)
 
-        if 'Volume' in movag_input:
-            fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
-                                       marker=dict(color='gray'), opacity=0.3), row=i + 1, col=1, secondary_y=True)
-            fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i + 1, col=1)
+            if 'Volume' in movag_input:
+                fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
+                                           marker=dict(color='gray'), opacity=0.3), row=i + 1, col=1, secondary_y=True)
+                fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i + 1, col=1)
 
-        if '30D_MA' in movag_input:
-            fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
-                                           line=dict(color='green')), row=i + 1, col=1)
+            if '30D_MA' in movag_input:
+                fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
+                                               line=dict(color='green')), row=i + 1, col=1)
 
-        if '100D_MA' in movag_input:
-            fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
-                                           line=dict(color='red')), row=i + 1, col=1)
+            if '100D_MA' in movag_input:
+                fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
+                                               line=dict(color='red')), row=i + 1, col=1)
 
     fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False,
                             margin=dict(l=40, r=40, t=40, b=40))
