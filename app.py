@@ -606,7 +606,7 @@ carousel = dbc.Carousel(
             "src": "/assets/gif4.gif",
             "alt": "Demo 2",
             "header": "Chatbot Advisor",
-            "caption": "Ask your personal Chatbot for advise"
+            "caption": "Ask your personal Chatbot for advice."
         },
         {
             "key": "3",
@@ -622,13 +622,12 @@ carousel = dbc.Carousel(
             "header": "Timeseries Forecast",
             "caption": "Visualize forecasts and access analyst recommendations."
         }
-        
     ],
     controls=True,
     indicators=True,
     interval=20000,  # Time in ms for each slide
     ride="carousel",
-    className="carousel-fade",
+    className="custom-carousel",  # Add custom-carousel class
     id="custom-carousel"
 )
 
