@@ -26,6 +26,11 @@ from flask_session import Session
 import dash_table
 from flask import send_from_directory
 
+# load robots.txt file for SEO
+@server.route('/robots.txt')
+def serve_robots_txt():
+    return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
+
 
 # List of available Bootstrap themes and corresponding Plotly themes
 themes = {
@@ -199,13 +204,14 @@ app.layout = html.Div([
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H1("MyStock Dashboard",  style={"position": "absolute", "left": "-9999px"}),  # for SEO purpose (visually hidden)
+            html.H1("Stocks monitoring dashboard - MyStocks",  style={"display": "none"}),  # for SEO purpose (visually hidden)
             html.Div([
                 dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "10px"})
             ]),
             dbc.Collapse(
                 dbc.Card([  
                     dbc.CardBody([
+                        html.H2("Filter stocks, create custom watchlist",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                         html.Div([
                             html.Label("Add Stock Symbol:", className="font-weight-bold"),
                             dcc.Input(
@@ -257,6 +263,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                html.H3("Analyse Stock Prices",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 dcc.Dropdown(
                                     id='prices-stock-dropdown',
                                     options=[],  # This will be populated dynamically
@@ -298,6 +305,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='📰 News', value='📰 News', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                html.H3("Stock News",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div(id='stock-news', className='news-container')
                             ])
                         )
@@ -305,6 +313,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                html.H3("Compare stocks prices",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -338,6 +347,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                html.H3("Forecast stocks prices",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -390,6 +400,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='❤️ Analyst Recommendations', value='❤️ Analyst Recommendations', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                html.H3("Get analyst stock recommendations",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 dcc.Loading(
                                     id="loading-analyst-recommendations",
                                     children=[
@@ -415,6 +426,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='📊 Investment Simulation', children=[
                         dbc.Card(
                             dbc.CardBody([
+                                html.H3("Simulate investement",  style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Stock Symbol:", className="font-weight-bold"),
                                     dcc.Dropdown(
