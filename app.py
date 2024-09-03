@@ -25,6 +25,7 @@ from flask import session
 from flask_session import Session
 import dash_table
 from flask import send_from_directory
+from flask import render_template
 
 
 # List of available Bootstrap themes and corresponding Plotly themes
@@ -53,6 +54,10 @@ server = app.server
 def serve_robots_txt():
     return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
 
+# Define a custom 404 error handler
+@app.server.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
