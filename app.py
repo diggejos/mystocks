@@ -2263,13 +2263,14 @@ app.index_string = '''
         {%metas%}
         <title>Stocks monitoring and recommendation made easy - MyStocks</title>
         <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
-        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, stocks monitoring, stocks recommendations">
-        <meta name="author" content="mystocksportfolio.io">
+        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, stocks monitoring, stocks recommendations, finance, financial advisor">
+        <meta name="author" content="myStocksportoflio">
         <meta property="og:title" content="Stocks monitoring and recommendation made easy - MyStocks" />
         <meta property="og:description" content="Stocks monitoring, recommendations, news and more" />
-        <meta property="og:image" content="https://github.com/diggejos/mystocks/assets/logo_with_transparent_background.png" />
-        <meta property="og:url" content="https://mystocks-m9xp.onrender.com/" />
+        <meta property="og:image" content="https://mystocksportfolio.io/assets/logo_with_transparent_background.png" />
+        <meta property="og:url" content="https://mystocksportfolio.io/" />
         <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href="https://mystocksportfolio.io/" />
         {%favicon%}
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
@@ -2285,6 +2286,20 @@ app.index_string = '''
                 }
             }
         </style>
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "url": "https://mystocksportfolio.io/",
+          "name": "myStocksportoflio",
+          "description": "Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor.",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MyStocks"
+          }
+        }
+        </script>
+        
     </head>
     <body>
         <!-- Google Tag Manager (noscript) -->
