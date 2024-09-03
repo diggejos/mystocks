@@ -1764,14 +1764,16 @@ def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, us
     Output('individual-stocks-store', 'data',allow_duplicate=True),
     [Input('login-status', 'data')],
     [State('login-username-store', 'data')],
-    prevent_initial_call=True  # Ensure this is triggered only after login-status is available
+    prevent_initial_call=True
 )
 def load_watchlist(login_status, username):
     if login_status and username:
         user = User.query.filter_by(username=username).first()
         if user and user.watchlist:
             return json.loads(user.watchlist)  # Load the watchlist from the database
-    return []
+        return []  # No default stock if logged in but watchlist is empty
+    return ['AAPL']  # Default to AAPL if not logged in
+
 
 @app.callback(
     Output('individual-stocks-store', 'data',allow_duplicate=True),
@@ -1785,7 +1787,8 @@ def load_watchlist_on_page_load(pathname, login_status, username):
         user = User.query.filter_by(username=username).first()
         if user and user.watchlist:
             return json.loads(user.watchlist)  # Load the watchlist from the database
-    return []
+    return ['AAPL']  # Default to AAPL if not logged in
+
 
 @app.callback(
     Output('theme-store', 'data', allow_duplicate=True),
@@ -1799,6 +1802,10 @@ def load_user_theme(login_status, username):
         if user and user.theme:
             return user.theme
     return 'MATERIA'  # Default theme if none is found
+
+from dash import dcc, html, Input, Output, State, callback_context, ALL
+from datetime import datetime, timedelta
+
 
 from dash import dcc, html, Input, Output, State, callback_context, ALL
 from datetime import datetime, timedelta
@@ -1913,11 +1920,21 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         interval = '1d'
 
     end_date = today
-
+    
     data = []
     for symbol in individual_stocks:
-        df = yf.download(symbol, start=start_date, end=end_date, interval=interval)
-        if not df.empty:
+        try:
+            df = yf.download(symbol, start=start_date, end=end_date, interval=interval)
+    
+            # Conditional check for intraday data
+            if predefined_range in ['1D_15m']:
+                # Check if there's data in the last 24 hours
+                # if df.empty or len(df[df.index >= end_date - timedelta(hours=24)]) == 0:
+                if df.empty:
+                    print(f"No intraday data found for {symbol} in the last 24 hours. Skipping to the next stock.")
+                    continue  # Skip to the next stock if no intraday data is available
+    
+            # Continue processing the data if not intraday or if data is available
             df.reset_index(inplace=True)
             if 'Date' in df.columns:
                 df['Date'] = pd.to_datetime(df['Date'])
@@ -1925,13 +1942,18 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             else:
                 df['Datetime'] = pd.to_datetime(df['Datetime'])
                 df.set_index('Datetime', inplace=True)
-
+    
             df = df.tz_localize(None)
             df['Stock'] = symbol
             df['30D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=30, min_periods=1).mean())
             df['100D_MA'] = df.groupby('Stock')['Close'].transform(lambda x: x.rolling(window=100, min_periods=1).mean())
             data.append(df)
-
+        
+        except Exception as e:
+            print(f"Error fetching data for {symbol}: {e}")
+            continue  # Skip to the next stock if an error occurs
+    
+    # Ensure there's data for at least one stock
     if not data and benchmark_selection == 'None':
         return (
             individual_stocks,
@@ -1946,22 +1968,22 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             selected_prices_stocks,
             ""
         )
-
+    
     df_all = pd.concat(data) if data else pd.DataFrame()
-
+    
     indexed_data = {}
     for symbol in individual_stocks:
         if symbol in df_all['Stock'].unique():
             df_stock = df_all[df_all['Stock'] == symbol].copy()
             df_stock['Index'] = df_stock['Close'] / df_stock['Close'].iloc[0] * 100
             indexed_data[symbol] = df_stock[['Index']].rename(columns={"Index": symbol})
-
+    
     if benchmark_selection != 'None':
         benchmark_data = yf.download(benchmark_selection, start=start_date, end=end_date, interval=interval)
         if not benchmark_data.empty:
             benchmark_data.reset_index(inplace=True)
             benchmark_data['Index'] = benchmark_data['Close'] / benchmark_data['Close'].iloc[0] * 100
-
+    
     if indexed_data:
         df_indexed = pd.concat(indexed_data, axis=1)
         df_indexed.reset_index(inplace=True)
@@ -1984,11 +2006,10 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
                 selected_prices_stocks,  # prices dropdown value
                 ""
             )
-        
-
+    
         df_indexed_filtered = df_indexed[['Date'] + available_stocks]
-
-        fig_indexed = px.line(df_indexed_filtered, x='Date', y=selected_comparison_stocks, template=plotly_theme)
+    
+        fig_indexed = px.line(df_indexed_filtered, x='Date', y=available_stocks, template=plotly_theme)
         fig_indexed.update_yaxes(matches=None, title_text=None)
         fig_indexed.update_xaxes(title_text=None)
         fig_indexed.update_layout(legend=dict(
@@ -1998,7 +2019,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             x=0.01,
             font=dict(size=10)
         ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
-
+    
         fig_indexed.add_shape(
             type='line',
             x0=df_indexed['Date'].min(),
@@ -2011,11 +2032,11 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
                 dash="dot"
             )
         )
-
+    
         if benchmark_selection != 'None':
             fig_indexed.add_scatter(x=benchmark_data['Date'], y=benchmark_data['Index'], mode='lines',
                                     name=benchmark_selection, line=dict(dash='dot'))
-
+    
     else:
         fig_indexed = px.line(title="No data available.", template=plotly_theme)
 
@@ -2026,8 +2047,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     fig_stock = make_subplots(
         rows=num_stocks,
         cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.02,
+        shared_xaxes=False,
+        vertical_spacing=0.05,
         subplot_titles=selected_prices_stocks,
         row_heights=[1] * num_stocks,
         specs=[[{"secondary_y": True}]] * num_stocks
