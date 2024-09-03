@@ -2263,7 +2263,7 @@ app.index_string = '''
         {%metas%}
         <title>Stocks monitoring and recommendation made easy - MyStocks</title>
         <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
-        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, openAI">
+        <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, stocks monitoring, stocks recommendations">
         <meta name="author" content="mystocksportfolio.io">
         <meta property="og:title" content="Stocks monitoring and recommendation made easy - MyStocks" />
         <meta property="og:description" content="Stocks monitoring, recommendations, news and more" />
