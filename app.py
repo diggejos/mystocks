@@ -81,7 +81,6 @@ def sitemap():
 def serve_robots():
     return send_from_directory(project_root, 'robots.txt')
 
-
 # Define User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -165,7 +164,6 @@ financials_modal = dbc.Modal(
     is_open=False,
 )
 
-
 chatbot_modal = dbc.Modal(
     [
         dbc.ModalHeader(dbc.ModalTitle("🤖 Financio")),
@@ -206,7 +204,6 @@ footer = html.Footer([
     ], fluid=True)
 ], className="footer")
 
-
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=[]),
@@ -232,14 +229,14 @@ app.layout = html.Div([
 dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H1("Stocks monitoring dashboard - MyStocks",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+            html.H1("Stocks monitoring dashboard - MyStocks", style={"display": "none"}),  # for SEO purpose (visually hidden)
             html.Div([
                 dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "10px"})
             ]),
             dbc.Collapse(
-                dbc.Card([  
+                dbc.Card([
                     dbc.CardBody([
-                        html.H2("Filter stocks, create custom watchlist",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+                        html.H2("Filter stocks, create custom watchlist", style={"display": "none"}),  # for SEO purpose (visually hidden)
                         html.Div([
                             html.Label("Add Stock Symbol:", className="font-weight-bold"),
                             dcc.Input(
@@ -253,8 +250,7 @@ dashboard_layout = dbc.Container([
                             dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
                             html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '24px'}, className='mt-2 me-2'),  # Refresh icon
                             dbc.Button("💾 Watchlist", id='save-portfolio-button', color='primary', className='',
-                                        disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
-
+                                       disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
                         ], className='mb-3'),
                         
                         html.Div([
@@ -276,15 +272,19 @@ dashboard_layout = dbc.Container([
                                 className='form-control',
                             )
                         ], className='mb-3'),
-
                         
-                        html.Div(id='watchlist-summary', className='mb-3')
+                        dcc.Loading(
+                            id="loading-indicator",
+                            type="default",
+                            children=[html.Div(id='watchlist-summary', className='mb-3')])
                     ])
-                ]), 
-                id="filters-collapse", 
+                ]),
+                id="filters-collapse",
                 is_open=True,  # Start with the card open
-                style={"margin-top": "20px"}), 
-        ], width=12, md=3, style={"margin-top": "-25px"} ),
+                style={"margin-top": "20px"}
+            ),
+        ], width=12, md=3, style={"margin-top": "-25px"}),
+        
         dbc.Col([
             dcc.Tabs(
                 id='tabs',
@@ -293,7 +293,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Analyse Stock Prices",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+                                html.H3("Analyse Stock Prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 dcc.Dropdown(
                                     id='prices-stock-dropdown',
                                     options=[],  # This will be populated dynamically
@@ -327,22 +327,30 @@ dashboard_layout = dbc.Container([
                                     inputStyle={"margin-right": "10px"},
                                     labelStyle={"margin-right": "20px"}
                                 ),
-                                dcc.Graph(id='stock-graph', style={'height': '500px'})
+                                dcc.Loading(
+                                    id="loading-prices",
+                                    type="default",
+                                    children=[dcc.Graph(id='stock-graph', style={'height': '500px'})]
+                                )
                             ])
                         )
                     ]),
                     dcc.Tab(label='📰 News', value='📰 News', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Stock News",  style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                html.Div(id='stock-news', className='news-container')
+                                html.H3("Stock News", style={"display": "none"}),  # for SEO purpose (visually hidden)
+                                dcc.Loading(
+                                    id="loading-news",
+                                    type="default",
+                                    children=[html.Div(id='stock-news', className='news-container')]
+                                )
                             ])
                         )
                     ]),
                     dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Compare stocks prices",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+                                html.H3("Compare stocks prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -368,7 +376,11 @@ dashboard_layout = dbc.Container([
                                     inputStyle={"margin-right": "10px"},
                                     labelStyle={"margin-right": "20px"}
                                 ),
-                                dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})
+                                dcc.Loading(
+                                    id="loading-comparison",
+                                    type="default",
+                                    children=[dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})]
+                                )
                             ])
                         )
                     ]),
@@ -376,7 +388,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Forecast stocks prices",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+                                html.H3("Forecast stocks prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -404,7 +416,7 @@ dashboard_layout = dbc.Container([
                                     a wide range of unpredictable factors. These predictions should be considered with caution and should not be used 
                                     as financial advice. Always conduct your own research or consult with a financial advisor before making investment decisions.
                                 ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
-                                
+
                                 dcc.Loading(
                                     id="loading-forecast",
                                     type="default",
@@ -429,13 +441,11 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='❤️ Analyst Recommendations', value='❤️ Analyst Recommendations', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Get analyst stock recommendations",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+                                html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 dcc.Loading(
                                     id="loading-analyst-recommendations",
-                                    children=[
-                                        html.Div(id='analyst-recommendations-content', className='mt-4')
-                                    ],
-                                    type="default"
+                                    type="default",
+                                    children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
                                 ),
                                 html.Div(id='blur-overlay', style={
                                     'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
@@ -455,7 +465,7 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='📊 Investment Simulation', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Simulate investement",  style={"display": "none"}),  # for SEO purpose (visually hidden)
+                                html.H3("Simulate investment", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Stock Symbol:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -484,7 +494,11 @@ dashboard_layout = dbc.Container([
                                     ),
                                 ], className='mb-3'),
                                 dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
-                                html.Div(id='simulation-result', className='mt-4')
+                                dcc.Loading(
+                                    id="loading-simulation",
+                                    type="default",
+                                    children=[html.Div(id='simulation-result', className='mt-4')]
+                                )
                             ])
                         )
                     ]),
@@ -497,18 +511,18 @@ dashboard_layout = dbc.Container([
                 },
                 style={'overflowX': 'scroll', 'width': '100%'}  # Enable horizontal scroll for tabs
             )
-        ], width=12, md=8,xs=12)
+        ], width=12, md=8, xs=12)
     ], className='mb-4'),
+
     dbc.Row([
         dbc.Col([
-            html.H3("Welcome to Your Stock Monitoring Dashboard", className="text-center mb-4" ,style={"display": "none"}),
+            html.H3("Welcome to Your Stock Monitoring Dashboard", className="text-center mb-4", style={"display": "none"}),
             html.P([
                 "Track and analyze your favorite stocks with real-time data, forecasts, and personalized recommendations. ",
                 html.A("Learn more about the features.", href="/about", className="text-primary")
             ], className="text-center")
         ], width=12)
     ], className="mb-4")
-                                   
 ], fluid=True)
 
 profile_layout = dbc.Container([
@@ -700,64 +714,102 @@ about_layout = dbc.Container([
                     html.Li("Save and customize your personal watchlist."),
                 ], className="checked-list"),
             ], style={"padding": "20px", "background-color": "#ffffff", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
-
-            # # Section: About the Author
-            # html.Div([
-            #     html.H3("About the Author", className="text-center mt-5 mb-4"),
-            #     dbc.Row([
-            #         # dbc.Col(html.Img(src='/assets/Portrait.png', className="img-fluid rounded-circle shadow-sm", style={"max-width": "150px", "margin": "auto"}), width=12, lg=4),
-            #         dbc.Col(html.Div([
-            #             html.P("Josua is a professional with 10+ years of experience in pricing, marketing, data analysis, and revenue management. "
-            #                    "He holds an executive master's degree in international business and a bachelor's degree in engineering and management. "
-            #                    "He also has two executive certificates in data analysis and visualization. With a strong data-driven approach and business acumen, "
-            #                    "he strives to optimize performance and bring value to organizations.", className="lead"),
-            #             html.A(html.Img(src='/assets/linkedin.png', style={"max-width": "30px", "margin-top": "10px"}),
-            #                    href="https://www.linkedin.com/in/diggejos", target="_blank"),
-            #         ]), width=12, lg=8),
-            #     ], align="center", justify="center", className="mt-4 mb-4"),
-            # ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
         ], className="mx-auto", style={"max-width": "900px"}))
     ]),
 ], fluid=True)
 
-def fetch_news(api_key, symbols):
+def fetch_news(symbols, max_articles=4):
     news_content = []
-    base_url = "https://newsapi.org/v2/everything"
 
     for symbol in symbols:
-        query = f"{symbol} stock"
-        response = requests.get(base_url, params={
-            'q': query,
-            'apiKey': api_key,
-            'language': 'en',
-            'sortBy': 'publishedAt',
-            'pageSize': 5  # Number of news articles to fetch
-        })
-        articles = response.json().get('articles', [])
+        ticker = yf.Ticker(symbol)
+        news = ticker.news  # Fetch news using yfinance
 
-        if articles:
+        if news:
             news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
-            for article in articles:
+
+            for idx, article in enumerate(news[:max_articles]):  # Display only the first `max_articles` news articles
+                related_tickers = ", ".join(article.get('relatedTickers', []))
                 news_card = dbc.Col(
                     dbc.Card(
                         dbc.CardBody([
-                            html.H5(html.A(article['title'], href=article['url'], target="_blank")),
-                            html.Img(src=article['urlToImage'], style={"width": "250px", "height": "auto"})
-                            if article['urlToImage'] else html.Div(),
-                            html.P(article.get('description', 'No summary available')),
+                            html.H5(html.A(article['title'], href=article['link'], target="_blank")),
+                            html.Img(src=article['thumbnail']['resolutions'][0]['url'], style={"width": "250px", "height": "auto"})
+                            if 'thumbnail' in article else html.Div(),
+                            html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
-                                f"Source: {article['source']['name']} - Published at: {article['publishedAt']}",
+                                f"Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
                                 style={"margin-bottom": "0px", "padding-bottom": "0px"}
                             )
                         ])
                     ), width=12, md=6, className="mb-2"
                 )
                 news_content.append(news_card)
+
+            if len(news) > max_articles:
+                # Add a "Load More" button if there are more articles available
+                news_content.append(
+                    dbc.Button("Load More", id={'type': 'load-more-button', 'index': symbol}, color='primary', size='sm', className='mb-2')
+        
+                )
+                news_content.append(html.Div(id={'type': 'additional-news', 'index': symbol}))
         else:
             news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
     
-    # Wrap the news_content in a Row
     return dbc.Row(news_content, className="news-row")
+
+from dash.dependencies import Input, Output, State, MATCH
+@app.callback(
+    [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
+      Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
+      Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
+    [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
+    [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
+      State({'type': 'additional-news', 'index': MATCH}, 'children')]
+)
+def load_more_articles(n_clicks, button_id, current_articles):
+    if n_clicks is None or n_clicks == 0:
+        raise PreventUpdate
+
+    symbol = button_id['index']
+    ticker = yf.Ticker(symbol)
+    news = ticker.news
+
+    if not news or len(news) <= 4:
+        return dash.no_update, dash.no_update, dash.no_update
+
+    # If current_articles is None, initialize it to an empty list
+    if current_articles is None:
+        current_articles = []
+
+    max_articles = (n_clicks + 1) * 4  # Increase the max articles by 4 each time the button is clicked
+    additional_articles = []
+
+    for article in news[4:max_articles]:
+        related_tickers = ", ".join(article.get('relatedTickers', []))
+        news_card = dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H5(html.A(article['title'], href=article['link'], target="_blank")),
+                    html.Img(src=article['thumbnail']['resolutions'][0]['url'], style={"width": "250px", "height": "auto"})
+                    if 'thumbnail' in article else html.Div(),
+                    html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
+                    html.Footer(
+                        f"Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
+                        style={"margin-bottom": "0px", "padding-bottom": "0px"}
+                    )
+                ])
+            ),
+            xs=12, md=6,  # Full width on mobile, half width on desktop
+            className="mb-2"
+        )
+        additional_articles.append(news_card)
+
+    if max_articles >= len(news):
+        # Hide the "Load More" button if all articles have been loaded
+        return current_articles + additional_articles, "No more articles", {'display': 'none'}
+    
+    return current_articles + additional_articles, "Load More", dash.no_update
 
 def fetch_analyst_recommendations(symbol):
     ticker = yf.Ticker(symbol)
@@ -1811,10 +1863,6 @@ def load_user_theme(login_status, username):
 from dash import dcc, html, Input, Output, State, callback_context, ALL
 from datetime import datetime, timedelta
 
-
-from dash import dcc, html, Input, Output, State, callback_context, ALL
-from datetime import datetime, timedelta
-
 @app.callback(
     [Output('individual-stocks-store', 'data'),
      Output('watchlist-summary', 'children'),
@@ -2136,14 +2184,10 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
-    load_dotenv()
-    api_key = os.getenv('API_KEY')
-
-    news_content = fetch_news(api_key, individual_stocks)
+    news_content = fetch_news(individual_stocks)
 
     return individual_stocks, generate_watchlist_table(individual_stocks), fig_stock, {
         'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, options, selected_comparison_stocks, options, selected_prices_stocks, ""
-
 
 
 @app.callback(Output('simulation-result', 'children'),
@@ -2217,7 +2261,6 @@ def display_page(pathname, login_status):
         return profile_layout, {"display": "none"}
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}
-
 
 
 @app.callback(
