@@ -81,21 +81,20 @@ def sitemap():
 def serve_robots():
     return send_from_directory(project_root, 'robots.txt')
 
-# Define User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    watchlist = db.Column(db.Text, nullable=True, default="[]")
-    theme = db.Column(db.String(500), nullable=True, default="MATERIA")  # New theme field
+    theme = db.Column(db.String(50), nullable=True)  # New field for storing the theme
+    watchlists = db.relationship('Watchlist', backref='user', lazy=True)
 
-    def __init__(self, username, email, password, watchlist="[]", theme="MATERIA"):
-        self.username = username
-        self.email = email
-        self.password = password
-        self.watchlist = watchlist
-        self.theme = theme
+class Watchlist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    stocks = db.Column(db.Text, nullable=False)  # JSON list of stock symbols
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_default = db.Column(db.Boolean, default=False)  # New field to mark as default
      
 # Create the database tables
 with server.app_context():
@@ -204,9 +203,17 @@ footer = html.Footer([
     ], fluid=True)
 ], className="footer")
 
+watchlist_management_layout = dbc.Container([
+    dcc.Input(id='new-watchlist-name', placeholder="Enter Watchlist Name", className="form-control",disabled=True),
+    html.Label(" Saved Watchlists:", className="font-weight-bold",style={"margin-top": "10px"}),
+    dcc.Dropdown(id='saved-watchlists-dropdown', placeholder="Select a Watchlist", options=[],clearable=True,disabled=True, style={"margin-top": "10px"}),
+    dbc.Button("💾 Watchlist", id='create-watchlist-button', color='primary', className='',disabled=False),
+    dbc.Button("X Watchlist", id='delete-watchlist-button', color='danger', className='',disabled=False)
+])
+
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
-    dcc.Store(id='individual-stocks-store', data=[]),
+    dcc.Store(id='individual-stocks-store', data=['AAPL']),
     dcc.Store(id='theme-store', data=dbc.themes.MATERIA),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
     dcc.Store(id='login-status', data=False),  # Store to track login status
@@ -246,13 +253,13 @@ dashboard_layout = dbc.Container([
                                 debounce=True,
                                 className='form-control'
                             ),
-                            dbc.Button("➕ Stock", id='add-stock-button', color='secondary', className='mt-2 me-2'),
-                            dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='mt-2 me-2'),
-                            html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '24px'}, className='mt-2 me-2'),  # Refresh icon
-                            dbc.Button("💾 Watchlist", id='save-portfolio-button', color='primary', className='',
-                                       disabled=False, style={'margin-top': '10px', 'margin-bottom': '10px', 'width': 'flexible'}),
+                            dbc.Button("➕ Stock", id='add-stock-button', color='primary', className='small-button'),
+                            dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
+                            html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),  # Refresh icon
+                
                         ], className='mb-3'),
                         
+                        html.Div(id='watchlist-summary', className='mb-3'),
                         html.Div([
                             html.Label("Select Date Range:", className="font-weight-bold"),
                             dcc.Dropdown(
@@ -272,12 +279,8 @@ dashboard_layout = dbc.Container([
                                 className='form-control',
                             )
                         ], className='mb-3'),
-                        
-                        dcc.Loading(
-                            id="loading-indicator",
-                            type="default",
-                            children=[html.Div(id='watchlist-summary', className='mb-3')])
-                    ])
+                    ]),
+                    watchlist_management_layout
                 ]),
                 id="filters-collapse",
                 is_open=True,  # Start with the card open
@@ -574,6 +577,7 @@ profile_layout = dbc.Container([
 ], fluid=True)
 
 # Layout for Registration page
+# Layout for Registration page
 register_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -600,6 +604,12 @@ register_layout = dbc.Container([
     ]),
     dbc.Row([
         dbc.Col([
+            html.H3("Login here", className="text-center mt-5 mb-4"),
+            html.P([
+                "Successfully registered? ",
+                html.A("Login here", href="/login", className="text-primary")
+            ], className="text-center"),
+
             html.H3("Why Register?", className="text-center mt-5 mb-4"),  # Add mt-5 for space above
             html.P([
                 "Registering allows you to save your stock watchlist, access personalized recommendations, and more. ",
@@ -608,6 +618,7 @@ register_layout = dbc.Container([
         ], width=12, md=6, className="mx-auto")
     ])
 ], fluid=True)
+
 # Layout for Login page
 login_layout = dbc.Container([
     dbc.Row([
@@ -1050,58 +1061,52 @@ def get_stock_performance(symbols):
 
     return performance_data
 
-
-
 @app.callback(
     [Output("chatbot-modal", "is_open"),
-      Output("conversation-store", "data", allow_duplicate=True),
-      Output("chatbot-conversation", "children", allow_duplicate=True)],
+     Output("conversation-store", "data", allow_duplicate=True),
+     Output("chatbot-conversation", "children", allow_duplicate=True)],
     [Input("open-chatbot-button", "n_clicks"),
-      Input("clear-button", "n_clicks")],
+     Input("clear-button", "n_clicks")],
     [State("chatbot-modal", "is_open"),
-      State('conversation-store', 'data'),
-      State('login-username-store', 'data')],
+     State('conversation-store', 'data'),
+     State('login-username-store', 'data'),
+     State('saved-watchlists-dropdown', 'value'),  # New: get the selected watchlist
+     State('individual-stocks-store', 'data')],  # New: get stocks from the selected watchlist
     prevent_initial_call=True
 )
-def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_history, username):
+def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_history, username, selected_watchlist, watchlist_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
         return is_open, conversation_history, dash.no_update
 
-    # Check if the chatbot was toggled open or the conversation was cleared
     if ctx.triggered[0]["prop_id"] in ["open-chatbot-button.n_clicks", "clear-button.n_clicks"]:
         if ctx.triggered[0]["prop_id"] == "open-chatbot-button.n_clicks" and is_open:
-            # If already open, just close without resetting
+            # Close modal if it's already open
             return not is_open, conversation_history, dash.no_update
 
-        # Fetch the user's watchlist and performance data if logged in
         watchlist_message = ""
-        personalized_greeting = "Hello! My name is Financio and I'm your financial advisor 🤖."
+        personalized_greeting = "Hello! My name is Financio, your financial advisor 🤖."
+        
         if username:
-            user = User.query.filter_by(username=username).first()
-            if user and user.watchlist:
-                watchlist = json.loads(user.watchlist)
-                if watchlist:
-                    performance_data = get_stock_performance(watchlist)
-                    # Create a message with performance summaries
-                    performance_summaries = []
-                    for symbol, data in performance_data.items():
-                        summary = (f"{symbol}: Latest - ${data['latest_close']:.2f}")
-                        performance_summaries.append(summary)
-                    watchlist_message = f"Here are the stocks on your watchlist and their performance: {'; '.join(performance_summaries)}."
-                else:
-                    watchlist_message = "You currently don't have any stocks on your watchlist."
+            if selected_watchlist and watchlist_stocks:
+                # Generate the stock performance summaries for the selected watchlist
+                performance_data = get_stock_performance(watchlist_stocks)
+                performance_summaries = [
+                    f"{symbol}: Latest - ${data['latest_close']:.2f}" 
+                    for symbol, data in performance_data.items()
+                ]
+                watchlist_message = f"Here are the stocks on your selected watchlist and their performance: {'; '.join(performance_summaries)}."
             else:
-                watchlist_message = "You currently don't have any stocks on your watchlist."
+                watchlist_message = "You currently don't have a watchlist selected."
 
-            # Personalize the greeting with the username
-            personalized_greeting = f"Hello, {username}! My name is Financio and I'm your financial advisor 🤖."
+            # Personalize greeting
+            personalized_greeting = f"Hello, {username}! My name is Financio, your financial advisor 🤖."
         else:
             watchlist_message = "You're not logged in, so I don't have access to your watchlist."
 
-        # Initialize the conversation with a personalized welcome message
+        # Initialize the conversation with a personalized message
         conversation_history = [{"role": "system", "content": "You are a helpful stock financial advisor."}]
-        introduction_message = f"{personalized_greeting} How can I assist you today with your stock queries? {watchlist_message}"
+        introduction_message = f"{personalized_greeting} How can I assist you today? {watchlist_message}"
         conversation_history.append({"role": "assistant", "content": introduction_message})
 
         conversation_display = [
@@ -1115,8 +1120,7 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
         ]
         return True, conversation_history, conversation_display
 
-    return is_open, conversation_history, dash.no_update  # Just toggle the modal without changing the conversation
-
+    return is_open, conversation_history, dash.no_update
 
 @app.callback(
     [Output('conversation-store', 'data'),
@@ -1125,10 +1129,12 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
     [Input('send-button', 'n_clicks')],
     [State('chatbot-input', 'value'),
      State('conversation-store', 'data'),
-     State('login-username-store', 'data')],
+     State('login-username-store', 'data'),
+     State('saved-watchlists-dropdown', 'value'),  # New: get the selected watchlist
+     State('individual-stocks-store', 'data')],  # New: get stocks from the selected watchlist
     prevent_initial_call=True
 )
-def manage_chatbot_interaction(send_clicks, user_input, conversation_history, username):
+def manage_chatbot_interaction(send_clicks, user_input, conversation_history, username, selected_watchlist, watchlist_stocks):
     from openai import OpenAI
     from dotenv import load_dotenv
     import os
@@ -1140,56 +1146,29 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
     # Define the system message
     system_message = {"role": "system", "content": "You are a helpful stock financial advisor."}
 
-    # Initialize the conversation history if not already present
     if conversation_history is None:
         conversation_history = [system_message]
 
-    # Handle sending a message
     if send_clicks and send_clicks > 0 and user_input:
         # Append the user's message to the conversation history
         conversation_history.append({"role": "user", "content": user_input})
 
-        # Respond with stock performance data if asked
+        # Respond with stock performance if requested and the user is logged in
         if "performance" in user_input.lower() and username:
-            user = User.query.filter_by(username=username).first()
-            if user and user.watchlist:
-                watchlist = json.loads(user.watchlist)
-                if watchlist:
-                    performance_data = get_stock_performance(watchlist)
-                    performance_summaries = []
-                    for symbol, data in performance_data.items():
-                        summary = (
-                            f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data['latest_close'] is not None else f"{symbol}: Latest Close - N/A"
-                        )
-                        summary += (
-                            f", 1-Year Return - {data['one_year_return']:.2f}%" if data['one_year_return'] is not None else ", 1-Year Return - N/A"
-                        )
-                        summary += (
-                            f", 52-Week High - ${data['52_week_high']:.2f}" if data['52_week_high'] is not None else ", 52-Week High - N/A"
-                        )
-                        summary += (
-                            f", 52-Week Low - ${data['52_week_low']:.2f}" if data['52_week_low'] is not None else ", 52-Week Low - N/A"
-                        )
-                        summary += (
-                            f", Market Cap - ${data['market_cap']:,}" if data['market_cap'] is not None else ", Market Cap - N/A"
-                        )
-                        summary += (
-                            f", PE Ratio - {data['pe_ratio']:.2f}" if data['pe_ratio'] is not None else ", PE Ratio - N/A"
-                        )
-                        summary += (
-                            f", Dividend Yield - {data['dividend_yield']:.2%}" if data['dividend_yield'] is not None else ", Dividend Yield - N/A"
-                        )
-                        performance_summaries.append(summary)
-                    response = f"Here is the performance data for the stocks on your watchlist: {'; '.join(performance_summaries)}."
-                else:
-                    response = "You don't have any stocks in your watchlist to show performance data."
+            if selected_watchlist and watchlist_stocks:
+                performance_data = get_stock_performance(watchlist_stocks)
+                performance_summaries = [
+                    f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data['latest_close'] is not None else f"{symbol}: Latest Close - N/A"
+                    for symbol, data in performance_data.items()
+                ]
+                response = f"Here is the performance data for the stocks in your selected watchlist: {'; '.join(performance_summaries)}."
             else:
-                response = "I couldn't find your watchlist data."
+                response = "You don't have a watchlist selected to show performance data."
         else:
-            # Call the OpenAI API to get the chatbot's general response
+            # Use OpenAI to generate a response for other queries
             completion = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=conversation_history,  # Use the entire conversation history
+                messages=conversation_history,
             )
             response = completion.choices[0].message.content
 
@@ -1212,9 +1191,10 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
                     )
                 )
 
-        return conversation_history, conversation_display, ""  # Clear the input box after
+        return conversation_history, conversation_display, ""  # Clear input box after response
 
-    return conversation_history, dash.no_update, dash.no_update  # No change to conversation history or inpu
+    return conversation_history, dash.no_update, dash.no_update
+
 
 @app.callback(
     Output('analyst-recommendations-content', 'children'),
@@ -1528,9 +1508,12 @@ def validate_password(password):
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
      Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style', allow_duplicate=True),
+     Output('login-link', 'style',allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True)],  # Add output for profile link
+     Output('profile-link', 'style', allow_duplicate=True),
+     Output('theme-store', 'data',allow_duplicate=True),  # Load the user's theme
+     Output('plotly-theme-store', 'data',allow_duplicate=True),  # Load the corresponding Plotly theme
+     Output('login-output', 'children')],
     [Input('login-button', 'n_clicks')],
     [State('login-username', 'value'),
      State('login-password', 'value')],
@@ -1540,12 +1523,16 @@ def handle_login(login_clicks, username, password):
     if login_clicks:
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password, password):
-            session['logged_in'] = True  # Store login status in session
-            session['username'] = username  # Store username in session
-            return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"})
+            session['logged_in'] = True
+            session['username'] = username
+            theme = user.theme if user.theme else dbc.themes.MATERIA
+            plotly_theme = themes.get(theme, {}).get('plotly', 'plotly_white')
+            return True, username, {"display": "none"}, {"display": "block"}, {"display": "block"}, theme, plotly_theme, ""
         else:
-            return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"})
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return False, None, {"display": "block"}, {"display": "none"}, {"display": "none"}, dbc.themes.MATERIA, 'plotly_white', dbc.Alert("Login failed.", color="danger")
+
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
 
 @app.callback(
     [Output('profile-username', 'value'),
@@ -1668,16 +1655,24 @@ def update_profile_password_requirements(password):
     [Output('login-status', 'data', allow_duplicate=True),
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True)],  # Add output for profile link
+     Output('profile-link', 'style', allow_duplicate=True),
+     Output('individual-stocks-store', 'data', allow_duplicate=True),  # Set AAPL as default stock on logout
+     Output('theme-store', 'data', allow_duplicate=True),  # Reset theme to default on logout
+     Output('plotly-theme-store', 'data', allow_duplicate=True),  # Reset plotly theme to default on logout
+     Output('url', 'pathname', allow_duplicate=True)],  # Redirect to default view
     [Input('logout-button', 'n_clicks')],
     prevent_initial_call=True
 )
 def handle_logout(logout_clicks):
     if logout_clicks:
-        session.pop('logged_in', None)  # Remove login status from session
-        session.pop('username', None)  # Remove username from session
-        return False, {"display": "block"}, {"display": "none"}, {"display": "none"}
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        # Remove login status and username from session
+        session.pop('logged_in', None)
+        session.pop('username', None)
+        
+        # Set AAPL as default stock, reset theme, and redirect to default page
+        return False, {"display": "block"}, {"display": "none"}, {"display": "none"}, ['AAPL'], dbc.themes.MATERIA, 'plotly_white', "/"
+    
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -1708,31 +1703,31 @@ def update_dropdown_status(login_status):
 @app.callback(
     Output('login-overlay', 'is_open'),
     [Input('theme-dropdown-wrapper', 'n_clicks'),
-     Input('save-portfolio-button', 'n_clicks')],
+      Input('create-watchlist-button', 'n_clicks'),
+      Input('delete-watchlist-button', 'n_clicks')],
     [State('login-status', 'data')]
 )
-def show_overlay_if_logged_out(theme_n_clicks, save_n_clicks, login_status):
+def show_overlay_if_logged_out(theme_n_clicks, create_n_clicks, delete_n_clicks, login_status):
     # Ensure no NoneType errors
     theme_n_clicks = theme_n_clicks or 0
-    save_n_clicks = save_n_clicks or 0
-    
-    # Debugging print to see if the callback is triggered
-    print(f"Save Button Clicks: {save_n_clicks}, Theme Dropdown Clicks: {theme_n_clicks}, Logged In: {login_status}")
-    
+    create_n_clicks = create_n_clicks or 0
+    delete_n_clicks = delete_n_clicks or 0
+
     # Show the overlay if the user is not logged in and clicks on either element
-    if (theme_n_clicks > 0 or save_n_clicks > 0) and not login_status:
+    if (theme_n_clicks > 0  or create_n_clicks > 0 or delete_n_clicks > 0) and not login_status:
         return True  # Show overlay
     return False  # Don't show overlay
 
 @app.callback(
-    Output('save-portfolio-button', 'className'),
+    [
+     Output('create-watchlist-button', 'className'),
+     Output('delete-watchlist-button', 'className')],
     Input('login-status', 'data')
 )
 def style_save_button(login_status):
     if not login_status:
-        return 'grayed-out'  # Apply the grayed-out class when logged out
-    return ''  # No class when logged in
-
+        return 'grayed-out','grayed-out'  # Apply the grayed-out class when logged out
+    return 'small-button','small-button'  # No class when logged in
 
 def fetch_stock_data_watchlist(symbol):
     """Fetch latest stock data for a given symbol."""
@@ -1790,81 +1785,108 @@ def generate_watchlist_table(watchlist):
     )
 
 
-
 @app.callback(
-    [Output('save-portfolio-button', 'children'),
-     Output('login-overlay', 'is_open', allow_duplicate=True)],
-    Input('save-portfolio-button', 'n_clicks'),
-    [State('individual-stocks-store', 'data'),
-     State('theme-store', 'data'),
-     State('login-status', 'data'),
-     State('login-username-store', 'data')],
-    prevent_initial_call=True
-)
-def save_portfolio(n_clicks, individual_stocks, selected_theme, login_status, username):
-    if n_clicks:
-        if login_status and username:
-            user = User.query.filter_by(username=username).first()
-            if user:
-                try:
-                    user.watchlist = json.dumps(individual_stocks)
-                    user.theme = selected_theme  # Save the selected theme
-                    db.session.commit()
-                    return "Portfolio and Theme Saved!", False
-                except Exception as e:
-                    return f"Error saving portfolio: {str(e)}", False
-        else:
-            return dash.no_update, True  # Show the login overlay when not logged in
-    return dash.no_update, False
-
-@app.callback(
-    Output('individual-stocks-store', 'data',allow_duplicate=True),
+    [Output('new-watchlist-name', 'disabled',allow_duplicate=True),
+      Output('saved-watchlists-dropdown', 'disabled',allow_duplicate=True),
+      Output('create-watchlist-button', 'disabled',allow_duplicate=True),
+      Output('delete-watchlist-button', 'disabled',allow_duplicate=True)],
     [Input('login-status', 'data')],
-    [State('login-username-store', 'data')],
-    prevent_initial_call=True
+    prevent_initial_call='initial_duplicate'
 )
-def load_watchlist(login_status, username):
-    if login_status and username:
-        user = User.query.filter_by(username=username).first()
-        if user and user.watchlist:
-            return json.loads(user.watchlist)  # Load the watchlist from the database
-        return []  # No default stock if logged in but watchlist is empty
-    return ['AAPL']  # Default to AAPL if not logged in
+def update_watchlist_management_layout(login_status):
+    if login_status:
+        return False, False, False, False  # Enable the components when logged in
+    else:
+        return True, True, False, False  # Keep them disabled when logged out
+
 
 
 @app.callback(
-    Output('individual-stocks-store', 'data',allow_duplicate=True),
+    [Output('saved-watchlists-dropdown', 'options'),
+     Output('saved-watchlists-dropdown', 'value'),
+     Output('new-watchlist-name', 'value')],
+    [Input('login-status', 'data'),
+     Input('create-watchlist-button', 'n_clicks'),
+     Input('delete-watchlist-button', 'n_clicks')],
+    [State('new-watchlist-name', 'value'),
+     State('individual-stocks-store', 'data'),
+     State('saved-watchlists-dropdown', 'value'),
+     State('theme-store', 'data'),  # Get the selected theme
+     State('login-username-store', 'data')]
+)
+def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_name, stocks, selected_watchlist_id, selected_theme, username):
+    if not username or not login_status:
+        return [], None, ''  # Clear the dropdown and inputs if not logged in
+    
+    user = User.query.filter_by(username=username).first()
+    
+    # Save theme to the user profile
+    if user:
+        user.theme = selected_theme
+        db.session.commit()
+
+    if delete_clicks and selected_watchlist_id:
+        # If a delete button was clicked and a watchlist is selected, delete it
+        watchlist = Watchlist.query.get(selected_watchlist_id)
+        if watchlist and watchlist.user_id == user.id:
+            db.session.delete(watchlist)
+            db.session.commit()
+            selected_watchlist_id = None  # Clear the selected watchlist
+
+    elif create_clicks:
+        # If a watchlist is selected, update the existing watchlist
+        if selected_watchlist_id:
+            watchlist = Watchlist.query.get(selected_watchlist_id)
+            if watchlist and watchlist.user_id == user.id:
+                watchlist.stocks = json.dumps(stocks)  # Update the existing watchlist
+                db.session.commit()
+        # If no watchlist is selected, create a new one
+        elif new_watchlist_name:
+            new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
+            db.session.add(new_watchlist)
+            db.session.commit()
+
+    # Load and return updated watchlist options for the user
+    watchlists = Watchlist.query.filter_by(user_id=user.id).all()
+    watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
+
+    return watchlist_options, selected_watchlist_id, ''
+
+
+@app.callback(
+    Output('individual-stocks-store', 'data'),
     [Input('url', 'pathname'),  # Triggers when the page is loaded/refreshed
+     Input('saved-watchlists-dropdown', 'value'),
      Input('login-status', 'data')],
     [State('login-username-store', 'data')],
-    prevent_initial_call=True
+    prevent_initial_call=False  # Ensure this runs on page load
 )
-def load_watchlist_on_page_load(pathname, login_status, username):
+def load_watchlist(pathname, watchlist_id, login_status, username):
+    # Check if the user is logged in and a username is provided
     if login_status and username:
         user = User.query.filter_by(username=username).first()
-        if user and user.watchlist:
-            return json.loads(user.watchlist)  # Load the watchlist from the database
-    return ['AAPL']  # Default to AAPL if not logged in
+        
+        if watchlist_id:
+            # Load the selected watchlist from the dropdown
+            watchlist = db.session.get(Watchlist, watchlist_id)
+            if watchlist:
+                return json.loads(watchlist.stocks)
+        
+        # If no specific watchlist is selected, load the default or most recent watchlist
+        default_watchlist = Watchlist.query.filter_by(user_id=user.id, is_default=True).first()
+        if default_watchlist:
+            return json.loads(default_watchlist.stocks)
 
+        # If no default, load the most recent watchlist
+        recent_watchlist = Watchlist.query.filter_by(user_id=user.id).order_by(Watchlist.id.desc()).first()
+        if recent_watchlist:
+            return json.loads(recent_watchlist.stocks)
+    
+    # If not logged in or no watchlist is selected, return AAPL as the default stock
+    return ['AAPL']
 
 @app.callback(
-    Output('theme-store', 'data', allow_duplicate=True),
-    Input('login-status', 'data'),
-    State('login-username-store', 'data'),
-    prevent_initial_call=True
-)
-def load_user_theme(login_status, username):
-    if login_status and username:
-        user = User.query.filter_by(username=username).first()
-        if user and user.theme:
-            return user.theme
-    return 'MATERIA'  # Default theme if none is found
-
-from dash import dcc, html, Input, Output, State, callback_context, ALL
-from datetime import datetime, timedelta
-
-@app.callback(
-    [Output('individual-stocks-store', 'data'),
+    [Output('individual-stocks-store', 'data', allow_duplicate=True),
      Output('watchlist-summary', 'children'),
      Output('stock-graph', 'figure'),
      Output('stock-graph', 'style'),
@@ -1884,19 +1906,31 @@ from datetime import datetime, timedelta
      Input('benchmark-selection', 'value'),
      Input('predefined-ranges', 'value'),
      Input('indexed-comparison-stock-dropdown', 'value'),
-     Input('prices-stock-dropdown', 'value')],
+     Input('prices-stock-dropdown', 'value'),
+     Input('saved-watchlists-dropdown', 'value')],  # Added the dropdown as an Input
     [State('individual-stock-input', 'value'),
      State('individual-stocks-store', 'data'),
      State('plotly-theme-store', 'data')],
-    prevent_initial_call=True
+    prevent_initial_call='initial_duplicate'
 )
-def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, new_stock, individual_stocks, plotly_theme):
+def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_watchlist, new_stock, individual_stocks, plotly_theme):
     ctx = callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     trigger = ctx.triggered[0]['prop_id']
 
+    # Check if the watchlist dropdown triggered the update
+    if 'saved-watchlists-dropdown' in trigger and selected_watchlist:
+        # Load the selected watchlist from the database
+        watchlist = db.session.get(Watchlist, selected_watchlist)
+        if watchlist:
+            individual_stocks = json.loads(watchlist.stocks)
+            # Automatically select up to 5 stocks
+            selected_prices_stocks = individual_stocks[:5]
+            selected_comparison_stocks = individual_stocks[:5]
+
+    # Handle other triggers as before (add stock, reset stock, remove stock, etc.)
     if 'add-stock-button' in trigger and new_stock:
         new_stock = new_stock.upper().strip()
         if new_stock and new_stock not in individual_stocks:
@@ -1909,11 +1943,12 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         index_to_remove = json.loads(trigger.split('.')[0])['index']
         if 0 <= index_to_remove < len(individual_stocks):
             individual_stocks.pop(index_to_remove)
-
     if benchmark_selection in individual_stocks:
         individual_stocks.remove(benchmark_selection)
 
     options = [{'label': stock, 'value': stock} for stock in individual_stocks]
+
+    # Update selected stocks for Prices and Indexed Comparison dropdowns
     if selected_comparison_stocks:
         selected_comparison_stocks = [stock for stock in selected_comparison_stocks if stock in individual_stocks]
     else:
@@ -1939,6 +1974,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             ""
         )
 
+    # The rest of the code (fetching data, creating graphs) remains unchanged
     today = pd.to_datetime('today')
 
     if predefined_range == '5D_15m':
@@ -1982,7 +2018,6 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             # Conditional check for intraday data
             if predefined_range in ['1D_15m']:
                 # Check if there's data in the last 24 hours
-                # if df.empty or len(df[df.index >= end_date - timedelta(hours=24)]) == 0:
                 if df.empty:
                     print(f"No intraday data found for {symbol} in the last 24 hours. Skipping to the next stock.")
                     continue  # Skip to the next stock if no intraday data is available
@@ -2113,7 +2148,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         if not df_stock.empty and len(df_stock) > 1:  # Ensure there's enough data
             if chart_type == 'line':
                 fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
-                                               line=dict(color='blue')), row=i + 1, col=1)
+                                                line=dict(color='blue')), row=i + 1, col=1)
 
                 last_close = df_stock['Close'].iloc[-2]
                 latest_close = df_stock['Close'].iloc[-1]
@@ -2168,26 +2203,59 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
 
             if 'Volume' in movag_input:
                 fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
-                                           marker=dict(color='gray'), opacity=0.3), row=i + 1, col=1, secondary_y=True)
+                                            marker=dict(color='gray'), opacity=0.3), row=i + 1, col=1, secondary_y=True)
                 fig_stock.update_yaxes(showgrid=False, secondary_y=True, row=i + 1, col=1)
 
             if '30D_MA' in movag_input:
                 fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
-                                               line=dict(color='green')), row=i + 1, col=1)
+                                                line=dict(color='green')), row=i + 1, col=1)
 
             if '100D_MA' in movag_input:
                 fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
-                                               line=dict(color='red')), row=i + 1, col=1)
+                                                line=dict(color='red')), row=i + 1, col=1)
 
     fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False,
                             margin=dict(l=40, r=40, t=40, b=40))
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
+    # load_dotenv()
+    # api_key = os.getenv('API_KEY')
+
+    # news_content = fetch_news(api_key, individual_stocks)
     news_content = fetch_news(individual_stocks)
 
-    return individual_stocks, generate_watchlist_table(individual_stocks), fig_stock, {
-        'height': f'{graph_height}px', 'overflow': 'auto'}, news_content, fig_indexed, options, selected_comparison_stocks, options, selected_prices_stocks, ""
+    return (
+        individual_stocks,
+        generate_watchlist_table(individual_stocks),
+        fig_stock,
+        {'height': f'{graph_height}px', 'overflow': 'auto'},
+        news_content,
+        fig_indexed,
+        options,
+        selected_comparison_stocks,
+        options,
+        selected_prices_stocks,
+        ""
+    )
+
+
+@app.callback(
+    Output('theme-store', 'data', allow_duplicate=True),
+    Input('login-status', 'data'),
+    State('login-username-store', 'data'),
+    prevent_initial_call=True
+)
+def load_user_theme(login_status, username):
+    if login_status and username:
+        user = User.query.filter_by(username=username).first()
+        if user and user.theme:
+            return user.theme
+    return 'MATERIA'  # Default theme if none is found
+
+from dash import dcc, html, Input, Output, State, callback_context, ALL
+from datetime import datetime, timedelta
+
 
 
 @app.callback(Output('simulation-result', 'children'),
