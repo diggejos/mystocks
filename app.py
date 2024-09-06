@@ -1885,6 +1885,9 @@ def load_watchlist(pathname, watchlist_id, login_status, username):
     # If not logged in or no watchlist is selected, return AAPL as the default stock
     return ['AAPL']
 
+from dash import dcc, html, Input, Output, State, callback_context, ALL
+from datetime import datetime, timedelta
+
 @app.callback(
     [Output('individual-stocks-store', 'data', allow_duplicate=True),
      Output('watchlist-summary', 'children'),
