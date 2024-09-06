@@ -2240,24 +2240,6 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     )
 
 
-@app.callback(
-    Output('theme-store', 'data', allow_duplicate=True),
-    Input('login-status', 'data'),
-    State('login-username-store', 'data'),
-    prevent_initial_call=True
-)
-def load_user_theme(login_status, username):
-    if login_status and username:
-        user = User.query.filter_by(username=username).first()
-        if user and user.theme:
-            return user.theme
-    return 'MATERIA'  # Default theme if none is found
-
-from dash import dcc, html, Input, Output, State, callback_context, ALL
-from datetime import datetime, timedelta
-
-
-
 @app.callback(Output('simulation-result', 'children'),
               Input('simulate-button', 'n_clicks'),
               State('simulation-stock-input', 'value'),
@@ -2333,10 +2315,10 @@ def display_page(pathname, login_status):
 
 @app.callback(
     [Output('theme-store', 'data'),
-     Output('plotly-theme-store', 'data')],
+      Output('plotly-theme-store', 'data')],
     [Input(f'theme-{theme}', 'n_clicks') for theme in themes.keys()],
     [State('login-status', 'data'),
-     State('login-username-store', 'data')]
+      State('login-username-store', 'data')]
 )
 def update_theme(*args, login_status=None, username=None):
     ctx = dash.callback_context
@@ -2355,6 +2337,7 @@ def update_theme(*args, login_status=None, username=None):
 
     # Default theme if no selection was made or user not logged in
     return dbc.themes.MATERIA, 'plotly_white'
+
 
 @app.callback(
     Output('theme-switch', 'href'),
