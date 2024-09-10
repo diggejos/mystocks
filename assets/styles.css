@@ -418,17 +418,7 @@
     }
 }
 
-#filters-collapse {
-    position: fixed;
-    top: 140px; /* Adjust this value to leave space for the button */
-    left: 0;
-    width: 80%; /* Set to 80% width for mobile */
-    z-index: 1000; /* Ensure it stays above other elements */
-    background-color: white; /* Background color for the collapse */
-    overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
-    max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
-    display: none; /* Hide collapse by default */
-}
+
 
 @media (min-width: 768px) {
     #filters-collapse {
