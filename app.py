@@ -326,7 +326,7 @@ dashboard_layout = dbc.Container([
                         ], className='mb-3'),
                     ]),
                     watchlist_management_layout
-                ]),
+                ],className="sidebar-card"),
                 id="filters-collapse",
                 is_open=False# Initially closed (for mobile use case)
                 
