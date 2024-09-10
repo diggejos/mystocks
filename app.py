@@ -127,7 +127,20 @@ navbar = dbc.NavbarSimple(
     dark=True,
     className="sticky-top mb-4"
 )
+# Create a sticky footer with tabs for mobile view
+sticky_footer_mobile = dbc.Nav(
+    [
+        dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="tab-prices")),
+        dbc.NavItem(dbc.NavLink("📰 News", href="#news", id="tab-news")),
+        dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="tab-comparison")),
+        dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="tab-forecast")),
+        dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="tab-simulation")),
+        dbc.NavItem(dbc.NavLink("❤️ Reccomendations", href="#reccomendations", id="tab-reccommendation"))
 
+    ],
+    pills=True,
+    className="footer-nav"
+)
 overlay = dbc.Modal(
     [
         dbc.ModalHeader(dbc.ModalTitle("Access Restricted")),
@@ -141,7 +154,7 @@ overlay = dbc.Modal(
 )
 
 floating_chatbot_button = html.Div(
-    dbc.Button("💬 with Financio", id="open-chatbot-button", color="primary", className="chatbot-button"),
+    dbc.Button("💬 Financio", id="open-chatbot-button", color="primary", className="chatbot-button"),
     style={
         "position": "fixed",
         "bottom": "20px",
@@ -230,6 +243,7 @@ app.layout = html.Div([
     floating_chatbot_button,  
     chatbot_modal,
     financials_modal,
+    sticky_footer_mobile,
     footer
 ])
 
