@@ -249,15 +249,34 @@ app.layout = html.Div([
 
 dashboard_layout = dbc.Container([
     dbc.Row([
+        # Sidebar Filters (for both mobile and desktop)
         dbc.Col([
-            html.H1("Stocks monitoring dashboard - MyStocks", style={"display": "none"}),  # for SEO purpose (visually hidden)
-            html.Div([
-                dbc.Button("🔽", id="toggle-filters-button", color="primary", outline=True, size="sm", style={"position": "flexible", "top": "15px", "left": "10px"})
-            ]),
+            html.H1("Stocks monitoring dashboard - MyStocks", style={"display": "none"}), 
+            html.H2("Stocks monitoring made easy. Create multiple personal watchlists", style={"display": "none"}), 
+            
+            # Toggle button (only visible on mobile)
+            dbc.Button(
+                "⚙️ Watchlists and select Time", 
+                id="toggle-filters-button", 
+                color="danger", 
+                outline=False, 
+                size="sm", 
+                className="mobile-only", 
+                style={
+                    "position": "fixed",  # Make the button floating
+                    "top": "110px",        # Adjust the top position
+                    "left": "10px",      # Adjust the right position (you can also use 'left' instead)
+                    "z-index": "999",     # Ensure it's on top of other elements
+                    "margin-bottom": "15px"
+                }
+            ),
+
+            # Offcanvas Filters (for mobile and hidden on desktop)
             dbc.Collapse(
                 dbc.Card([
                     dbc.CardBody([
-                        html.H2("Filter stocks, create custom watchlist", style={"display": "none"}),  # for SEO purpose (visually hidden)
+                        html.H2("Filter stocks, create custom watchlist", style={"display": "none"}),  # for SEO
+
                         html.Div([
                             html.Label("Add Stock Symbol:", className="font-weight-bold"),
                             dcc.Input(
@@ -269,11 +288,13 @@ dashboard_layout = dbc.Container([
                             ),
                             dbc.Button("➕ Stock", id='add-stock-button', color='primary', className='small-button'),
                             dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
-                            html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),  # Refresh icon
-                
+                            html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),
                         ], className='mb-3'),
                         
-                        html.Div(id='watchlist-summary', className='mb-3'),
+                        dcc.Loading(id="loading-watchlist", type="default", children=[
+                            html.Div(id='watchlist-summary', className='mb-3')
+                        ]),
+                        
                         html.Div([
                             html.Label("Select Date Range:", className="font-weight-bold"),
                             dcc.Dropdown(
@@ -297,11 +318,12 @@ dashboard_layout = dbc.Container([
                     watchlist_management_layout
                 ]),
                 id="filters-collapse",
-                is_open=True,  # Start with the card open
-                style={"margin-top": "20px"}
+                is_open=False# Initially closed (for mobile use case)
+                
             ),
-        ], width=12, md=3, style={"margin-top": "-25px"}),
-        
+        ], width=12, md=3, style={"margin-top": "10px"}),
+
+        # Main content area (Tabs for Prices, News, Comparison, etc.)
         dbc.Col([
             dcc.Tabs(
                 id='tabs',
@@ -310,15 +332,13 @@ dashboard_layout = dbc.Container([
                     dcc.Tab(label='📈 Prices', value='📈 Prices', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Analyse Stock Prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 dcc.Dropdown(
                                     id='prices-stock-dropdown',
-                                    options=[],  # This will be populated dynamically
-                                    value=[],  # Default selected stocks (up to 5)
+                                    options=[],  
+                                    value=[],  
                                     multi=True,
                                     placeholder="Select stocks to display",
                                     className='form-control',
-                                    maxHeight=200,
                                 ),
                                 dcc.RadioItems(
                                     id='chart-type',
@@ -329,8 +349,9 @@ dashboard_layout = dbc.Container([
                                     value='line',
                                     inline=True,
                                     className='form-control',
-                                    inputStyle={"margin-right": "10px"},
+                                    inputStyle={"margin-right": "10px","margin-buttom":"0px"},
                                     labelStyle={"margin-right": "20px"}
+                                    
                                 ),
                                 dcc.Checklist(
                                     id='movag_input',
@@ -341,44 +362,36 @@ dashboard_layout = dbc.Container([
                                     ],
                                     value=[],
                                     inline=True,
+                                    className='form-control',
                                     inputStyle={"margin-right": "10px"},
                                     labelStyle={"margin-right": "20px"}
                                 ),
-                                dcc.Loading(
-                                    id="loading-prices",
-                                    type="default",
-                                    children=[dcc.Graph(id='stock-graph', style={'height': '500px'})]
-                                )
+                                dcc.Loading(id="loading-prices", type="default", children=[
+                                    dcc.Graph(id='stock-graph', style={'height': '500px'})
+                                ])
                             ])
                         )
                     ]),
                     dcc.Tab(label='📰 News', value='📰 News', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Stock News", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                dcc.Loading(
-                                    id="loading-news",
-                                    type="default",
-                                    children=[html.Div(id='stock-news', className='news-container')]
-                                )
+                                dcc.Loading(id="loading-news", type="default", children=[
+                                    html.Div(id='stock-news', className='news-container')
+                                ])
                             ])
                         )
                     ]),
-                    dcc.Tab(label='⚖️ Indexed Comparison', value='⚖️ Indexed Comparison', children=[
+                    dcc.Tab(label='⚖️ Compare', value='⚖️ Compare', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Compare stocks prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                html.Div([
-                                    html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
-                                    dcc.Dropdown(
-                                        id='indexed-comparison-stock-dropdown',
-                                        options=[],  # This will be populated dynamically
-                                        value=[],  # Default selected stocks
-                                        multi=True,
-                                        className='form-control',
-                                        maxHeight=200,
-                                    ),
-                                ], className='mb-3'),
+                                html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
+                                dcc.Dropdown(
+                                    id='indexed-comparison-stock-dropdown',
+                                    options=[],  # Populated dynamically
+                                    value=[],  # Default selected stocks
+                                    multi=True,
+                                    className='form-control',
+                                ),
                                 dcc.RadioItems(
                                     id='benchmark-selection',
                                     options=[
@@ -393,25 +406,21 @@ dashboard_layout = dbc.Container([
                                     inputStyle={"margin-right": "10px"},
                                     labelStyle={"margin-right": "20px"}
                                 ),
-                                dcc.Loading(
-                                    id="loading-comparison",
-                                    type="default",
-                                    children=[dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})]
-                                )
+                                dcc.Loading(id="loading-comparison", type="default", children=[
+                                    dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})
+                                ])
                             ])
                         )
                     ]),
-
                     dcc.Tab(label='🌡️ Forecast', value='🌡️ Forecast', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Forecast stocks prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
                                 html.Div([
                                     html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
                                     dcc.Dropdown(
                                         id='forecast-stock-input',
-                                        options=[],  # Options will be populated dynamically
-                                        value=[],  # Default selected stocks
+                                        options=[],  
+                                        value=[],  
                                         multi=True,
                                         className='form-control',
                                     ),
@@ -427,18 +436,9 @@ dashboard_layout = dbc.Container([
                                     ),
                                     dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
                                 ], className='mb-3'),
-                                dcc.Markdown('''
-                                    **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
-                                    While this tool is useful for identifying potential trends based on historical data, stock markets are influenced by 
-                                    a wide range of unpredictable factors. These predictions should be considered with caution and should not be used 
-                                    as financial advice. Always conduct your own research or consult with a financial advisor before making investment decisions.
-                                ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
-
-                                dcc.Loading(
-                                    id="loading-forecast",
-                                    type="default",
-                                    children=[dcc.Graph(id='forecast-graph', style={'height': '500px'})]
-                                ),
+                                dcc.Loading(id="loading-forecast", type="default", children=[
+                                    dcc.Graph(id='forecast-graph', style={'height': '500px'})
+                                ]),
                                 # Blur overlay for the Forecast tab
                                 html.Div(id='forecast-blur-overlay', style={
                                     'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
@@ -450,20 +450,17 @@ dashboard_layout = dbc.Container([
                                         html.P("Please ", style={'display': 'inline'}),
                                         html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
                                         html.P(" to view this content.", style={'display': 'inline'}),
-                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
+                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '-300px'})
                                 ])
                             ], style={'position': 'relative'})
                         )
                     ]),
-                    dcc.Tab(label='❤️ Analyst Recommendations', value='❤️ Analyst Recommendations', children=[
+                    dcc.Tab(label='❤️ Reccomendations', value='❤️ Reccomendations', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                dcc.Loading(
-                                    id="loading-analyst-recommendations",
-                                    type="default",
-                                    children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
-                                ),
+                                dcc.Loading(id="loading-analyst-recommendations", type="default", children=[
+                                    html.Div(id='analyst-recommendations-content', className='mt-4')
+                                ]),
                                 html.Div(id='blur-overlay', style={
                                     'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
                                     'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
@@ -471,73 +468,61 @@ dashboard_layout = dbc.Container([
                                     'backdrop-filter': 'blur(5px)'
                                 }, children=[
                                     html.Div([
-                                        html.P("Please ", style={'display': 'inline'}),
-                                        html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
-                                        html.P(" to view this content.", style={'display': 'inline'}),
-                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
+                                        html.P("Please ", style={'display': 'inline', "margin":"0"}),
+                                        html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue',"margin":"0"}),
+                                        html.P(" to view this content.", style={'display': 'inline',"margin":"0"}),
+                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '-100px'})
                                 ])
                             ], style={'position': 'relative'})
                         )
                     ]),
-                    dcc.Tab(label='📊 Investment Simulation', children=[
+                    dcc.Tab(label='📊 Simulate', value='📊 Simulate', children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H3("Simulate investment", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                html.Div([
-                                    html.Label("Stock Symbol:", className="font-weight-bold"),
-                                    dcc.Dropdown(
-                                        id='simulation-stock-input',
-                                        options=[],
-                                        value=[],
-                                        className='form-control',
-                                    ),
-                                ], className='mb-3'),
-                                html.Div([
-                                    html.Label("Investment Amount ($):", className="font-weight-bold"),
-                                    dcc.Input(
-                                        id='investment-amount',
-                                        type='number',
-                                        placeholder='Enter Amount',
-                                        value=1000,
-                                        className='form-control',
-                                    ),
-                                ], className='mb-3'),
-                                html.Div([
-                                    html.Label("Investment Date:", className="font-weight-bold"),
-                                    dcc.DatePickerSingle(
-                                        id='investment-date',
-                                        date=pd.to_datetime('2024-01-01'),
-                                        className='form-control'
-                                    ),
-                                ], className='mb-3'),
+                                html.Label("Stock Symbol:", className="font-weight-bold"),
+                                dcc.Dropdown(
+                                    id='simulation-stock-input',
+                                    options=[],  
+                                    value=[],  
+                                    className='form-control',
+                                ),
+                                html.Label("Investment Amount ($):", className="font-weight-bold"),
+                                dcc.Input(
+                                    id='investment-amount',
+                                    type='number',
+                                    value=1000,
+                                    className='form-control',
+                                ),
+                                html.Label("Investment Date:", className="font-weight-bold"),
+                                dcc.DatePickerSingle(
+                                    id='investment-date',
+                                    date=pd.to_datetime('2024-01-01'),
+                                    className='form-control'
+                                ),
                                 dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
-                                dcc.Loading(
-                                    id="loading-simulation",
-                                    type="default",
-                                    children=[html.Div(id='simulation-result', className='mt-4')]
-                                )
+                                dcc.Loading(id="loading-simulation", type="default", children=[
+                                    html.Div(id='simulation-result', className='mt-4')
+                                ])
                             ])
                         )
-                    ]),
+                    ])
                 ],
-                mobile_breakpoint=0,  # Force the tabs to be scrollable on mobile
-                colors={
-                    "border": "white",
-                    "primary": "blue",
-                    "background": "lightgray"
-                },
-                style={'overflowX': 'scroll', 'width': '100%'}  # Enable horizontal scroll for tabs
+                mobile_breakpoint=0,  # Forces tabs to be scrollable on mobile
+                style={'overflowX': 'scroll', 'width': '100%'},
+                className="desktop-tabs"
             )
-        ], width=12, md=8, xs=12)
+        ],  width=12, md=9, xs=12)
     ], className='mb-4'),
-
+    
+    # Welcome section
     dbc.Row([
         dbc.Col([
-            html.H3("Welcome to Your Stock Monitoring Dashboard", className="text-center mb-4", style={"display": "none"}),
+            html.H3("Welcome to Your Stock Monitoring Dashboard. Save your watchlits, monitoring stocks made easy", className="text-center mb-4", style={"display": "none"}),
             html.P([
                 "Track and analyze your favorite stocks with real-time data, forecasts, and personalized recommendations. ",
                 html.A("Learn more about the features.", href="/about", className="text-primary")
-            ], className="text-center")
+            ], className="text-center"),
+            
         ], width=12)
     ], className="mb-4")
 ], fluid=True)
@@ -590,7 +575,6 @@ profile_layout = dbc.Container([
     ])
 ], fluid=True)
 
-# Layout for Registration page
 # Layout for Registration page
 register_layout = dbc.Container([
     dbc.Row([
@@ -1408,6 +1392,48 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range):
     return go.Figure(), "", dash.no_update
 
 @app.callback(
+    Output("filters-collapse", "is_open"),
+    Input("toggle-filters-button", "n_clicks"),
+    State("filters-collapse", "is_open")
+)
+def toggle_collapse(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
+@app.callback(
+    Output('tabs', 'value'),
+    [Input('tab-prices', 'n_clicks'),
+     Input('tab-news', 'n_clicks'),
+     Input('tab-comparison', 'n_clicks'),
+     Input('tab-forecast', 'n_clicks'),
+     Input('tab-simulation', 'n_clicks'),
+     Input('tab-reccommendation', 'n_clicks')
+     ],
+    [State('tabs', 'value')]
+)
+def switch_tabs_footer_to_tabs(n_clicks_prices, n_clicks_news, n_clicks_comparison, n_clicks_forecast, n_clicks_simulation, n_clicks_reccomendation, current_tab):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return current_tab  # No tab change if nothing is clicked
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == 'tab-prices':
+        return '📈 Prices'
+    elif triggered_id == 'tab-news':
+        return '📰 News'
+    elif triggered_id == 'tab-comparison':
+        return '⚖️ Compare'
+    elif triggered_id == 'tab-forecast':
+        return '🌡️ Forecast'
+    elif triggered_id == 'tab-simulation':
+        return '📊 Simulate'
+    elif triggered_id == 'tab-reccommendation':
+        return '❤️ Reccomendations'
+    
+    return current_tab
+
+@app.callback(
     Output('forecast-graph', 'figure', allow_duplicate=True),
     [Input('active-tab', 'data')],
     [State('forecast-data-store', 'data')],
@@ -1767,35 +1793,37 @@ def generate_watchlist_table(watchlist):
             color = 'green' if change_percent > 0 else 'red' if change_percent < 0 else 'black'
             rows.append(
                 html.Tr([
-                    html.Td(dbc.Button(stock, id={'type': 'stock-symbol', 'index': i}, color="link"), style={"verticalAlign": "middle"}),
-                    html.Td(f"{latest_close:.2f}", style={"verticalAlign": "middle"}),
-                    html.Td(f"{change_percent:.2f}%", style={"color": color, "verticalAlign": "middle"}),
-                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}), style={"verticalAlign": "middle"})
+                    html.Td(html.A(stock, href="#", id={'type': 'stock-symbol', 'index': i}, 
+                                   style={"text-decoration": "none", "color": "blue"}), 
+                            style={"verticalAlign": "middle"}),  # Vertically center the link
+                    html.Td(f"{latest_close:.2f}", style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td(f"{change_percent:.2f}%", style={"color": color, "verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}),
+                            style={"verticalAlign": "middle"})  # Vertically center the button
                 ])
             )
         else:
             rows.append(
                 html.Tr([
-                    html.Td(stock, style={"verticalAlign": "middle"}),
-                    html.Td("N/A", style={"verticalAlign": "middle"}),
-                    html.Td("N/A", style={"verticalAlign": "middle"}),
-                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}), style={"verticalAlign": "middle"})
+                    html.Td(stock, style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td("N/A", style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td("N/A", style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}),
+                            style={"verticalAlign": "middle"})  # Vertically center the button
                 ])
             )
 
     return dbc.Table(
         children=[
-            html.Thead(html.Tr([html.Th("Symbol"), 
-                                html.Th("Latest"), 
-                                html.Th("daily %"), 
-                                html.Th("")])),
+            html.Thead(html.Tr([html.Th("Symbol"), html.Th("Latest"), html.Th("Change (%)"), html.Th("")])),
             html.Tbody(rows)
         ],
         bordered=True,
         hover=True,
         responsive=True,
         striped=True,
-        size="sm"
+        size="sm",
+        className="custom-table"  # Apply the custom class for the table
     )
 
 
@@ -2363,19 +2391,6 @@ def update_theme(*args, login_status=None, username=None):
 def update_stylesheet(theme):
     return theme
 
-# Callback to handle the collapse toggle and emoji change
-@app.callback(
-    [Output("filters-collapse", "is_open"),
-     Output("toggle-filters-button", "children")],
-    [Input("toggle-filters-button", "n_clicks")],
-    [State("filters-collapse", "is_open")]
-)
-def toggle_filters_visibility(n_clicks, is_open):
-    if n_clicks:
-        is_open = not is_open  # Toggle the state
-    # Change the emoji based on the collapse state
-    emoji = "🔽" if not is_open else "🔼"
-    return is_open, emoji
 
 app.index_string = '''
 <!DOCTYPE html>
