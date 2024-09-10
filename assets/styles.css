@@ -16,11 +16,11 @@
 }
 
 .navbar {
-    padding: 1rem 1rem;
+    padding: 10px 10px;
 }
 
 .navbar-nav .nav-item {
-    margin-left: 1rem;
+    margin-left: 10px;
 }
 
 .navbar-logo {
