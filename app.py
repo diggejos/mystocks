@@ -2390,6 +2390,16 @@ def update_sticky_footer(login_status):
     return {"display": "block"}  # Always show footer on mobile regardless of login status
 
 
+
+@app.callback(
+    Output('sticky-footer-container', 'style',allow_duplicate=True),
+    [Input('login-status', 'data')],
+    prevent_initial_call=True
+)
+def update_sticky_footer(login_status):
+    return {"display": "block"}  # Always show footer on mobile regardless of login status
+
+
 @app.callback(
     [Output('tab-prices', 'className'),
      Output('tab-news', 'className'),
