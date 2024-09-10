@@ -1558,11 +1558,11 @@ def validate_password(password):
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
      Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style',allow_duplicate=True),
+     Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
      Output('profile-link', 'style', allow_duplicate=True),
-     Output('theme-store', 'data',allow_duplicate=True),  # Load the user's theme
-     Output('plotly-theme-store', 'data',allow_duplicate=True),  # Load the corresponding Plotly theme
+     Output('theme-store', 'data', allow_duplicate=True),  # Load the user's theme
+     Output('plotly-theme-store', 'data', allow_duplicate=True),  # Load the corresponding Plotly theme
      Output('login-output', 'children')],
     [Input('login-button', 'n_clicks')],
     [State('login-username', 'value'),
@@ -1573,13 +1573,23 @@ def handle_login(login_clicks, username, password):
     if login_clicks:
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password, password):
+            # Set the session values to log the user in
             session['logged_in'] = True
             session['username'] = username
-            theme = user.theme if user.theme else dbc.themes.MATERIA
-            plotly_theme = themes.get(theme, {}).get('plotly', 'plotly_white')
-            return True, username, {"display": "none"}, {"display": "block"}, {"display": "block"}, theme, plotly_theme, ""
+
+            # Get the user's selected theme or default to MATERIA if not set
+            user_theme = user.theme if user.theme else 'MATERIA'
+            
+            # Load the corresponding Plotly theme
+            plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
+            
+            # Return the correct styles and themes
+            return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"},
+                    themes[user_theme]['dbc'], plotly_theme, "")
         else:
-            return False, None, {"display": "block"}, {"display": "none"}, {"display": "none"}, dbc.themes.MATERIA, 'plotly_white', dbc.Alert("Login failed.", color="danger")
+            # Return failed login status
+            return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"},
+                    dbc.themes.MATERIA, 'plotly_white', dbc.Alert("Login failed.", color="danger"))
 
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
@@ -1851,8 +1861,6 @@ def update_watchlist_management_layout(login_status):
     else:
         return True, True, False, False  # Keep them disabled when logged out
 
-
-
 @app.callback(
     [Output('saved-watchlists-dropdown', 'options'),
      Output('saved-watchlists-dropdown', 'value'),
@@ -1863,7 +1871,7 @@ def update_watchlist_management_layout(login_status):
     [State('new-watchlist-name', 'value'),
      State('individual-stocks-store', 'data'),
      State('saved-watchlists-dropdown', 'value'),
-     State('theme-store', 'data'),  # Get the selected theme
+     State('theme-store', 'data'),  # Get the selected theme (name, not URL)
      State('login-username-store', 'data')]
 )
 def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_name, stocks, selected_watchlist_id, selected_theme, username):
@@ -1871,31 +1879,34 @@ def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_
         return [], None, ''  # Clear the dropdown and inputs if not logged in
     
     user = User.query.filter_by(username=username).first()
-    
-    # Save theme to the user profile
-    if user:
-        user.theme = selected_theme
-        db.session.commit()
 
+    # Handle watchlist deletion
     if delete_clicks and selected_watchlist_id:
-        # If a delete button was clicked and a watchlist is selected, delete it
         watchlist = Watchlist.query.get(selected_watchlist_id)
         if watchlist and watchlist.user_id == user.id:
             db.session.delete(watchlist)
             db.session.commit()
             selected_watchlist_id = None  # Clear the selected watchlist
 
+    # Handle watchlist creation or update
     elif create_clicks:
-        # If a watchlist is selected, update the existing watchlist
         if selected_watchlist_id:
             watchlist = Watchlist.query.get(selected_watchlist_id)
             if watchlist and watchlist.user_id == user.id:
                 watchlist.stocks = json.dumps(stocks)  # Update the existing watchlist
                 db.session.commit()
-        # If no watchlist is selected, create a new one
         elif new_watchlist_name:
             new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
             db.session.add(new_watchlist)
+            db.session.commit()
+
+        # Save the theme **name** to the user profile, not the URL
+        if user:
+            # Make sure only the theme name is saved
+            for theme_name, theme_info in themes.items():
+                if theme_info['dbc'] == selected_theme:
+                    user.theme = theme_name  # Save the theme name like 'JOURNAL'
+                    break
             db.session.commit()
 
     # Load and return updated watchlist options for the user
@@ -1903,6 +1914,7 @@ def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_
     watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
 
     return watchlist_options, selected_watchlist_id, ''
+
 
 
 @app.callback(
