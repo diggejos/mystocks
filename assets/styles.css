@@ -520,3 +520,41 @@ a:hover {
         display: block;
     }
 }
+
+/* Overlay styling */
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    z-index: 999; /* Ensure it is above other elements but below the sidebar */
+}
+
+/* Ensure the overlay is only visible on mobile */
+@media (min-width: 768px) {
+    .mobile-overlay {
+        display: none !important; /* Hide the overlay on larger screens */
+    }
+}
+
+/* Make sure the toggle button stays on top of everything */
+#toggle-filters-button {
+    z-index: 1001; /* Ensure the button is above the overlay */
+    position: fixed; /* Keep the button fixed */
+    top: 110px; /* Adjust position as needed */
+    left: 10px; /* Adjust left position */
+    margin-bottom: 15px;
+}
+
+@media (min-width: 768px) {
+    #toggle-filters-button {
+        display: none; /* Hide the button on desktop */
+    }
+}
+/* Sidebar collapse container */
+#filters-collapse {
+    z-index: 1000; /* Ensure it is above the overlay */
+}
+
