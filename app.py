@@ -253,6 +253,16 @@ dashboard_layout = dbc.Container([
         dbc.Col([
             html.H1("Stocks monitoring dashboard - MyStocks", style={"display": "none"}), 
             html.H2("Stocks monitoring made easy. Create multiple personal watchlists", style={"display": "none"}), 
+            html.Div([
+                html.P("Welcome to MyStocks - the ultimate platform for stock monitoring. Track stock prices, analyze market trends, and create personalized watchlists with ease. Our dashboard is designed to provide real-time data, forecasts, and insights tailored to your investment portfolio."),
+                html.P("With MyStocks, you can compare stock performance, simulate investments, and access the latest news and analyst recommendations. Whether you're a seasoned trader or a beginner, MyStocks offers tools and features that help you make informed investment decisions."),
+                html.P("Create multiple custom watchlists and monitor your stocks with real-time updates. MyStocks allows you to easily manage and organize your investments across different watchlists."),
+                html.P("Get access to historical stock data and perform in-depth analysis with our comprehensive charting tools. MyStocks also offers forecasting features, allowing you to predict future stock prices using advanced algorithms."),
+                html.P("Our platform also integrates with popular news sources to provide you with up-to-date news and information on your favorite stocks."),
+                html.P("MyStocks is your one-stop solution for stock monitoring, forecasting, news aggregation, and personalized investment tools. Try MyStocks today and take control of your investments like never before."),
+                html.P("Key Features: Historical Stock Price Tracking, Stock Market News, Profit/Loss Simulation, Analyst Recommendations, Time Series Forecasting, Personalized Watchlist, Stock Performance Comparison, Intelligent Financial Chatbot."),
+            ], style={"display": "none"}),  # This text is hidden but available for SEO
+
             
             # Toggle button (only visible on mobile)
             dbc.Button(
