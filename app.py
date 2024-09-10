@@ -243,7 +243,7 @@ app.layout = html.Div([
     floating_chatbot_button,  
     chatbot_modal,
     financials_modal,
-    sticky_footer_mobile,
+    html.Div(sticky_footer_mobile, id="sticky-footer-container"),
     footer
 ])
 
@@ -2339,23 +2339,36 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
             ])
     return dash.no_update
 
+
+# Callback to display page content and conditionally show the sticky footer
 @app.callback(
     [Output('page-content', 'children'),
-     Output('register-link', 'style')],
+     Output('register-link', 'style'),
+     Output('sticky-footer-container', 'style')],  # Output for showing/hiding the sticky footer
     [Input('url', 'pathname'),
      Input('login-status', 'data')]
 )
 def display_page(pathname, login_status):
-    if pathname == '/about':
-        return about_layout, {"display": "block"} if not login_status else {"display": "none"}
-    elif pathname == '/register':
-        return register_layout, {"display": "block"} if not login_status else {"display": "none"}
-    elif pathname == '/login' and not login_status:
-        return login_layout, {"display": "block"} if not login_status else {"display": "none"}
-    elif pathname == '/profile' and login_status:
-        return profile_layout, {"display": "none"}
+    # Define pages where the sticky footer should be hidden
+    pages_without_footer = ['/about', '/login', '/register', '/profile']
+
+    # Conditionally display the footer based on the current pathname
+    if pathname in pages_without_footer:
+        footer_style = {"display": "none"}
     else:
-        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}
+        footer_style = {"display": "block"}  # Show the footer on other pages
+
+    # Return the correct layout for each page
+    if pathname == '/about':
+        return about_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+    elif pathname == '/register':
+        return register_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+    elif pathname == '/login' and not login_status:
+        return login_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+    elif pathname == '/profile' and login_status:
+        return profile_layout, {"display": "none"}, footer_style
+    else:
+        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
 
 
 @app.callback(
