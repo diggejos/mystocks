@@ -1577,15 +1577,16 @@ def handle_login(login_clicks, username, password):
             session['logged_in'] = True
             session['username'] = username
 
-            # Get the user's selected theme or default to MATERIA if not set
+            # Get the user's selected theme name from the database
             user_theme = user.theme if user.theme else 'MATERIA'
             
-            # Load the corresponding Plotly theme
+            # Load the corresponding Bootstrap and Plotly themes using the theme name
+            bootstrap_theme = themes.get(user_theme, {}).get('dbc', dbc.themes.MATERIA)
             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-            
+
             # Return the correct styles and themes
             return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"},
-                    themes[user_theme]['dbc'], plotly_theme, "")
+                    bootstrap_theme, plotly_theme, "")
         else:
             # Return failed login status
             return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"},
@@ -1860,7 +1861,6 @@ def update_watchlist_management_layout(login_status):
         return False, False, False, False  # Enable the components when logged in
     else:
         return True, True, False, False  # Keep them disabled when logged out
-
 @app.callback(
     [Output('saved-watchlists-dropdown', 'options'),
      Output('saved-watchlists-dropdown', 'value'),
@@ -1914,7 +1914,6 @@ def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_
     watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
 
     return watchlist_options, selected_watchlist_id, ''
-
 
 
 @app.callback(
