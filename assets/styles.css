@@ -492,4 +492,15 @@ a:hover {
         display: none !important;  /* Hide the sticky footer on larger screens */
     }
 }
+/* Hide the sticky footer by default */
+#sticky-footer-container {
+    display: none;
+}
+
+/* Show the sticky footer only on mobile screens */
+@media (max-width: 768px) {
+    #sticky-footer-container {
+        display: block;
+    }
+}
 
