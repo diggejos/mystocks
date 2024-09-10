@@ -70,6 +70,32 @@
     margin-right: 8px;
 }
 
+@media (max-width: 768px) {
+    .desktop-tabs {
+        display: none !important;  /* Hide the tabs on mobile devices */
+    }
+}
+
+@media (min-width: 768px) {
+    .footer-nav {
+        display: none !important;  /* Hide the sticky footer on larger screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .desktop-filters {
+        display: none !important;  /* Hide filters collapse on mobile */
+    }
+}
+
+@media (min-width: 768px) {
+    .mobile-filters {
+        display: none !important;  /* Hide sidebar on desktop */
+    }
+}
+
+
+
 
 #chatbot-conversation {
     background-color: #f8f9fa;
@@ -299,8 +325,8 @@
     left: 0; /* Align it to the left */
     top: 0; /* Align it to the top */
     font-size: 1.2em; /* Slightly larger checkmark */
-}
-
+ }
+    
 .small-button {
     font-size: 14px !important;
     justify-content: center; /* Horizontally center the text */
@@ -314,7 +340,7 @@
     margin-right: 10px;
 
  }
-
+ 
 .custom-table td, .custom-table th {
     padding: 2px 5px !important;  /* Reduce padding */
     line-height: 1.2 !important;  /* Adjust line height */
