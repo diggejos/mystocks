@@ -276,11 +276,11 @@ dashboard_layout = dbc.Container([
                     "position": "fixed",  # Make the button floating
                     "top": "110px",        # Adjust the top position
                     "left": "10px",      # Adjust the right position (you can also use 'left' instead)
-                    "z-index": "999",     # Ensure it's on top of other elements
+                    "z-index": "1001",     # Ensure it's on top of other elements
                     "margin-bottom": "15px"
                 }
             ),
-
+            html.Div(id="mobile-overlay", className="mobile-overlay", style={"display": "none"}),
             # Offcanvas Filters (for mobile and hidden on desktop)
             dbc.Collapse(
                 dbc.Card([
@@ -328,8 +328,8 @@ dashboard_layout = dbc.Container([
                     watchlist_management_layout
                 ],className="sidebar-card"),
                 id="filters-collapse",
-                is_open=False# Initially closed (for mobile use case)
-                
+                is_open=False,# Initially closed (for mobile use case)
+                style={"z-index": "1000"}
             ),
         ], width=12, md=3, style={"margin-top": "10px"}),
 
@@ -1402,14 +1402,19 @@ def generate_forecasts(n_clicks, selected_stocks, horizon, predefined_range):
     return go.Figure(), "", dash.no_update
 
 @app.callback(
-    Output("filters-collapse", "is_open"),
-    Input("toggle-filters-button", "n_clicks"),
-    State("filters-collapse", "is_open")
+    [Output('filters-collapse', 'is_open'),
+     Output('mobile-overlay', 'style')],
+    [Input('toggle-filters-button', 'n_clicks')],
+    [State('filters-collapse', 'is_open')]
 )
-def toggle_collapse(n_clicks, is_open):
+def toggle_sidebar(n_clicks, is_open):
     if n_clicks:
-        return not is_open
-    return is_open
+        # Toggle the sidebar and the overlay
+        new_is_open = not is_open
+        overlay_style = {"display": "block"} if new_is_open else {"display": "none"}
+        return new_is_open, overlay_style
+    return is_open, {"display": "none"}
+
 
 @app.callback(
     Output('tabs', 'value'),
