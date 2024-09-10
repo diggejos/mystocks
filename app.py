@@ -2380,6 +2380,26 @@ def display_page(pathname, login_status):
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
 
+@app.callback(
+    [Output('tab-prices', 'className'),
+     Output('tab-news', 'className'),
+     Output('tab-comparison', 'className'),
+     Output('tab-forecast', 'className'),
+     Output('tab-simulation', 'className'),
+     Output('tab-reccommendation', 'className')],
+    [Input('tabs', 'value')]
+)
+def update_active_tab_class(current_tab):
+    # Determine which tab is active and apply the "active" class accordingly
+    return [
+        "nav-link active" if current_tab == '📈 Prices' else "nav-link",
+        "nav-link active" if current_tab == '📰 News' else "nav-link",
+        "nav-link active" if current_tab == '⚖️ Compare' else "nav-link",
+        "nav-link active" if current_tab == '🌡️ Forecast' else "nav-link",
+        "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
+        "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
+    ]
+
 
 @app.callback(
     [Output('theme-store', 'data'),
