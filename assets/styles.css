@@ -1,9 +1,7 @@
 .grayed-out {
     background-color: #d3d3d3; /* Light gray background */
-    color: #a9a9a9;            /* Dark gray text color */
-    border-color: #a9a9a9;     /* Dark gray border color */
-    /*cursor: not-allowed;       /* Change cursor to indicate "disabled" */
-    /*pointer-events: none;      /* Prevent interaction */
+    color: #a9a9a9; /* Dark gray text color */
+    border-color: #a9a9a9; /* Dark gray border color */
     opacity: 0.5;
     font-size: 14px !important;
     justify-content: center; /* Horizontally center the text */
@@ -94,9 +92,6 @@
     }
 }
 
-
-
-
 #chatbot-conversation {
     background-color: #f8f9fa;
     padding: 15px;
@@ -106,12 +101,10 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-
 #chatbot-conversation p {
     padding: 10px;
     border-radius: 10px;
     margin: 5px 0;
-    
 }
 
 #chatbot-conversation p.user {
@@ -121,7 +114,6 @@
     text-align: left;
     margin-left: 30%;
 }
-
 
 /* Fade-in effect */
 @keyframes fadeIn {
@@ -136,7 +128,6 @@
 .fade-in {
     animation: fadeIn 0.5s ease-in;
 }
-
 
 #chatbot-conversation .chatbot-response {
     animation: fadeIn 1s ease-in-out; /* Apply the fade-in animation */
@@ -154,9 +145,6 @@
     opacity: 1; /* Fully visible */
 }
 
-
-
-
 #chatbot-conversation .chatbot-response .robot-avatar {
     font-size: 25px;
     margin-right: 10px;
@@ -169,7 +157,6 @@
     white-space: pre-wrap; /* Preserve line breaks */
 }
 
-
 /* Other styling for inputs and buttons */
 #chatbot-input {
     border-radius: 10px;
@@ -181,7 +168,7 @@
 
 #send-button, #clear-button {
     border-radius: 10px;
-    boxShadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .typing-indicator {
@@ -220,8 +207,8 @@
 .carousel-caption p {
     color: #dddddd;
 }
+
 /* Custom CSS for carousel captions */
-/* General carousel caption styling */
 .custom-carousel .carousel-caption {
     position: relative; /* Make the caption relative to its normal position */
     bottom: 0; /* Align caption to the bottom */
@@ -255,7 +242,6 @@
     }
 }
 
-
 /* Footer Container */
 .footer {
     background-color: #f8f9fa; /* Light grey background color */
@@ -269,7 +255,7 @@
 .footer a.footer-link {
     color: #343a40; /* Darker text color for links */
     text-decoration: none; /* Remove underline */
-    transition: color 0.3s ease; 
+    transition: color 0.3s ease;
 }
 
 .footer a.footer-link:hover {
@@ -325,8 +311,8 @@
     left: 0; /* Align it to the left */
     top: 0; /* Align it to the top */
     font-size: 1.2em; /* Slightly larger checkmark */
- }
-    
+}
+
 .small-button {
     font-size: 14px !important;
     justify-content: center; /* Horizontally center the text */
@@ -338,13 +324,12 @@
     margin-top: 10px;
     margin-bottom: 10px;
     margin-right: 10px;
+}
 
- }
- 
 .custom-table td, .custom-table th {
     padding: 2px 5px !important;  /* Reduce padding */
     line-height: 1.2 !important;  /* Adjust line height */
-    height: 20px !important;      /* Set a fixed height */
+    height: 20px !important; /* Set a fixed height */
     vertical-align: middle !important; /* Ensure vertical alignment is middle */
 }
 
@@ -353,34 +338,47 @@
 }
 
 .custom-table .btn-link {
-    padding: 0 !important;      /* Remove padding */
-    height: 20px !important;    /* Set the desired height */
+    padding: 0 !important; /* Remove padding */
+    height: 20px !important; /* Set the desired height */
     line-height: 1.2 !important; /* Set the desired line height */
 }
 
+/* Highlight active footer tab */
+.footer-nav .nav-link.active {
+    background-color: #007bff; /* Set background color for active tab */
+    color: white; /* Set text color for active tab */
+    border-radius: 5px; /* Optional: Add rounded corners */
+    font-weight: bold; /* Make the active tab text bold */
+}
+
+.footer-nav .nav-link {
+    color: #007bff; /* Default tab color */
+    background-color: #f8f9fa; /* Default background color */
+    font-weight: normal;
+}
 
 .footer-nav {
-    display: none;  /* Hidden on larger screens */
+    display: none; /* Hidden on larger screens */
 }
 
 @media (max-width: 768px) {
-        .footer-nav .nav-item {
-        flex-shrink: 0;  /* Prevent shrinking */
-        text-align: center;  /* Center text */
-        width: 100px;  /* Set a fixed width to prevent text wrapping */
-        white-space: nowrap;  /* Ensure text stays on one line */
+    .footer-nav .nav-item {
+        flex-shrink: 0; /* Prevent shrinking */
+        text-align: center; /* Center text */
+        width: 100px; /* Set a fixed width to prevent text wrapping */
+        white-space: nowrap; /* Ensure text stays on one line */
     }
-    
+
     .footer-nav .nav-link {
-        padding: 0;  /* Reduce padding to save space */
-        font-size: 14px;  /* Adjust font size if needed */
+        padding: 0; /* Reduce padding to save space */
+        font-size: 14px; /* Adjust font size if needed */
         display: inline-block;
         text-align: center;
-        white-space: nowrap;  /* Ensure the link text stays on one line */
+        white-space: nowrap; /* Ensure the link text stays on one line */
         overflow: hidden;
-        text-overflow: ellipsis;  /* Add ellipsis for overflowed text */
+        text-overflow: ellipsis; /* Add ellipsis for overflowed text */
     }
-    
+
     .footer-nav {
         display: flex;
         position: fixed;
@@ -395,28 +393,21 @@
         padding: 10px 0;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     /* Optional: Hide scrollbar */
     .footer-nav::-webkit-scrollbar {
         display: none;
     }
-    
 }
 
-/* Ensure that each tab link doesn't take up too much space */
-
-
-/* Hide elements on mobile and show on desktop */
 .desktop-only {
     display: none;
 }
 
-/* Show elements on mobile and hide on desktop */
 .mobile-only {
     display: block;
 }
 
-/* Media query to control visibility based on screen size */
 @media (min-width: 768px) {
     .desktop-only {
         display: block;
@@ -427,36 +418,31 @@
     }
 }
 
-
-/* General styles for the collapse on mobile */
 #filters-collapse {
     position: fixed;
-    top: 140px;  /* Adjust this value to leave space for the button */
+    top: 140px; /* Adjust this value to leave space for the button */
     left: 0;
-    width: 80%;  /* Set to 80% width for mobile */
-    z-index: 1000;  /* Ensure it stays above other elements */
-    background-color: white;  /* Background color for the collapse */
-    /*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);  /* Optional: Shadow effect for a raised panel */
-    overflow-y: auto;  /* Allow scrolling if the content exceeds screen height */
-    max-height: calc(100vh - 160px);  /* Adjust height dynamically based on the top space */
-    display: none;  /* Hide collapse by default */
+    width: 80%; /* Set to 80% width for mobile */
+    z-index: 1000; /* Ensure it stays above other elements */
+    background-color: white; /* Background color for the collapse */
+    overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
+    max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
+    display: none; /* Hide collapse by default */
 }
 
-/* Sidebar should be visible by default on desktop and sticky */
 @media (min-width: 768px) {
     #filters-collapse {
         display: block !important;
-        position: fixed !important;  /* Make the sidebar sticky */
-        top: 140px;  /* Stick to the top of the viewport */
-        width: 450px;  /* Set a fixed width for desktop */
-        height: 100vh;  /* Full height for the sidebar */
-        background-color: white;  /* Ensure the background is white */
-        /*box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  /* Shadow around the entire box */
+        position: fixed !important; /* Make the sidebar sticky */
+        top: 140px; /* Stick to the top of the viewport */
+        width: 500px; /* Set a fixed width for desktop */
+        height: 100vh; /* Full height for the sidebar */
+        background-color: white; /* Ensure the background is white */
         max-height: 100vh;
-        border-radius: 8px;  /* Optional: Add slight border radius */
-        padding: 10px;  /* Adds internal spacing instead of margin */
-        box-sizing: border-box;  /* Ensure padding doesn't affect width */
-        margin-bottom: 100px;  /* Add margin at the bottom to avoid cutting off content */
+        border-radius: 8px; /* Optional: Add slight border radius */
+        padding: 10px; /* Adds internal spacing instead of margin */
+        box-sizing: border-box; /* Ensure padding doesn't affect width */
+        margin-bottom: 100px; /* Add margin at the bottom to avoid cutting off content */
     }
 
     /* Hide the toggle button on desktop */
@@ -465,21 +451,18 @@
     }
 }
 
-
-/* For mobile screens, collapse is hidden by default */
 @media (max-width: 767px) {
     #filters-collapse {
-        display: none;  /* Initially hidden */
+        display: none; /* Initially hidden */
         position: fixed;
-        top: 160px;  /* Ensure collapse starts below the button */
-        width: 70%;  /* Set the width to 80% for mobile */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+        top: 160px; /* Ensure collapse starts below the button */
+        width: 70%; /* Set the width to 80% for mobile */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         height: 70vh; /* Shadow around the entire box */
-
     }
 
     #filters-collapse.show {
-        display: block;  /* Show collapse when triggered on mobile */
+        display: block; /* Show collapse when triggered on mobile */
     }
 
     /* Toggle button should be visible on mobile */
@@ -488,17 +471,12 @@
     }
 }
 
+a {
+    cursor: pointer;
+    text-decoration: underline;
+    color: #007bff;
+}
 
-
-<style>
-    a {
-        cursor: pointer;
-        text-decoration: underline;
-        color: #007bff;
-    }
-    a:hover {
-        color: #0056b3;
-    }
-</style>
-
-
+a:hover {
+    color: #0056b3;
+}
