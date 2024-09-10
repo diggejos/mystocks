@@ -17,7 +17,6 @@
 
 .navbar {
     padding: 1rem 1rem;
-    height: 50px;
 }
 
 .navbar-nav .nav-item {
@@ -26,7 +25,7 @@
 
 .navbar-logo {
     height: 10%; /* Adjust this percentage as needed */
-    max-height: 45px; /* Set a max-height to prevent it from growing too large */
+    max-height: 60px; /* Set a max-height to prevent it from growing too large */
     object-fit: contain; /* Ensure the image maintains its aspect ratio */
 }
 
@@ -89,7 +88,7 @@
 
 @media (min-width: 768px) {
     .mobile-filters {
-        display: none !important;  /* Hide  on desktop */
+        display: none !important;  /* Hide sidebar on desktop */
     }
 }
 
@@ -390,7 +389,7 @@
         justify-content: flex-start;
         overflow-x: auto;
         white-space: nowrap;
-        z-index: 1030;
+        z-index: 1500;
         padding: 10px 0;
         -webkit-overflow-scrolling: touch;
     }
@@ -419,13 +418,28 @@
     }
 }
 
+#filters-collapse .card {
+    background-color: #f0f0f0; /* Light gray background for sidebar */
+    border-color: #ccc; /* Optional: border color */
+}
+
+#filters-collapse .card-body {
+    color: #333; /* Dark text color for better contrast */
+}
+
+/* Add padding and other styling for the sidebar */
+#filters-collapse .card-body {
+    padding: 15px;
+    border-radius: 8px; /* Optional: Add some border radius for a softer look */
+}
+
 #filters-collapse {
-    /*position: fixed;*/
-    top: 140px;
+    position: fixed;
+    top: 110px; /* Adjust this value to leave space for the button */
     left: 0;
     width: 80%; /* Set to 80% width for mobile */
     z-index: 1000; /* Ensure it stays above other elements */
-    color: #f8f9fa; /* Background color for the collapse */
+    background-color: white; /* Background color for the collapse */
     overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
     max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
     display: none; /* Hide collapse by default */
@@ -434,11 +448,11 @@
 @media (min-width: 768px) {
     #filters-collapse {
         display: block !important;
-        /*position: fixed !important; /* Make the sidebar sticky */
-        top: 140px; /* Stick to the top of the viewport */
-        width: 400px; /* Set a fixed width for desktop */
-        max-height: 800px; /* Full height for the sidebar */
-        color: #f8f9fa; /* Ensure the background is white */
+        position: fixed !important; /* Make the sidebar sticky */
+        top: 110px; /* Stick to the top of the viewport */
+        max-width:450px;
+        height: 900px; /* Full height for the sidebar */
+        background-color: white; /* Ensure the background is white */
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
         box-sizing: border-box; /* Ensure padding doesn't affect width */
@@ -457,11 +471,11 @@
     #filters-collapse {
         display: none; /* Initially hidden */
         position: fixed;
-        top: 160px; /* Ensure collapse starts below the button */
+        top: 140px; /* Ensure collapse starts below the button */
         width: 70%; /* Set the width to 80% for mobile */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        height: 70vh; /* Shadow around the entire box */
-        color: #f8f9fa;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);*/
+        height: 60%; /* Shadow around the entire box */
+        max-height:500px;
     }
 
     #filters-collapse.show {
@@ -495,6 +509,7 @@ a:hover {
         display: none !important;  /* Hide the sticky footer on larger screens */
     }
 }
+
 /* Hide the sticky footer by default */
 #sticky-footer-container {
     display: none;
@@ -506,4 +521,3 @@ a:hover {
         display: block;
     }
 }
-
