@@ -17,6 +17,7 @@
 
 .navbar {
     padding: 1rem 1rem;
+    height: 50px;
 }
 
 .navbar-nav .nav-item {
