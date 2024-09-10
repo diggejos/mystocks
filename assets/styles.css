@@ -435,7 +435,7 @@
         display: block !important;
         position: fixed !important; /* Make the sidebar sticky */
         top: 140px; /* Stick to the top of the viewport */
-        width: 500px; /* Set a fixed width for desktop */
+        width: 450px; /* Set a fixed width for desktop */
         max-height: 800px; /* Full height for the sidebar */
         background-color: white; /* Ensure the background is white */
         border-radius: 8px; /* Optional: Add slight border radius */
