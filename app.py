@@ -154,10 +154,10 @@ overlay = dbc.Modal(
 )
 
 floating_chatbot_button = html.Div(
-    dbc.Button("💬 Financio", id="open-chatbot-button", color="primary", className="chatbot-button"),
+    dbc.Button("💬 Financio? ", id="open-chatbot-button", color="primary", className="chatbot-button"),
     style={
         "position": "fixed",
-        "bottom": "20px",
+        "bottom": "80px",
         "right": "20px",
         "z-index": "999",
     }
