@@ -2353,41 +2353,34 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
 @app.callback(
     [Output('page-content', 'children'),
      Output('register-link', 'style'),
-     Output('sticky-footer-container', 'style')],  # Output for showing/hiding the sticky footer
+     Output('sticky-footer-container', 'style'),
+     Output('url', 'pathname')],  # Redirect the user after login
     [Input('url', 'pathname'),
      Input('login-status', 'data')]
 )
 def display_page(pathname, login_status):
-    # Define pages where the sticky footer should be hidden (on desktop, not mobile)
+    # Define pages where the sticky footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile']
 
-    # Check if the current page is in the list where the footer should be hidden
-    if pathname in pages_without_footer:
-        footer_style = {"display": "none"}  # Hide footer for these pages
-    else:
-        footer_style = {"display": "block"}  # Show the footer for other pages
+    # Default footer style: show by default unless it's a page in `pages_without_footer`
+    footer_style = {"display": "block"} if pathname not in pages_without_footer else {"display": "none"}
 
-    # Handle page content display logic
+    # Handle the redirection after login
+    if pathname == '/login' and login_status:
+        return dashboard_layout, {"display": "none"}, {"display": "block"}, '/'
+    
+    # Handle page content and register link visibility
     if pathname == '/about':
-        return about_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+        return about_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
     elif pathname == '/register':
-        return register_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+        return register_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
     elif pathname == '/login' and not login_status:
-        return login_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+        return login_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
     elif pathname == '/profile' and login_status:
-        return profile_layout, {"display": "none"}, footer_style
+        return profile_layout, {"display": "none"}, footer_style, pathname
     else:
-        # Always return the dashboard layout when logged in, with the footer visible
-        return dashboard_layout, {"display": "none" if login_status else "block"}, footer_style
+        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
 
-
-@app.callback(
-    Output('sticky-footer-container', 'style',allow_duplicate=True),
-    [Input('login-status', 'data')],
-    prevent_initial_call=True
-)
-def update_sticky_footer(login_status):
-    return {"display": "block"}  # Always show footer on mobile regardless of login status
 
 
 @app.callback(
