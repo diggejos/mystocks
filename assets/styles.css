@@ -429,7 +429,7 @@
 
 /* Add padding and other styling for the sidebar */
 #filters-collapse .card-body {
-    padding: 15px;
+    padding: 10px;
     border-radius: 8px; /* Optional: Add some border radius for a softer look */
 }
 
@@ -437,7 +437,7 @@
     position: fixed;
     top: 110px; /* Adjust this value to leave space for the button */
     left: 0;
-    width: 85%; /* Set to 80% width for mobile */
+    width: 90%; /* Set to 80% width for mobile */
     z-index: 1000; /* Ensure it stays above other elements */
     background-color: white; /* Background color for the collapse */
     overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
