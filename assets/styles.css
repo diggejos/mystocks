@@ -435,9 +435,9 @@
         display: block !important;
         /*position: fixed !important; /* Make the sidebar sticky */
         top: 140px; /* Stick to the top of the viewport */
-        width: 450px; /* Set a fixed width for desktop */
-        max-height: 800px; /* Full height for the sidebar */
-        background-color: white; /* Ensure the background is white */
+        width: 400px; /* Set a fixed width for desktop */
+        max-height: 900px; /* Full height for the sidebar */
+        background-color: #f8f9fa; /* Ensure the background is white */
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
         box-sizing: border-box; /* Ensure padding doesn't affect width */
@@ -460,6 +460,7 @@
         width: 70%; /* Set the width to 80% for mobile */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         height: 70vh; /* Shadow around the entire box */
+        background-color: #f8f9fa;
     }
 
     #filters-collapse.show {
