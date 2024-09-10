@@ -2350,7 +2350,6 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
     return dash.no_update
 
 
-# Callback to display page content and conditionally show the sticky footer
 @app.callback(
     [Output('page-content', 'children'),
      Output('register-link', 'style'),
@@ -2359,16 +2358,16 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
      Input('login-status', 'data')]
 )
 def display_page(pathname, login_status):
-    # Define pages where the sticky footer should be hidden
+    # Define pages where the sticky footer should be hidden (on desktop, not mobile)
     pages_without_footer = ['/about', '/login', '/register', '/profile']
 
-    # Conditionally display the footer based on the current pathname
+    # Check if the current page is in the list where the footer should be hidden
     if pathname in pages_without_footer:
-        footer_style = {"display": "none"}
+        footer_style = {"display": "none"}  # Hide footer for these pages
     else:
-        footer_style = {"display": "block"}  # Show the footer on other pages
+        footer_style = {"display": "block"}  # Show the footer for other pages
 
-    # Return the correct layout for each page
+    # Handle page content display logic
     if pathname == '/about':
         return about_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
     elif pathname == '/register':
@@ -2378,7 +2377,18 @@ def display_page(pathname, login_status):
     elif pathname == '/profile' and login_status:
         return profile_layout, {"display": "none"}, footer_style
     else:
-        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
+        # Always return the dashboard layout when logged in, with the footer visible
+        return dashboard_layout, {"display": "none" if login_status else "block"}, footer_style
+
+
+@app.callback(
+    Output('sticky-footer-container', 'style',allow_duplicate=True),
+    [Input('login-status', 'data')],
+    prevent_initial_call=True
+)
+def update_sticky_footer(login_status):
+    return {"display": "block"}  # Always show footer on mobile regardless of login status
+
 
 @app.callback(
     [Output('tab-prices', 'className'),
