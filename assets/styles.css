@@ -435,14 +435,15 @@
         display: block !important;
         position: fixed !important; /* Make the sidebar sticky */
         top: 140px; /* Stick to the top of the viewport */
-        width: 450px; /* Set a fixed width for desktop */
-        height: 100vh; /* Full height for the sidebar */
+        width: 500px; /* Set a fixed width for desktop */
+        max-height: 800px; /* Full height for the sidebar */
         background-color: white; /* Ensure the background is white */
-        max-height: 100vh;
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
         box-sizing: border-box; /* Ensure padding doesn't affect width */
-        margin-bottom: 100px; /* Add margin at the bottom to avoid cutting off content */
+        margin-bottom: 100px; 
+        order: 1px solid #ddd; /* Optional: Add a border for clarity */
+        padding-right: 10px; /* Optional: Add padding to the right for scrollbar spacing *//* Add margin at the bottom to avoid cutting off content */
     }
 
     /* Hide the toggle button on desktop */
