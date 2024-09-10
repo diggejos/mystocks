@@ -452,7 +452,6 @@
         top: 110px; /* Stick to the top of the viewport */
         max-width:450px;
         height: 900px; /* Full height for the sidebar */
-        background-color: white; /* Ensure the background is white */
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
         box-sizing: border-box; /* Ensure padding doesn't affect width */
