@@ -435,7 +435,7 @@
         display: block !important;
         position: fixed !important; /* Make the sidebar sticky */
         top: 140px; /* Stick to the top of the viewport */
-        width: 450px; /* Set a fixed width for desktop */
+        width: 500px; /* Set a fixed width for desktop */
         height: 100vh; /* Full height for the sidebar */
         background-color: white; /* Ensure the background is white */
         max-height: 100vh;
@@ -480,3 +480,16 @@ a {
 a:hover {
     color: #0056b3;
 }
+
+@media (max-width: 768px) {
+    .footer-nav {
+        display: flex !important; /* Ensure the sticky footer is always visible on mobile */
+    }
+}
+
+@media (min-width: 768px) {
+    .footer-nav {
+        display: none !important;  /* Hide the sticky footer on larger screens */
+    }
+}
+
