@@ -25,7 +25,7 @@
 
 .navbar-logo {
     height: 10%; /* Adjust this percentage as needed */
-    max-height: 60px; /* Set a max-height to prevent it from growing too large */
+    max-height: 40px; /* Set a max-height to prevent it from growing too large */
     object-fit: contain; /* Ensure the image maintains its aspect ratio */
 }
 
