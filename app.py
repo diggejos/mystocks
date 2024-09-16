@@ -2373,35 +2373,27 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
     return dash.no_update
 
 @app.callback(
-    [Output('page-content', 'children'),
+    [Output('page-content', 'children',allow_duplicate=True),
      Output('register-link', 'style'),
-     Output('sticky-footer-container', 'style'),
-     Output('url', 'pathname')],  # Redirect the user after login
+     Output('sticky-footer-container', 'style')],
     [Input('url', 'pathname'),
-     Input('login-status', 'data')]
+     Input('login-status', 'data')],
+    prevent_initial_call=True
 )
 def display_page(pathname, login_status):
-    # Define pages where the sticky footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile']
-
-    # Default footer style: show by default unless it's a page in `pages_without_footer`
     footer_style = {"display": "block"} if pathname not in pages_without_footer else {"display": "none"}
 
-    # Handle the redirection after login
-    if pathname == '/login' and login_status:
-        return dashboard_layout, {"display": "none"}, {"display": "block"}, '/'
-    
-    # Handle page content and register link visibility
     if pathname == '/about':
-        return about_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
+        return about_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
     elif pathname == '/register':
-        return register_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
+        return register_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
     elif pathname == '/login' and not login_status:
-        return login_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
+        return login_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
     elif pathname == '/profile' and login_status:
-        return profile_layout, {"display": "none"}, footer_style, pathname
+        return profile_layout, {"display": "none"}, footer_style
     else:
-        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style, pathname
+        return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
 
 
 @app.callback(
