@@ -218,14 +218,6 @@ footer = html.Footer([
     ], fluid=True)
 ], className="footer")
 
-watchlist_management_layout = dbc.Container([
-    dcc.Input(id='new-watchlist-name', placeholder="Enter Watchlist Name", className="form-control",disabled=True),
-    html.Label(" Saved Watchlists:", className="font-weight-bold",style={"margin-top": "10px"}),
-    dcc.Dropdown(id='saved-watchlists-dropdown', placeholder="Select a Watchlist", options=[],clearable=True,disabled=True, style={"margin-top": "10px"}),
-    dbc.Button("💾 Watchlist", id='create-watchlist-button', color='primary', className='',disabled=False),
-    dbc.Button("X Watchlist", id='delete-watchlist-button', color='danger', className='',disabled=False)
-])
-
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=['AAPL']),
@@ -247,6 +239,18 @@ app.layout = html.Div([
     financials_modal,
     html.Div(sticky_footer_mobile, id="sticky-footer-container"),
     footer
+])
+
+watchlist_management_layout = dbc.Container([
+    dcc.Input(id='new-watchlist-name', placeholder="Enter Watchlist Name", className="form-control",disabled=True),
+    html.Label(" Saved Watchlists:", className="font-weight-bold",style={"margin-top": "10px"}),
+    html.Div([
+        dcc.Dropdown(id='saved-watchlists-dropdown', placeholder="Select a Watchlist", options=[],clearable=True,disabled=True,
+                     style={"margin-top": "10px", "display": "block" if 'login-status' else "none"})
+        ])
+    ,
+    dbc.Button("💾 Watchlist", id='create-watchlist-button', color='primary', className='',disabled=False),
+    dbc.Button("X Watchlist", id='delete-watchlist-button', color='danger', className='',disabled=False)
 ])
 
 dashboard_layout = dbc.Container([
@@ -1875,7 +1879,6 @@ def update_watchlist_management_layout(login_status):
     else:
         return True, True, False, False  # Keep them disabled when logged out
 
-
 @app.callback(
     [Output('saved-watchlists-dropdown', 'options'),
      Output('saved-watchlists-dropdown', 'value'),
@@ -1890,9 +1893,11 @@ def update_watchlist_management_layout(login_status):
      State('login-username-store', 'data')]
 )
 def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_name, stocks, selected_watchlist_id, selected_theme, username):
+    # Check if user is not logged in, clear dropdown and inputs
     if not username or not login_status:
         return [], None, ''  # Clear the dropdown and inputs if not logged in
     
+    # Get the user from the database
     user = User.query.filter_by(username=username).first()
 
     # Handle watchlist deletion
@@ -1901,26 +1906,28 @@ def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_
         if watchlist and watchlist.user_id == user.id:
             db.session.delete(watchlist)
             db.session.commit()
-            selected_watchlist_id = None  # Clear the selected watchlist
+            selected_watchlist_id = None  # Clear the selected watchlist after deletion
 
     # Handle watchlist creation or update
     elif create_clicks:
         if selected_watchlist_id:
+            # Update existing watchlist if selected
             watchlist = Watchlist.query.get(selected_watchlist_id)
             if watchlist and watchlist.user_id == user.id:
-                watchlist.stocks = json.dumps(stocks)  # Update the existing watchlist
+                watchlist.stocks = json.dumps(stocks)  # Update the stock list in the watchlist
                 db.session.commit()
         elif new_watchlist_name:
+            # Create a new watchlist
             new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
             db.session.add(new_watchlist)
             db.session.commit()
 
-        # Save the theme **name** to the user profile, not the URL
+        # Update the theme in the user's profile (save the theme name, not the URL)
         if user:
-            # Make sure only the theme name is saved
+            # Find the selected theme name based on the theme info and save it
             for theme_name, theme_info in themes.items():
                 if theme_info['dbc'] == selected_theme:
-                    user.theme = theme_name  # Save the theme name like 'JOURNAL'
+                    user.theme = theme_name  # Save the theme name (e.g., 'JOURNAL')
                     break
             db.session.commit()
 
@@ -1928,7 +1935,7 @@ def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_
     watchlists = Watchlist.query.filter_by(user_id=user.id).all()
     watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
 
-    return watchlist_options, selected_watchlist_id, ''
+    return watchlist_options, selected_watchlist_id, ''  # Clear the new watchlist name input after creation or update
 
 
 @app.callback(
@@ -1962,6 +1969,7 @@ def load_watchlist(pathname, watchlist_id, login_status, username):
     
     # If not logged in or no watchlist is selected, return AAPL as the default stock
     return ['AAPL']
+
 
 from dash import dcc, html, Input, Output, State, callback_context, ALL
 from datetime import datetime, timedelta
@@ -2395,7 +2403,6 @@ def display_page(pathname, login_status):
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
 
-
 @app.callback(
     [Output('tab-prices', 'className'),
      Output('tab-news', 'className'),
@@ -2415,8 +2422,6 @@ def update_active_tab_class(current_tab):
         "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
         "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
     ]
-
-
 
 @app.callback(
     [Output('theme-store', 'data'),
