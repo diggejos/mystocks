@@ -152,7 +152,8 @@ navbar = dbc.Navbar(
                             ),
                             id='theme-dropdown-wrapper',
                             n_clicks=0,
-                            className="d-flex align-items-center"
+                            className="d-flex align-items-center",
+                           
                         )
                     ],
                     className="ms-auto",  # Align nav items to the right
@@ -174,6 +175,9 @@ navbar = dbc.Navbar(
     className="sticky-top mb-4"
 )
 
+
+
+
 from dash import Input, Output, State
 
 @app.callback(
@@ -185,6 +189,8 @@ def toggle_navbar(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
+
+
 
 sticky_footer_mobile = dbc.Nav(
     [
@@ -310,15 +316,15 @@ app.layout = html.Div([
 ])
 
 watchlist_management_layout = dbc.Container([
-    dcc.Input(id='new-watchlist-name', placeholder="Enter Watchlist Name", className="form-control",disabled=True),
     html.Label(" Saved Watchlists:", className="font-weight-bold",style={"margin-top": "10px"}),
     html.Div([
-        dcc.Dropdown(id='saved-watchlists-dropdown', placeholder="Select a Watchlist", options=[],clearable=True,disabled=True,
-                     style={"margin-top": "10px", "display": "block" if 'login-status' else "none"})
+        dcc.Dropdown(id='saved-watchlists-dropdown', placeholder="Select a Watchlist", options=[],clearable=True,disabled=True, searchable=False,
+                     style={"margin-bottom": "10px", "display": "block" if 'login-status' else "none"})
         ])
     ,
-    dbc.Button("💾 Watchlist", id='create-watchlist-button', color='primary', className='',disabled=False),
-    dbc.Button("X Watchlist", id='delete-watchlist-button', color='danger', className='',disabled=False)
+    dcc.Input(id='new-watchlist-name', placeholder="Enter Watchlist Name", className="form-control",disabled=True),
+    dbc.Button("💾 save", id='create-watchlist-button', color='primary', className='',disabled=False),
+    dbc.Button("X delete", id='delete-watchlist-button', color='danger', className='',disabled=False)
 ])
 
 
@@ -385,7 +391,7 @@ dashboard_layout = dbc.Container([
                         html.Div([
                             html.Label("Select Date Range:", className="font-weight-bold"),
                             dcc.Dropdown(
-                                id='predefined-ranges',
+                                id='predefined-ranges',searchable=False,
                                 options=[
                                     {'label': 'Intraday', 'value': '1D_15m'},
                                     {'label': 'Last 5D', 'value': '5D_15m'},
@@ -398,6 +404,7 @@ dashboard_layout = dbc.Container([
                                     {'label': 'Last 10Y', 'value': '10Y'}
                                 ],
                                 value='12M',  # Default selection
+                                
                                 # className='form-control',
                             )
                         ], className='mb-3'),
@@ -407,7 +414,7 @@ dashboard_layout = dbc.Container([
                 id="filters-collapse",
                 is_open=False  # Initially closed (for mobile use case)
             ),
-        ], width=12, md=3, style={"margin-top": "10px"}),
+        ], width=12, md=3, style={"margin-top": "10px", "buttom":"50px"}),
 
         # Main content area (Tabs for Prices, News, Comparison, etc.)
         dbc.Col([
@@ -424,6 +431,7 @@ dashboard_layout = dbc.Container([
                                     value=[],  
                                     multi=True,
                                     placeholder="Select stocks to display",
+                                    searchable=False
                                     # style={'width': '70%'}
                                 ),
                                 dcc.RadioItems(
@@ -473,6 +481,7 @@ dashboard_layout = dbc.Container([
                                     options=[],  # Populated dynamically
                                     value=[],  # Default selected stocks
                                     multi=True,
+                                    searchable=False
                                     # style={'width': '70%'}
                                     # className='form-control',
                                 ),
@@ -508,6 +517,7 @@ dashboard_layout = dbc.Container([
                                         value=[],  # Default selected stocks
                                         multi=True,
                                         className='form-control',
+                                        searchable=False
                                     ),
                                     html.Div(id='forecast-stock-warning', style={'color': 'red'}),
                                     html.Label("Forecast Horizon (days):", className="font-weight-bold"),
@@ -582,6 +592,7 @@ dashboard_layout = dbc.Container([
                                     options=[],  
                                     value=[],  
                                     className='form-control',
+                                    searchable=False
                                 ),
                                 html.Label("Investment Amount ($):", className="font-weight-bold"),
                                 dcc.Input(
@@ -2588,6 +2599,8 @@ def update_plotly_theme(theme):
         return 'plotly_dark'
     return 'plotly_white'
 
+
+
 app.clientside_callback(
     """
     function(n_clicks) {
@@ -2597,6 +2610,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 
 app.index_string = '''
