@@ -96,38 +96,96 @@ class Watchlist(db.Model):
 with server.app_context():
     db.create_all()
 
-navbar = dbc.NavbarSimple(
-    children=[
-        dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
-        dbc.NavItem(dbc.NavLink("ℹ️ About", href="/about", active="exact")),
-        dbc.NavItem(dbc.NavLink("👤 Profile", href="/profile", active="exact", id='profile-link', style={"display": "none"})),  # New profile link
-        dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
-        dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
-        dbc.NavItem(dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"})),
-        html.Div([
-            dbc.Button("Full 🖥️", id='fullscreen-button', color='secondary'), dcc.Store(id="trigger-fullscreen")
-        ]),
-        html.Div([
-            dbc.DropdownMenu(
-                children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
-                nav=True,
-                in_navbar=True,
-                label="🎨 Select Theme",
-                id='theme-dropdown',
-            )
-        ], id='theme-dropdown-wrapper', n_clicks=0),
-    ],
-    brand=[
-        html.Img(src='/assets/logo_with_transparent_background.png', height='60px'),
-        "MySTOCKS"
-    ],
-    brand_href="/",
+navbar = dbc.Navbar(
+    dbc.Container(
+        [
+            # Row for the brand logo with left margin
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.NavbarBrand([
+                            html.Img(src='/assets/logo_with_transparent_background.png', height='50px'),
+                            "MySTOCKS"
+                        ], href="/", className="ms-3")  # Add margin on the left side of the logo
+                    ),
+                ],
+                align="center",
+                className="g-0 flex-grow-1"
+            ),
+            
+            # Fullscreen button (order it before the collapse)
+            dbc.Row(
+                dbc.Col(
+                    dbc.Button("Full 🖥️", id='fullscreen-button', color='secondary', className="me-2 order-1"),  # Fullscreen button with margin on the right
+                    className="d-flex align-items-center"
+                ),
+                align="center",
+                className="g-0 flex-grow-1"
+            ),
+            
+            # NavbarToggler and Collapse aligned to the right
+            dbc.NavbarToggler(id="navbar-toggler", className="order-2 me-3"),  # Adjust toggler order and add right margin
+            
+            dbc.Collapse(
+                dbc.Nav(
+                    [
+                        dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
+                        dbc.NavItem(dbc.NavLink("ℹ️ About", href="/about", active="exact")),
+                        dbc.NavItem(dbc.NavLink("👤 Profile", href="/profile", active="exact", id='profile-link', style={"display": "none"})),
+                        dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
+                        dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
+                        # Group Logout button
+                        html.Div(
+                            [
+                                dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"}, className="me-2"),
+                            ],
+                            className="d-flex align-items-center"
+                        ),
+                        # Theme selection dropdown
+                        html.Div(
+                            dbc.DropdownMenu(
+                                children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
+                                nav=True,
+                                in_navbar=True,
+                                label="🎨 Select Theme",
+                                id='theme-dropdown',
+                            ),
+                            id='theme-dropdown-wrapper',
+                            n_clicks=0,
+                            className="d-flex align-items-center"
+                        )
+                    ],
+                    className="ms-auto",  # Align nav items to the right
+                    navbar=True
+                ),
+                id="navbar-collapse",
+                is_open=False,  # Initially collapsed on mobile
+                navbar=True,
+                className="order-3"  # Ensure the collapse stays on the far right
+            ),
+            
+            # Separate dcc.Store for fullscreen trigger
+            dcc.Store(id="trigger-fullscreen")
+        ],
+        fluid=True  # Ensure proper responsiveness
+    ),
     color="primary",
     dark=True,
     className="sticky-top mb-4"
 )
 
 
+from dash import Input, Output, State
+
+@app.callback(
+    Output("navbar-collapse", "is_open"),
+    [Input("navbar-toggler", "n_clicks")],
+    [State("navbar-collapse", "is_open")]
+)
+def toggle_navbar(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
 
 sticky_footer_mobile = dbc.Nav(
     [
