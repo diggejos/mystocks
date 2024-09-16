@@ -16,16 +16,16 @@
 }
 
 .navbar {
-    padding: 10px 10px;
+    padding: 1rem 1rem;
 }
 
 .navbar-nav .nav-item {
-    margin-left: 10px;
+    margin-left: 1rem;
 }
 
 .navbar-logo {
     height: 10%; /* Adjust this percentage as needed */
-    max-height: 40px; /* Set a max-height to prevent it from growing too large */
+    max-height: 60px; /* Set a max-height to prevent it from growing too large */
     object-fit: contain; /* Ensure the image maintains its aspect ratio */
 }
 
@@ -49,6 +49,7 @@
     content: "\f201"; /* FontAwesome icon for chart-line */
     margin-right: 8px;
 }
+
 
 .tab-stock-news .tab-label::before {
     font-family: "Font Awesome 5 Free";
@@ -93,7 +94,7 @@
 }
 
 #chatbot-conversation {
-    background-color: #f8f9fa;
+    background-color: var(--bs-secondary)
     padding: 15px;
     border-radius: 10px;
     height: 400px; /* Fixed height */
@@ -108,8 +109,8 @@
 }
 
 #chatbot-conversation p.user {
-    background-color: #8bc462;
-    color: black;
+    background-color: var(--bs-secondary);
+    /*color: black;*/
     align-self: flex-end;
     text-align: left;
     margin-left: 30%;
@@ -244,16 +245,18 @@
 
 /* Footer Container */
 .footer {
-    background-color: #f8f9fa; /* Light grey background color */
-    color: #343a40; /* Darker text color for readability */
-    padding: 20px 0; /* Reduce top and bottom padding */
+    background-color: #3b5e82; /* Light grey background color */
+    color: #e1e6eb; /* Darker text color for readability */
+    padding:10px 0; /* Reduce top and bottom padding */
     font-size: 14px; /* Smaller font size */
-    text-align: center; /* Center text in the footer */
+    text-align: center;
+    margin-top:200px;
+    margin-bottom:30px /* Center text in the footer */
 }
 
 /* Links in the Footer */
 .footer a.footer-link {
-    color: #343a40; /* Darker text color for links */
+    color: #e1e6eb; /* Darker text color for links */
     text-decoration: none; /* Remove underline */
     transition: color 0.3s ease;
 }
@@ -267,7 +270,7 @@
     font-size: 16px; /* Slightly larger font for headings */
     margin-bottom: 15px; /* Space below headings */
     font-weight: bold; /* Make headings bold */
-    color: #343a40; /* Darker heading color */
+    color: #e1e6eb; /* Darker heading color */
 }
 
 /* Footer Lists */
@@ -288,8 +291,9 @@
 .footer .text-center {
     font-size: 13px; /* Small text for copyright */
     margin-top: 15px; /* Space above the copyright text */
-    color: #6c757d; /* Muted grey color for copyright */
-    text-align: center; /* Ensure copyright text is centered */
+    color: #e1e6eb; /* Muted grey color for copyright */
+    text-align: center; 
+    margin-bottom:40px/* Ensure copyright text is centered */
 }
 
 /* Style for the checkmark list */
@@ -343,62 +347,100 @@
     line-height: 1.2 !important; /* Set the desired line height */
 }
 
-/* Highlight active footer tab */
-.footer-nav .nav-link.active {
-    background-color: #007bff; /* Set background color for active tab */
-    color: white; /* Set text color for active tab */
-    border-radius: 5px; /* Optional: Add rounded corners */
-    font-weight: bold; /* Make the active tab text bold */
+
+
+
+.footer-nav {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping to new lines */
+    overflow-x: auto; /* Enable horizontal scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+    background-color: var(--bs-secondary); /* Light background */
+    border-top: 1px solid #e9ecef; /* Border at the top of the footer */
+    padding: 10px 0; /* Padding for the entire footer nav */
+    position: fixed;
+    bottom: 0;
+    width: 100%; /* Full width */
+    color: var(--bs-primary);
+    font-weight: bold;
+    z-index: 1500; /* Ensure it stays above other content */
+    white-space: nowrap; /* Prevent wrapping of nav items */
+    scroll-behavior: smooth; /* Smooth scroll */
+    overflow-y: hidden; /* Disable vertical scrolling */
+}
+
+
+/* Desktop-specific styles */
+@media (min-width: 769px) {  /* Adjusted to 769px for desktop */
+    .footer-nav {
+        display: none !important; /* Hide the sticky footer on larger screens */
+    }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    .footer-nav {
+        display: flex !important; /* Show the sticky footer on mobile */
+    }
+}
+
+/* Ensure the navbar items remain in one line and scrollable */
+.footer-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background-color: var(--bs-secondary);
+    border-top: 1px solid #e9ecef;
+    padding: 10px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 1500;
+    white-space: nowrap; /* Prevent wrapping of nav items */
+    scroll-behavior: smooth;
+    overflow-y: hidden;
+}
+
+.footer-nav .nav-item {
+    flex: 0 0 auto;
 }
 
 .footer-nav .nav-link {
-    color: #007bff; /* Default tab color */
-    background-color: #f8f9fa; /* Default background color */
-    font-weight: normal;
+    white-space: nowrap;
+    padding: 10px 10px;
+    font-size: 14px;
+    color: var(--bs-dark);
+    text-align: center;
+    min-width: 80px;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.footer-nav {
-    display: none; /* Hidden on larger screens */
+.footer-nav .nav-link.active {
+    background-color: var(--bs-primary);
+    color: white !important;
+    border-radius: 8px;
+    border: 2px solid white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 768px) {
-    .footer-nav .nav-item {
-        flex-shrink: 0; /* Prevent shrinking */
-        text-align: center; /* Center text */
-        width: 100px; /* Set a fixed width to prevent text wrapping */
-        white-space: nowrap; /* Ensure text stays on one line */
-    }
-
-    .footer-nav .nav-link {
-        padding: 0; /* Reduce padding to save space */
-        font-size: 14px; /* Adjust font size if needed */
-        display: inline-block;
-        text-align: center;
-        white-space: nowrap; /* Ensure the link text stays on one line */
-        overflow: hidden;
-        text-overflow: ellipsis; /* Add ellipsis for overflowed text */
-    }
-
-    .footer-nav {
-        display: flex;
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        background-color: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        justify-content: flex-start;
-        overflow-x: auto;
-        white-space: nowrap;
-        z-index: 1500;
-        padding: 10px 0;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* Optional: Hide scrollbar */
-    .footer-nav::-webkit-scrollbar {
-        display: none;
-    }
+.footer-nav .nav-link:hover:not(.active) {
+    background-color: var(--bs-light);
+    color: var(--bs-primary);
+    border-radius: 5px;
 }
+
+.footer-nav .nav-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.footer-nav .nav-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+
+
 
 .desktop-only {
     display: none;
@@ -419,39 +461,39 @@
 }
 
 #filters-collapse .card {
-    background-color: #f0f0f0; /* Light gray background for sidebar */
     border-color: #ccc; /* Optional: border color */
+    background-color: var(--bs-secondary);
+    color: var(--bs-dark);
+
 }
 
-#filters-collapse .card-body {
-    color: #333; /* Dark text color for better contrast */
-}
 
 /* Add padding and other styling for the sidebar */
 #filters-collapse .card-body {
-    padding: 10px;
+    padding: 15px;
     border-radius: 8px; /* Optional: Add some border radius for a softer look */
+
 }
 
 #filters-collapse {
-    position: fixed;
+    /*position: fixed;*/
     top: 110px; /* Adjust this value to leave space for the button */
     left: 0;
-    width: 90%; /* Set to 80% width for mobile */
+    width: 85%; /* Set to 80% width for mobile */
     z-index: 1000; /* Ensure it stays above other elements */
-    background-color: white; /* Background color for the collapse */
     overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
-    max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
+    /*max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
     display: none; /* Hide collapse by default */
+
 }
 
 @media (min-width: 768px) {
     #filters-collapse {
         display: block !important;
-        position: fixed !important; /* Make the sidebar sticky */
+        /*position: fixed !important; /* Make the sidebar sticky */
         top: 110px; /* Stick to the top of the viewport */
         max-width:450px;
-        height: 900px; /* Full height for the sidebar */
+        /*height: 900px; /* Full height for the sidebar */
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
         box-sizing: border-box; /* Ensure padding doesn't affect width */
@@ -528,7 +570,7 @@ a:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
     z-index: 999; /* Ensure it is above other elements but below the sidebar */
 }
 
@@ -553,8 +595,8 @@ a:hover {
         display: none; /* Hide the button on desktop */
     }
 }
+
 /* Sidebar collapse container */
 #filters-collapse {
     z-index: 1000; /* Ensure it is above the overlay */
 }
-
