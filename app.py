@@ -116,7 +116,7 @@ navbar = dbc.Navbar(
             # Fullscreen button (order it before the collapse)
             dbc.Row(
                 dbc.Col(
-                    dbc.Button("Full 🖥️", id='fullscreen-button', color='secondary', className="me-2 order-1"),  # Fullscreen button with margin on the right
+                    dbc.Button("⛶ 🖥️", id='fullscreen-button', color='secondary', className="me-2 order-1"),  # Fullscreen button with margin on the right
                     className="d-flex align-items-center"
                 ),
                 align="center",
