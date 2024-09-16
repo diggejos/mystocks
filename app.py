@@ -105,6 +105,9 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
         dbc.NavItem(dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"})),
         html.Div([
+            dbc.Button("Full 🖥️", id='fullscreen-button', color='secondary'), dcc.Store(id="trigger-fullscreen")
+        ]),
+        html.Div([
             dbc.DropdownMenu(
                 children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
                 nav=True,
@@ -2527,6 +2530,16 @@ def update_plotly_theme(theme):
     elif theme == dbc.themes.SOLAR:
         return 'plotly_dark'
     return 'plotly_white'
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        return window.dash_clientside.clientside.toggleFullScreen(n_clicks);
+    }
+    """,
+    Output("trigger-fullscreen", "data"),
+    [Input("fullscreen-button", "n_clicks")]
+)
 
 
 app.index_string = '''
