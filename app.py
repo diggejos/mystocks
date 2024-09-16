@@ -1583,9 +1583,10 @@ def validate_password(password):
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
      Output('profile-link', 'style', allow_duplicate=True),
-     Output('theme-store', 'data', allow_duplicate=True),  # Load the user's theme
-     Output('plotly-theme-store', 'data', allow_duplicate=True),  # Load the corresponding Plotly theme
-     Output('login-output', 'children')],
+     Output('theme-store', 'data', allow_duplicate=True),
+     Output('plotly-theme-store', 'data', allow_duplicate=True),
+     Output('page-content', 'children'),  # Redirect by changing the content
+     Output('url', 'pathname')],  # Use this to redirect on login success
     [Input('login-button', 'n_clicks')],
     [State('login-username', 'value'),
      State('login-password', 'value')],
@@ -1595,25 +1596,22 @@ def handle_login(login_clicks, username, password):
     if login_clicks:
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password, password):
-            # Set the session values to log the user in
+            # Set session values and return dashboard content + redirection
             session['logged_in'] = True
             session['username'] = username
 
-            # Get the user's selected theme or default to MATERIA if not set
             user_theme = user.theme if user.theme else 'MATERIA'
-            
-            # Load the corresponding Plotly theme
             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-            
-            # Return the correct styles and themes
-            return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"},
-                    themes[user_theme]['dbc'], plotly_theme, "")
-        else:
-            # Return failed login status
-            return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"},
-                    dbc.themes.MATERIA, 'plotly_white', dbc.Alert("Login failed.", color="danger"))
 
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"},
+                    themes[user_theme]['dbc'], plotly_theme, dashboard_layout, '/')  # Redirect to '/'
+        else:
+            return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"},
+                    dbc.themes.MATERIA, 'plotly_white', login_layout, dash.no_update)
+    
+    # If no clicks yet, ensure to return 9 values:
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
 
 @app.callback(
     [Output('profile-username', 'value'),
@@ -1737,22 +1735,18 @@ def update_profile_password_requirements(password):
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
      Output('profile-link', 'style', allow_duplicate=True),
-     Output('individual-stocks-store', 'data', allow_duplicate=True),  # Set AAPL as default stock on logout
-     Output('theme-store', 'data', allow_duplicate=True),  # Reset theme to default on logout
-     Output('plotly-theme-store', 'data', allow_duplicate=True),  # Reset plotly theme to default on logout
-     Output('url', 'pathname', allow_duplicate=True)],  # Redirect to default view
+     Output('individual-stocks-store', 'data', allow_duplicate=True),
+     Output('theme-store', 'data', allow_duplicate=True),
+     Output('plotly-theme-store', 'data', allow_duplicate=True),
+     Output('url', 'pathname', allow_duplicate=True)],  # Redirect on logout
     [Input('logout-button', 'n_clicks')],
     prevent_initial_call=True
 )
 def handle_logout(logout_clicks):
     if logout_clicks:
-        # Remove login status and username from session
         session.pop('logged_in', None)
         session.pop('username', None)
-        
-        # Set AAPL as default stock, reset theme, and redirect to default page
-        return False, {"display": "block"}, {"display": "none"}, {"display": "none"}, ['AAPL'], dbc.themes.MATERIA, 'plotly_white', "/"
-    
+        return False, {"display": "block"}, {"display": "none"}, {"display": "none"}, ['AAPL'], dbc.themes.MATERIA, 'plotly_white', '/login'  # Redirect to login
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 @app.callback(
@@ -2457,7 +2451,6 @@ def update_theme(*args, login_status=None, username=None):
 
     print("Using default theme")
     return dbc.themes.MATERIA, 'plotly_white'
-
 
 
 @app.callback(
