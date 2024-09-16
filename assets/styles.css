@@ -324,7 +324,7 @@
     display: flex;
     align-items: center;
     height: 30px;
-    width: 120px;
+    width: 80px;
     margin-top: 10px;
     margin-bottom: 10px;
     margin-right: 10px;
@@ -472,6 +472,12 @@
 #filters-collapse .card-body {
     padding: 15px;
     border-radius: 8px; /* Optional: Add some border radius for a softer look */
+    margin-bottom:10px
+
+}
+
+#filters-collapse .card {
+    margin-bottom:70px
 
 }
 
@@ -484,7 +490,6 @@
     overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
     /*max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
     display: none; /* Hide collapse by default */
-
 }
 
 @media (min-width: 768px) {
@@ -497,7 +502,6 @@
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
         box-sizing: border-box; /* Ensure padding doesn't affect width */
-        margin-bottom: 100px; 
         order: 1px solid #ddd; /* Optional: Add a border for clarity */
         padding-right: 10px; /* Optional: Add padding to the right for scrollbar spacing *//* Add margin at the bottom to avoid cutting off content */
     }
