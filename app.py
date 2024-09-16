@@ -106,21 +106,21 @@ navbar = dbc.Navbar(
                         dbc.NavbarBrand([
                             html.Img(src='/assets/logo_with_transparent_background.png', height='50px'),
                             "MySTOCKS", 
-                        ], href="/", className="ms-3",style={"font-size": "16px"})  # Add margin on the left side of the logo
+                        ], href="/", className="ms-3", style={"font-size": "16px"})  # Add margin on the left side of the logo
                     ),
                 ],
                 align="center",
                 className="g-0 flex-grow-1"
             ),
             
-            # Fullscreen button (order it before the collapse)
+            # Fullscreen button (smaller size with size="sm")
             dbc.Row(
                 dbc.Col(
-                    dbc.Button("⛶ 🖥️", id='fullscreen-button', color='secondary', className="me-2 order-1"),  # Fullscreen button with margin on the right
+                    dbc.Button("⛶ 🖥️", id='fullscreen-button', color='secondary', size="sm", className="me-2 order-1"),  # Smaller fullscreen button
                     className="d-flex align-items-center"
                 ),
                 align="center",
-                className="small-button g-0 flex-grow-1"
+                className="g-0 flex-grow-1"
             ),
             
             # NavbarToggler and Collapse aligned to the right
