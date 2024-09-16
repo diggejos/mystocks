@@ -105,8 +105,8 @@ navbar = dbc.Navbar(
                     dbc.Col(
                         dbc.NavbarBrand([
                             html.Img(src='/assets/logo_with_transparent_background.png', height='50px'),
-                            "MySTOCKS"
-                        ], href="/", className="ms-3")  # Add margin on the left side of the logo
+                            "MySTOCKS", 
+                        ], href="/", className="ms-3",style={"font-size": "16px"})  # Add margin on the left side of the logo
                     ),
                 ],
                 align="center",
@@ -120,7 +120,7 @@ navbar = dbc.Navbar(
                     className="d-flex align-items-center"
                 ),
                 align="center",
-                className="g-0 flex-grow-1"
+                className="small-button g-0 flex-grow-1"
             ),
             
             # NavbarToggler and Collapse aligned to the right
@@ -173,7 +173,6 @@ navbar = dbc.Navbar(
     dark=True,
     className="sticky-top mb-4"
 )
-
 
 from dash import Input, Output, State
 
