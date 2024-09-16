@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Existing chatbot logic
     const chatbotConversation = document.getElementById('chatbot-conversation');
 
     if (chatbotConversation) {
@@ -22,4 +23,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
         observer.observe(chatbotConversation, { childList: true });
     }
+
+    // Fullscreen toggle function
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    // Listen for Dash events to trigger full-screen
+    window.dash_clientside = Object.assign({}, window.dash_clientside, {
+        clientside: {
+            toggleFullScreen: function(n_clicks) {
+                if (n_clicks) {
+                    toggleFullScreen();
+                }
+                return null;
+            }
+        }
+    });
 });
