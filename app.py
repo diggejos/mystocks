@@ -124,7 +124,8 @@ navbar = dbc.NavbarSimple(
     className="sticky-top mb-4"
 )
 
-# Create a sticky footer with tabs for mobile view
+
+
 sticky_footer_mobile = dbc.Nav(
     [
         dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
@@ -154,6 +155,7 @@ overlay = dbc.Modal(
     is_open=False,  # Initially closed
 )
 
+
 floating_chatbot_button = html.Div(
     dbc.Button("💬 ask me", id="open-chatbot-button", color="primary", className="chatbot-button"),
     style={
@@ -176,6 +178,7 @@ financials_modal = dbc.Modal(
     size="lg",
     is_open=False,
 )
+
 
 chatbot_modal = dbc.Modal(
     [
@@ -218,6 +221,7 @@ footer = html.Footer([
     ], fluid=True)
 ], className="footer")
 
+
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=['AAPL']),
@@ -234,11 +238,15 @@ app.layout = html.Div([
     dcc.Store(id='forecast-data-store'),
     dcc.Location(id='url-refresh', refresh=True),
     DeferScript(src='assets/script.js'),
+    
     floating_chatbot_button,  # Add the floating button
     chatbot_modal ,
     financials_modal,
     html.Div(sticky_footer_mobile, id="sticky-footer-container"),
+    # sticky_footer_mobile,
+    # watchlist_management_layout,
     footer
+
 ])
 
 watchlist_management_layout = dbc.Container([
@@ -252,6 +260,7 @@ watchlist_management_layout = dbc.Container([
     dbc.Button("💾 Watchlist", id='create-watchlist-button', color='primary', className='',disabled=False),
     dbc.Button("X Watchlist", id='delete-watchlist-button', color='danger', className='',disabled=False)
 ])
+
 
 dashboard_layout = dbc.Container([
     dbc.Row([
@@ -551,6 +560,7 @@ dashboard_layout = dbc.Container([
     ], className="mb-4")
 ], fluid=True)
 
+                           
 profile_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -599,6 +609,7 @@ profile_layout = dbc.Container([
     ])
 ], fluid=True)
 
+
 # Layout for Registration page
 register_layout = dbc.Container([
     dbc.Row([
@@ -641,6 +652,7 @@ register_layout = dbc.Container([
     ])
 ], fluid=True)
 
+                           
 # Layout for Login page
 login_layout = dbc.Container([
     dbc.Row([
@@ -671,7 +683,7 @@ login_layout = dbc.Container([
     ])
 ], fluid=True)
 
-# Enhanced Carousel Component
+
 carousel = dbc.Carousel(
     items=[
         {
@@ -720,7 +732,7 @@ about_layout = dbc.Container([
 
             # Section: Why Choose MyStocks?
             html.Div([
-                html.H2("Why Choose MyStocks?", className="text-center mt-5 mb-3"),
+                html.H2("Why Choose MyStocks?", className="text-center mt-5 mb-3",style={"color":"black"}),
                 html.P("Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. "
                        "User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. "
                        "Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. "
@@ -732,7 +744,7 @@ about_layout = dbc.Container([
 
             # Section: Key Features
             html.Div([
-                html.H3("Key Features", className="text-center mt-5 mb-3"),
+                html.H3("Key Features", className="text-center mt-5 mb-3",style={"color":"black"}),
                 html.P("This application provides a comprehensive platform for tracking stock market performance and related news. "
                        "Here are some of the key features:", className="text-center", style={"display": "none"}),
                 html.Ul([
@@ -747,9 +759,11 @@ about_layout = dbc.Container([
                     html.Li("Save and customize your personal watchlist."),
                 ], className="checked-list"),
             ], style={"padding": "20px", "background-color": "#ffffff", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
+
         ], className="mx-auto", style={"max-width": "900px"}))
     ]),
 ], fluid=True)
+
 
 def fetch_news(symbols, max_articles=4):
     news_content = []
@@ -792,6 +806,8 @@ def fetch_news(symbols, max_articles=4):
     return dbc.Row(news_content, className="news-row")
 
 from dash.dependencies import Input, Output, State, MATCH
+
+
 @app.callback(
     [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
       Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
@@ -844,12 +860,14 @@ def load_more_articles(n_clicks, button_id, current_articles):
     
     return current_articles + additional_articles, "Load More", dash.no_update
 
+
 def fetch_analyst_recommendations(symbol):
     ticker = yf.Ticker(symbol)
     rec = ticker.recommendations
     if rec is not None and not rec.empty:
         return rec.tail(10)  # Fetch the latest 10 recommendations
     return pd.DataFrame()  # Return an empty DataFrame if no data
+
 
 def generate_recommendations_heatmap(dataframe, plotly_theme):
     # Ensure the periods and recommendations are in the correct order
@@ -911,7 +929,7 @@ def generate_recommendations_heatmap(dataframe, plotly_theme):
 )
 def update_active_tab(value):
     return value
-import dash_table
+
 
 def format_number(value):
     """Format the number into thousands (K), millions (M), or billions (B)."""
@@ -1060,6 +1078,8 @@ def close_financials_modal(n_clicks, is_open):
         return not is_open
     return is_open
 
+
+
 def get_stock_performance(symbols):
     performance_data = {}
     for symbol in symbols:
@@ -1091,8 +1111,8 @@ def get_stock_performance(symbols):
     [State("chatbot-modal", "is_open"),
      State('conversation-store', 'data'),
      State('login-username-store', 'data'),
-     State('saved-watchlists-dropdown', 'value'),  # New: get the selected watchlist
-     State('individual-stocks-store', 'data')],  # New: get stocks from the selected watchlist
+     State('saved-watchlists-dropdown', 'value'),  # Get the selected watchlist
+     State('individual-stocks-store', 'data')],     # Get stocks from the selected watchlist
     prevent_initial_call=True
 )
 def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_history, username, selected_watchlist, watchlist_stocks):
@@ -1100,15 +1120,18 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
     if not ctx.triggered:
         return is_open, conversation_history, dash.no_update
 
+    # If the chatbot button is clicked or the clear button is clicked
     if ctx.triggered[0]["prop_id"] in ["open-chatbot-button.n_clicks", "clear-button.n_clicks"]:
+        # Handle opening and closing the modal
         if ctx.triggered[0]["prop_id"] == "open-chatbot-button.n_clicks" and is_open:
-            # Close modal if it's already open
             return not is_open, conversation_history, dash.no_update
 
         watchlist_message = ""
         personalized_greeting = "Hello! My name is Financio, your financial advisor 🤖."
-        
+
+        # If the user is logged in
         if username:
+            # Check if the watchlist is selected and stocks are available
             if selected_watchlist and watchlist_stocks:
                 # Generate the stock performance summaries for the selected watchlist
                 performance_data = get_stock_performance(watchlist_stocks)
@@ -1120,9 +1143,10 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
             else:
                 watchlist_message = "You currently don't have a watchlist selected."
 
-            # Personalize greeting
+            # Personalize greeting for logged-in users
             personalized_greeting = f"Hello, {username}! My name is Financio, your financial advisor 🤖."
         else:
+            # Handle the case when the user is not logged in
             watchlist_message = "You're not logged in, so I don't have access to your watchlist."
 
         # Initialize the conversation with a personalized message
@@ -1143,6 +1167,7 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
 
     return is_open, conversation_history, dash.no_update
 
+
 @app.callback(
     [Output('conversation-store', 'data'),
      Output('chatbot-conversation', 'children'),
@@ -1151,8 +1176,8 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
     [State('chatbot-input', 'value'),
      State('conversation-store', 'data'),
      State('login-username-store', 'data'),
-     State('saved-watchlists-dropdown', 'value'),  # New: get the selected watchlist
-     State('individual-stocks-store', 'data')],  # New: get stocks from the selected watchlist
+     State('saved-watchlists-dropdown', 'value'),  # Get the selected watchlist
+     State('individual-stocks-store', 'data')],     # Get stocks from the selected watchlist
     prevent_initial_call=True
 )
 def manage_chatbot_interaction(send_clicks, user_input, conversation_history, username, selected_watchlist, watchlist_stocks):
@@ -1164,19 +1189,21 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
 
     client = OpenAI(api_key=open_api_key)
 
-    # Define the system message
+    # Define the system message for context
     system_message = {"role": "system", "content": "You are a helpful stock financial advisor."}
 
+    # Initialize conversation history if it's not already set
     if conversation_history is None:
         conversation_history = [system_message]
 
     if send_clicks and send_clicks > 0 and user_input:
-        # Append the user's message to the conversation history
+        # Append the user's input to the conversation history
         conversation_history.append({"role": "user", "content": user_input})
 
-        # Respond with stock performance if requested and the user is logged in
+        # If the input contains the keyword 'performance' and the user is logged in
         if "performance" in user_input.lower() and username:
             if selected_watchlist and watchlist_stocks:
+                # Fetch stock performance for the selected watchlist
                 performance_data = get_stock_performance(watchlist_stocks)
                 performance_summaries = [
                     f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data['latest_close'] is not None else f"{symbol}: Latest Close - N/A"
@@ -1193,10 +1220,10 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
             )
             response = completion.choices[0].message.content
 
-        # Append the chatbot's response to the conversation history
+        # Append the assistant's response to the conversation history
         conversation_history.append({"role": "assistant", "content": response})
 
-        # Update the conversation display
+        # Update the conversation display with the user's input and assistant's response
         conversation_display = []
         for message in conversation_history:
             if message["role"] == "user":
@@ -1212,16 +1239,21 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
                     )
                 )
 
-        return conversation_history, conversation_display, ""  # Clear input box after response
+        # Clear the chatbot input after responding
+        return conversation_history, conversation_display, ""  
 
+    # If no new input, return the current state without updates
     return conversation_history, dash.no_update, dash.no_update
+
+
 
 
 @app.callback(
     Output('analyst-recommendations-content', 'children'),
-    Input('individual-stocks-store', 'data')
+    [Input('individual-stocks-store', 'data'),
+     Input('plotly-theme-store', 'data')]
 )
-def update_analyst_recommendations(stock_symbols):
+def update_analyst_recommendations(stock_symbols, plotly_theme):
     if not stock_symbols:
         return html.P("Please select stocks to view their analyst recommendations.")
     
@@ -1239,7 +1271,7 @@ def update_analyst_recommendations(stock_symbols):
     for symbol in stock_symbols:
         df = fetch_analyst_recommendations(symbol)
         if not df.empty:
-            fig = generate_recommendations_heatmap(df)
+            fig = generate_recommendations_heatmap(df, plotly_theme)
             recommendations_content.append(html.H4(f"{symbol}", className='mt-3'))
             recommendations_content.append(dcc.Graph(figure=fig))
         else:
@@ -1247,9 +1279,11 @@ def update_analyst_recommendations(stock_symbols):
     
     return recommendations_content
 
+
+
 @app.callback(
     [Output('blur-overlay', 'style'),
-     Output('analyst-recommendations-content', 'style')],
+      Output('analyst-recommendations-content', 'style')],
     Input('login-status', 'data')
 )
 def update_recommendations_visibility(login_status):
@@ -1278,6 +1312,7 @@ def update_forecast_simulation_dropdown(individual_stocks):
     
     options = [{'label': stock, 'value': stock} for stock in individual_stocks]
     return options, options
+
 
 @app.callback(
     [Output('forecast-graph', 'figure'),
@@ -1420,6 +1455,7 @@ def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefi
     return empty_fig, "", dash.no_update
 
 
+
 @app.callback(
     [Output('filters-collapse', 'is_open'),
      Output('mobile-overlay', 'style')],
@@ -1433,6 +1469,7 @@ def toggle_sidebar(n_clicks, is_open):
         overlay_style = {"display": "block"} if new_is_open else {"display": "none"}
         return new_is_open, overlay_style
     return is_open, {"display": "none"}
+
 
 @app.callback(
     Output('tabs', 'active_tab'),
@@ -1469,6 +1506,7 @@ def switch_tabs_footer_to_tabs(n_clicks_footer_prices, n_clicks_footer_news, n_c
     return current_tab
 
 
+
 @app.callback(
     Output('forecast-graph', 'figure', allow_duplicate=True),
     [Input('active-tab', 'data')],
@@ -1480,9 +1518,10 @@ def display_stored_forecast(active_tab, stored_forecast):
         return stored_forecast
     return dash.no_update
 
+
 @app.callback(
     [Output('forecast-blur-overlay', 'style'),
-     Output('forecast-graph', 'style')],
+      Output('forecast-graph', 'style')],
     Input('login-status', 'data')
 )
 def update_forecast_visibility(login_status):
@@ -1504,9 +1543,9 @@ def update_forecast_visibility(login_status):
     Output('register-output', 'children'),
     [Input('register-button', 'n_clicks')],
     [State('username', 'value'),
-     State('email', 'value'),
-     State('password', 'value'),
-     State('confirm_password', 'value')]
+      State('email', 'value'),
+      State('password', 'value'),
+      State('confirm_password', 'value')]
 )
 def register_user(n_clicks, username, email, password, confirm_password):
     if n_clicks:
@@ -1538,10 +1577,10 @@ def register_user(n_clicks, username, email, password, confirm_password):
 
 @app.callback(
     [Output('req-length', 'className'),
-     Output('req-uppercase', 'className'),
-     Output('req-lowercase', 'className'),
-     Output('req-digit', 'className'),
-     Output('req-special', 'className')],
+      Output('req-uppercase', 'className'),
+      Output('req-lowercase', 'className'),
+      Output('req-digit', 'className'),
+      Output('req-special', 'className')],
     Input('password', 'value')
 )
 def update_password_requirements(password):
@@ -1580,6 +1619,7 @@ def validate_password(password):
     
     # If all conditions are met
     return None
+
 
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
@@ -1630,6 +1670,7 @@ def display_profile(pathname, login_status, username):
         if user:
             return user.username, user.email
     raise PreventUpdate
+    
 
 @app.callback(
     [Output('profile-username', 'disabled'),
@@ -1723,6 +1764,8 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, em
 
     raise PreventUpdate
 
+
+
 @app.callback(
     [Output('profile-req-length', 'className'),
      Output('profile-req-uppercase', 'className'),
@@ -1733,6 +1776,8 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, em
 )
 def update_profile_password_requirements(password):
     return update_password_requirements(password)
+
+
 
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
@@ -1752,6 +1797,7 @@ def handle_logout(logout_clicks):
         session.pop('username', None)
         return False, {"display": "block"}, {"display": "none"}, {"display": "none"}, ['AAPL'], dbc.themes.MATERIA, 'plotly_white', '/login'  # Redirect to login
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
 
 @app.callback(
     [Output('login-status', 'data'),
@@ -1777,6 +1823,8 @@ def check_session(pathname):
 )
 def update_dropdown_status(login_status):
     return not login_status  # Disable dropdown if not logged in
+
+
 
 @app.callback(
     Output('login-overlay', 'is_open'),
@@ -1807,6 +1855,8 @@ def style_save_button(login_status):
         return 'grayed-out','grayed-out'  # Apply the grayed-out class when logged out
     return 'small-button','small-button'  # No class when logged in
 
+
+
 def fetch_stock_data_watchlist(symbol):
     """Fetch latest stock data for a given symbol."""
     try:
@@ -1832,7 +1882,7 @@ def generate_watchlist_table(watchlist):
             rows.append(
                 html.Tr([
                     html.Td(html.A(stock, href="#", id={'type': 'stock-symbol', 'index': i}, 
-                                   style={"text-decoration": "none", "color": "blue"}), 
+                                   style={"text-decoration": "none", "color": "bg-primary"}), 
                             style={"verticalAlign": "middle"}),  # Vertically center the link
                     html.Td(f"{latest_close:.2f}", style={"verticalAlign": "middle"}),  # Vertically center the text
                     html.Td(f"{change_percent:.2f}%", style={"color": color, "verticalAlign": "middle"}),  # Vertically center the text
@@ -1878,6 +1928,7 @@ def update_watchlist_management_layout(login_status):
         return False, False, False, False  # Enable the components when logged in
     else:
         return True, True, False, False  # Keep them disabled when logged out
+
 
 @app.callback(
     [Output('saved-watchlists-dropdown', 'options'),
@@ -1997,13 +2048,13 @@ from datetime import datetime, timedelta
      Input('indexed-comparison-stock-dropdown', 'value'),
      Input('prices-stock-dropdown', 'value'),
      Input('saved-watchlists-dropdown', 'value'),
-     Input('plotly-theme-store', 'data')],  # Added the plotly theme store as an Input
+     Input('plotly-theme-store', 'data')],
     [State('individual-stock-input', 'value'),
      State('individual-stocks-store', 'data')],
     prevent_initial_call='initial_duplicate'
 )
 def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_watchlist, plotly_theme, new_stock, individual_stocks):
-    ctx = callback_context
+    ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
@@ -2065,6 +2116,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
 
     today = pd.to_datetime('today')
 
+    # Determine the start date and interval based on predefined range
     if predefined_range == '5D_15m':
         start_date = today - timedelta(days=5)
         interval = '15m'
@@ -2140,8 +2192,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             ""
         )
     
-    # df_all = pd.concat(data) if data else pd.DataFrame()
-    
+    # Combine the data into a single DataFrame
     if data:
         common_index = pd.date_range(start=start_date, end=end_date, freq=interval)
         data = [df.reindex(common_index, method='pad') for df in data]
@@ -2149,7 +2200,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     else:
         df_all = pd.DataFrame()
 
-    
+    # Create indexed data for comparison
     indexed_data = {}
     for symbol in individual_stocks:
         if symbol in df_all['Stock'].unique():
@@ -2218,6 +2269,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     else:
         fig_indexed = px.line(title="No data available.", template=plotly_theme)
 
+    # Prepare the price graph
     df_prices_filtered = df_all[df_all['Stock'].isin(selected_prices_stocks)]
     num_stocks = len(selected_prices_stocks)
     graph_height = 400 * num_stocks
@@ -2256,7 +2308,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
                 fig_stock.add_annotation(
                     x=latest_timestamp,
                     y=latest_close,
-                    text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
+                    text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')} ",
                     showarrow=True,
                     arrowhead=None,
                     ax=20,
@@ -2309,6 +2361,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     fig_stock.update_yaxes(title_text=None, secondary_y=False)
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
+    # Fetch news related to the stocks in the watchlist
     news_content = fetch_news(individual_stocks)
 
     return (
@@ -2380,6 +2433,8 @@ def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_da
             ])
     return dash.no_update
 
+
+
 @app.callback(
     [Output('page-content', 'children',allow_duplicate=True),
      Output('register-link', 'style'),
@@ -2403,6 +2458,8 @@ def display_page(pathname, login_status):
     else:
         return dashboard_layout, {"display": "block"} if not login_status else {"display": "none"}, footer_style
 
+
+
 @app.callback(
     [Output('tab-prices', 'className'),
      Output('tab-news', 'className'),
@@ -2422,6 +2479,8 @@ def update_active_tab_class(current_tab):
         "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
         "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
     ]
+
+
 
 @app.callback(
     [Output('theme-store', 'data'),
