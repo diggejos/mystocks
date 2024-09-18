@@ -493,6 +493,15 @@ dashboard_layout = dbc.Container([
                     dbc.Tab(label='📰 News', tab_id="news-tab", children=[
                         dbc.Card(
                             dbc.CardBody([
+                                dcc.Dropdown(
+                                    id='news-stock-dropdown',
+                                    options=[],  
+                                    value=[],  
+                                    multi=True,
+                                    placeholder="Select stocks to display",
+                                    searchable=False
+                                ),
+                                
                                 dcc.Loading(id="loading-news", type="default", children=[
                                     html.Div(id='stock-news', className='news-container')
                                 ])
@@ -889,6 +898,8 @@ about_layout = dbc.Container([
     ]),
 ], fluid=True)
 
+from dash.dependencies import Input, Output, State, MATCH
+
 
 def fetch_news(symbols, max_articles=4):
     news_content = []
@@ -902,6 +913,7 @@ def fetch_news(symbols, max_articles=4):
 
             for idx, article in enumerate(news[:max_articles]):  # Display only the first `max_articles` news articles
                 related_tickers = ", ".join(article.get('relatedTickers', []))
+                publisher = article.get('publisher', 'Unknown Publisher')  # Get the publisher information
                 news_card = dbc.Col(
                     dbc.Card(
                         dbc.CardBody([
@@ -910,7 +922,7 @@ def fetch_news(symbols, max_articles=4):
                             if 'thumbnail' in article else html.Div(),
                             html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
-                                f"Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
+                                f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
                                 style={"margin-bottom": "0px", "padding-bottom": "0px"}
                             )
                         ])
@@ -922,24 +934,20 @@ def fetch_news(symbols, max_articles=4):
                 # Add a "Load More" button if there are more articles available
                 news_content.append(
                     dbc.Button("Load More", id={'type': 'load-more-button', 'index': symbol}, color='primary', size='sm', className='mb-2')
-        
                 )
                 news_content.append(html.Div(id={'type': 'additional-news', 'index': symbol}))
         else:
             news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
-    
+
     return dbc.Row(news_content, className="news-row")
-
-from dash.dependencies import Input, Output, State, MATCH
-
 
 @app.callback(
     [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
-      Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
-      Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
+     Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
+     Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
     [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
     [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
-      State({'type': 'additional-news', 'index': MATCH}, 'children')]
+     State({'type': 'additional-news', 'index': MATCH}, 'children')]
 )
 def load_more_articles(n_clicks, button_id, current_articles):
     if n_clicks is None or n_clicks == 0:
@@ -961,6 +969,7 @@ def load_more_articles(n_clicks, button_id, current_articles):
 
     for article in news[4:max_articles]:
         related_tickers = ", ".join(article.get('relatedTickers', []))
+        publisher = article.get('publisher', 'Unknown Publisher')  # Get the publisher information
         news_card = dbc.Col(
             dbc.Card(
                 dbc.CardBody([
@@ -969,7 +978,7 @@ def load_more_articles(n_clicks, button_id, current_articles):
                     if 'thumbnail' in article else html.Div(),
                     html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                     html.Footer(
-                        f"Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
+                        f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
                         style={"margin-bottom": "0px", "padding-bottom": "0px"}
                     )
                 ])
@@ -2235,6 +2244,8 @@ from datetime import datetime, timedelta
      Output('indexed-comparison-stock-dropdown', 'value'),
      Output('prices-stock-dropdown', 'options'),
      Output('prices-stock-dropdown', 'value'),
+     Output('news-stock-dropdown', 'options'),
+     Output('news-stock-dropdown', 'value'),
      Output('stock-suggestions-input', 'value')],  # Updated this line
     [Input('add-stock-button', 'n_clicks'),
      Input('reset-stocks-button', 'n_clicks'),
@@ -2246,13 +2257,14 @@ from datetime import datetime, timedelta
      Input('predefined-ranges', 'value'),
      Input('indexed-comparison-stock-dropdown', 'value'),
      Input('prices-stock-dropdown', 'value'),
+     Input('news-stock-dropdown', 'value'),
      Input('saved-watchlists-dropdown', 'value'),
      Input('plotly-theme-store', 'data')],
     [State('stock-suggestions-input', 'value'),
      State('individual-stocks-store', 'data')],
     prevent_initial_call='initial_duplicate'
 )
-def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_watchlist, plotly_theme, new_stock, individual_stocks):
+def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_news_stocks ,selected_watchlist, plotly_theme, new_stock, individual_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -2266,6 +2278,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             individual_stocks = json.loads(watchlist.stocks)
             selected_prices_stocks = individual_stocks[:5]
             selected_comparison_stocks = individual_stocks[:5]
+            selected_news_stocks = individual_stocks[:5]
+
 
     # Handle stock addition using the selected ticker from input
     if 'add-stock-button' in trigger and new_stock:
@@ -2296,6 +2310,11 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         selected_prices_stocks = [stock for stock in selected_prices_stocks if stock in individual_stocks]
     else:
         selected_prices_stocks = individual_stocks[:5]
+        
+    if selected_news_stocks:
+        selected_news_stocks = [stock for stock in selected_news_stocks if stock in individual_stocks]
+    else:
+        selected_news_stocks = individual_stocks[:5]
 
     if not individual_stocks and benchmark_selection == 'None':
         return (
@@ -2309,6 +2328,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             selected_comparison_stocks,
             options,
             selected_prices_stocks,
+            options,
+            selected_news_stocks,
             ""
         )
 
@@ -2392,6 +2413,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             selected_comparison_stocks,
             options,
             selected_prices_stocks,
+            options,
+            selected_news_stocks,
             ""
         )
 
@@ -2565,7 +2588,9 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
     # Fetch related news for the stocks in the watchlist
-    news_content = fetch_news(individual_stocks)
+    # news_content = fetch_news(individual_stocks)
+    news_content = fetch_news(selected_news_stocks)
+
 
     return (
         individual_stocks,
@@ -2578,6 +2603,8 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         selected_comparison_stocks,
         options,
         selected_prices_stocks,
+        options,
+        selected_news_stocks,
         ""
     )
 
@@ -2742,7 +2769,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
 
 app.index_string = '''
 <!DOCTYPE html>
