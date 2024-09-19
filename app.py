@@ -175,7 +175,6 @@ navbar = dbc.Navbar(
     className="sticky-top mb-4"
 )
 
-
 from dash import Input, Output, State
 
 @app.callback(
@@ -187,8 +186,6 @@ def toggle_navbar(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
-
-
 
 sticky_footer_mobile = dbc.Nav(
     [
