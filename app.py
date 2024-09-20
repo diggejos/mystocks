@@ -106,6 +106,7 @@ class StockKPI(db.Model):
     price_momentum = db.Column(db.Float)
     risk_tolerance = db.Column(db.String(10), nullable=False)  # "low", "medium", or "high"
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    batch_id = db.Column(db.Integer, nullable=False)
      
 # Create the database tables
 with server.app_context():
