@@ -2086,7 +2086,7 @@ def generate_watchlist_table(watchlist):
     [Input('login-status', 'data')],
     prevent_initial_call='initial_duplicate'
 )
-def update_watchlist_management_layout(login_status):
+def t_management_layout(login_status):
     if login_status:
         return False, False, False, False  # Enable the components when logged in
     else:
@@ -2264,7 +2264,8 @@ from datetime import datetime, timedelta
 def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_news_stocks ,selected_watchlist, plotly_theme, new_stock, individual_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return (dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+        dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,dash.no_update)
 
     trigger = ctx.triggered[0]['prop_id']
 
