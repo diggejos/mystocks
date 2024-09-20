@@ -91,6 +91,21 @@ class Watchlist(db.Model):
     stocks = db.Column(db.Text, nullable=False)  # JSON list of stock symbols
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_default = db.Column(db.Boolean, default=False)  # New field to mark as default
+
+# Define your StockKPI model
+class StockKPI(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(10), nullable=False)
+    pe_ratio = db.Column(db.Float)
+    pb_ratio = db.Column(db.Float)
+    beta = db.Column(db.Float)
+    dividend_yield = db.Column(db.Float)
+    market_cap = db.Column(db.Float)
+    roe = db.Column(db.Float)
+    debt_to_equity = db.Column(db.Float)
+    price_momentum = db.Column(db.Float)
+    risk_tolerance = db.Column(db.String(10), nullable=False)  # "low", "medium", or "high"
+    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
      
 # Create the database tables
 with server.app_context():
@@ -175,6 +190,7 @@ navbar = dbc.Navbar(
     className="sticky-top mb-4"
 )
 
+
 from dash import Input, Output, State
 
 @app.callback(
@@ -187,6 +203,8 @@ def toggle_navbar(n_clicks, is_open):
         return not is_open
     return is_open
 
+
+
 sticky_footer_mobile = dbc.Nav(
     [
         dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
@@ -194,7 +212,9 @@ sticky_footer_mobile = dbc.Nav(
         dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="footer-compare-tab")),
         dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="footer-forecast-tab")),
         dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="footer-simulate-tab")),
-        dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab"))
+        dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
+        dbc.NavItem(dbc.NavLink("Top Shots", href="#topshots", id="footer-topshots-tab"))
+
     ],
     pills=True,
     justified=True,
@@ -647,6 +667,29 @@ dashboard_layout = dbc.Container([
                             ])
                         )
                     ]),
+                   dbc.Tab(label='topshots', tab_id="topshots-tab", children=[
+                       dbc.Card(
+                           dbc.CardBody([
+                               html.H3("Top 20 Buy Stocks Based on KPIs"),
+                                dcc.Dropdown(
+                                    id='risk-tolerance-dropdown',
+                                    options=[
+                                        {'label': 'Low Risk', 'value': 'low'},
+                                        {'label': 'Medium Risk', 'value': 'medium'},
+                                        {'label': 'High Risk', 'value': 'high'},
+                                    ],
+                                    value='medium',  # Default to medium risk
+                                    placeholder="Select Risk Tolerance"
+                                ),
+                                # dbc.Button('get it', id='get-top-stocks-button', className="small-button"),
+                                dcc.Loading(
+                                    id="loading-top-stocks",
+                                    children=[html.Div(id='top-stocks-table')],
+                                    type="default"
+                                )
+                           ])
+                       )
+                   ]),
                 ], className="desktop-tabs bg-secondary" #className="desktop-tabs" 
             )
         ], width=12, md=9, xs=12)
@@ -1052,6 +1095,57 @@ def generate_recommendations_heatmap(dataframe, plotly_theme):
     )
 
     return fig
+
+# Callback to retrieve top 20 stocks from the database based on risk tolerance
+@app.callback(
+    Output('top-stocks-table', 'children'),
+    [Input('risk-tolerance-dropdown', 'value')]
+)
+def get_top_stocks(risk_tolerance):
+    if risk_tolerance is None:
+        raise PreventUpdate
+
+    # Fetch top 20 stocks for the selected risk tolerance from the database
+    stock_data = StockKPI.query.filter_by(risk_tolerance=risk_tolerance).all()
+
+    # If no data found
+    if not stock_data:
+        return html.Div(f"No top stocks available for {risk_tolerance} risk tolerance.", style={"color": "red"})
+
+    # Normalize the momentum for the progress bar
+    max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum]) if stock_data else 0
+
+    # Build the table
+    rows = []
+    for idx, stock in enumerate(stock_data):
+        row_color = "table-warning" if idx == 0 else ""  # Highlight the top stock
+
+        # Conditional styling for P/E Ratio (red for high values)
+        pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {"backgroundColor": "lightcoral"}
+
+        # Conditional styling for Debt/Equity (green for low, red for high)
+        debt_style = {"backgroundColor": "lightgreen"} if stock.debt_to_equity and stock.debt_to_equity < 1 else {"backgroundColor": "lightcoral"}
+
+        # Normalize the momentum for the progress bar
+        momentum_normalized = (stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
+
+        # Add row with progress bar for Momentum
+        rows.append(html.Tr([
+            html.Td(stock.symbol),
+            html.Td(f"{stock.pe_ratio:.2f}" if stock.pe_ratio else "N/A", style=pe_style),
+            html.Td(f"{stock.beta:.2f}" if stock.beta else "N/A"),
+            html.Td(f"{stock.roe:.2f}" if stock.roe else "N/A"),
+            html.Td(f"{stock.debt_to_equity:.2f}" if stock.debt_to_equity else "N/A", style=debt_style),
+            html.Td(dbc.Progress(value=momentum_normalized, striped=True, color="info", style={"height": "20px"}))
+        ], className=row_color))
+
+    table_header = [
+        html.Thead(html.Tr([html.Th("Stock"), html.Th("P/E Ratio"), html.Th("Beta"), html.Th("ROE"), html.Th("Debt/Equity"), html.Th("Momentum")]))
+    ]
+    table_body = [html.Tbody(rows)]
+
+    return dbc.Table(table_header + table_body, bordered=True, hover=True, striped=True, responsive=True, className="table-sm")
+
 
 # Add a callback to update the active-tab store
 @app.callback(
@@ -2086,7 +2180,7 @@ def generate_watchlist_table(watchlist):
     [Input('login-status', 'data')],
     prevent_initial_call='initial_duplicate'
 )
-def t_management_layout(login_status):
+def update_watchlist_management_layout(login_status):
     if login_status:
         return False, False, False, False  # Enable the components when logged in
     else:
@@ -2264,8 +2358,7 @@ from datetime import datetime, timedelta
 def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_news_stocks ,selected_watchlist, plotly_theme, new_stock, individual_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return (dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-        dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,dash.no_update)
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     trigger = ctx.triggered[0]['prop_id']
 
@@ -2755,7 +2848,6 @@ def update_plotly_theme(theme):
     elif theme == dbc.themes.SOLAR:
         return 'plotly_dark'
     return 'plotly_white'
-
 
 
 app.clientside_callback(
