@@ -15,3 +15,5 @@ prophet
 dash_extensions
 flask_session
 openai
+apscheduler
+
