@@ -29,22 +29,60 @@ def fetch_kpi_for_stock(symbol):
     print(f"Fetched KPIs for {symbol}: {kpis}")
     return kpis
 
-# Fetch the list of stocks
-def get_stock_list():
-    url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
-    tables = pd.read_html(url)
-    sp500_table = tables[0]
-    sp500_tickers = sp500_table['Symbol'].tolist()
-    return sp500_tickers
 
-# Store top 20 stocks in the database
+def get_stock_list():
+    # S&P 500
+    url_sp500 = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+    sp500_tables = pd.read_html(url_sp500)
+    sp500_table = sp500_tables[0]
+    sp500_tickers = sp500_table['Symbol'].tolist()
+
+    # FTSE 100
+    url_ftse100 = 'https://en.wikipedia.org/wiki/FTSE_100_Index'
+    ftse100_tables = pd.read_html(url_ftse100)
+    ftse100_table = ftse100_tables[4]  # Table 4 typically contains the tickers
+    ftse100_tickers = ftse100_table['Ticker'].tolist()
+
+    # DAX (Germany)
+    url_dax = 'https://en.wikipedia.org/wiki/DAX'
+    dax_tables = pd.read_html(url_dax)
+    dax_table = dax_tables[4]  # Table 2 typically contains the tickers
+    dax_tickers = dax_table['Ticker'].tolist()
+    
+    url_asx = 'https://en.wikipedia.org/wiki/S%26P/ASX_200'
+    asx_tables = pd.read_html(url_asx)
+    asx_table = asx_tables[2]  # First table typically contains the tickers
+    asx_tickers = asx_table['Code'].tolist()
+    
+    # Sensex (India)
+    url_sensex = 'https://en.wikipedia.org/wiki/BSE_SENSEX'
+    sensex_tables = pd.read_html(url_sensex)
+    sensex_table = sensex_tables[1]  # Table 2 typically contains the tickers
+    sensex_tickers = sensex_table['Symbol'].tolist()
+
+
+    # SMI (Swiss Market Index)
+    url_smi = 'https://en.wikipedia.org/wiki/Swiss_Market_Index'
+    smi_tables = pd.read_html(url_smi)
+    smi_table = smi_tables[2]  # Table 4 typically contains the tickers
+    smi_tickers = smi_table['Ticker'].tolist()
+
+    # Combine all tickers
+    combined_tickers = sp500_tickers + ftse100_tickers + dax_tickers  + smi_tickers + asx_tickers + sensex_tickers
+
+    # Remove duplicates using a set
+    unique_tickers = list(set(combined_tickers))
+
+    print(f"Number of unique tickers: {len(unique_tickers)}")  # To verify uniqueness
+    return unique_tickers
+
+
+
 # Store top 20 stocks in the database
 def store_top_20_stocks(stock_symbols):
-    with app.server.app_context():
+    with app.server.app_context():  # Use app.server.app_context() to get Flask app context
         kpi_data = []
-        batch_id = int(datetime.utcnow().timestamp())  # Create a unique batch ID
-
-        # Fetch KPI data for all stocks
+        
         for symbol in stock_symbols:
             kpis = fetch_kpi_for_stock(symbol)
             kpis['Symbol'] = symbol
@@ -55,12 +93,13 @@ def store_top_20_stocks(stock_symbols):
         # Filter and store the top 20 for each risk tolerance
         def filter_and_store(df, risk_tolerance, beta_range):
             if risk_tolerance == "low":
-                filtered = df[df['Beta'] < 1]
+                filtered = df[df['Beta'] < 1]  # Low risk
             elif risk_tolerance == "medium":
-                filtered = df[(df['Beta'] >= 1) & (df['Beta'] <= 2)]
+                filtered = df[(df['Beta'] >= 1) & (df['Beta'] <= 2)]  # Medium risk
             else:
-                filtered = df[df['Beta'] > 2]
+                filtered = df[df['Beta'] > 2]  # High risk
 
+            # Apply the Buy criteria
             filtered.loc[:, 'Buy'] = (
                 (filtered['P/E Ratio'] < 30) | filtered['P/E Ratio'].isnull()
                 & (filtered['ROE'] > 0.10)
@@ -68,15 +107,12 @@ def store_top_20_stocks(stock_symbols):
                 & (filtered['Price Momentum'] > 0)
             )
 
-            top_20 = filtered[filtered['Buy'] == True].nlargest(20, 'Price Momentum')
+            # Get the top 20 stocks by momentum
+            top_20 = filtered[filtered['Buy'] == True].nlargest(30, 'Price Momentum')
 
-            # Clear old records if more than 5 batches exist
-            existing_batches = db.session.query(StockKPI.batch_id).distinct().count()
-            if existing_batches >= 5:
-                oldest_batch_id = db.session.query(StockKPI.batch_id).order_by(StockKPI.batch_id).first()[0]
-                StockKPI.query.filter_by(batch_id=oldest_batch_id).delete()
+            # Clear old records for this risk tolerance
+            StockKPI.query.filter_by(risk_tolerance=risk_tolerance).delete()
 
-            # Insert the top 20 stocks into the database with the new batch ID
             for _, row in top_20.iterrows():
                 stock_kpi = StockKPI(
                     symbol=row['Symbol'],
@@ -89,11 +125,10 @@ def store_top_20_stocks(stock_symbols):
                     debt_to_equity=row['Debt-to-Equity'],
                     price_momentum=row['Price Momentum'],
                     risk_tolerance=risk_tolerance,
-                    last_updated=datetime.utcnow(),
-                    batch_id=batch_id  # Add the new batch ID here
+                    last_updated=datetime.utcnow()
                 )
                 db.session.add(stock_kpi)
-
+            
             db.session.commit()
 
         # Run the filtering for each risk tolerance
