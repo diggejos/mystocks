@@ -1111,54 +1111,6 @@ def generate_recommendations_heatmap(dataframe, plotly_theme):
 
     return fig
 
-# @app.callback(
-#     Output('top-stocks-table', 'children'),
-#     [Input('risk-tolerance-dropdown', 'value')]
-# )
-# def get_top_stocks(risk_tolerance):
-#     if risk_tolerance is None:
-#         raise PreventUpdate
-
-#     # Fetch top 20 stocks for the selected risk tolerance from the database
-#     stock_data = StockKPI.query.filter_by(risk_tolerance=risk_tolerance).all()
-
-#     # If no data found
-#     if not stock_data:
-#         return html.Div(f"No top stocks available for {risk_tolerance} risk tolerance.", style={"color": "red"})
-
-#     # Normalize the momentum for the progress bar
-#     max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum]) if stock_data else 0
-
-#     # Build the table
-#     rows = []
-#     for idx, stock in enumerate(stock_data):
-#         # Conditional styling for P/E Ratio (red for high values)
-#         pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {"backgroundColor": "lightcoral"}
-
-#         # Conditional styling for Debt/Equity (green for low, red for high)
-#         debt_style = {"backgroundColor": "lightgreen"} if stock.debt_to_equity and stock.debt_to_equity < 1 else {"backgroundColor": "lightcoral"}
-
-#         # Normalize the momentum for the progress bar
-#         momentum_normalized = (stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
-
-#         # Add row with progress bar for Momentum with value label
-#         rows.append(html.Tr([
-#             html.Td(stock.symbol),
-#             html.Td(f"{stock.pe_ratio:.2f}" if stock.pe_ratio else "N/A", style=pe_style),
-#             html.Td(f"{stock.beta:.2f}" if stock.beta else "N/A"),
-#             html.Td(f"{stock.roe:.2f}" if stock.roe else "N/A"),
-#             html.Td(f"{stock.debt_to_equity:.2f}" if stock.debt_to_equity else "N/A", style=debt_style),
-#             html.Td(dbc.Progress(value=momentum_normalized, striped=True, color="info", style={"height": "20px"}, label=f"{stock.price_momentum:.2f}"))
-#         ]))
-
-#     table_header = [
-#         html.Thead(html.Tr([html.Th("Stock"), html.Th("P/E Ratio"), html.Th("Beta"), html.Th("ROE"), html.Th("Debt/Equity"), html.Th("Momentum")]))
-#     ]
-#     table_body = [html.Tbody(rows)]
-
-#     return dbc.Table(table_header + table_body, bordered=True, hover=True, striped=True, responsive=True, className="table-sm")
-
-
 import dash_bootstrap_components as dbc
 from dash import html
 from dash.exceptions import PreventUpdate
@@ -1179,190 +1131,87 @@ def get_top_stocks(risk_tolerance):
         return html.Div(f"No top stocks available for {risk_tolerance} risk tolerance.", style={"color": "red"})
 
     # Normalize the momentum for the progress bar
-    max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum]) if stock_data else 0
+    max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum], default=1)
 
-    # Table headers with beginner-friendly explanations and tooltips
+    # Table headers with info icons and tooltips
     table_header = [
         html.Thead(html.Tr([
             html.Th([
-                "Stock",
-                dbc.Tooltip("The stock symbol or ticker for the company.", target="stock-symbol", placement="top")
-            ], id="stock-symbol"),
+                "Stock", html.I(className="bi bi-info-circle-fill", id="stock-info", style={"margin-left": "5px"}), 
+                dbc.Tooltip("The stock symbol or ticker for the company.", target="stock-info", placement="top")
+            ], style={"width": "100px"}),  # Reduced width for Stock column
             html.Th([
-                "P/E Ratio",
-                dbc.Tooltip(
-                    "Price-to-Earnings ratio: measures a company's current share price relative to its per-share earnings. "
-                    "Lower values (<20) generally indicate a better value, but very low values could signal financial trouble.",
-                    target="pe-ratio", placement="top"
-                )
-            ], id="pe-ratio"),
+                "P/E Ratio", html.I(className="bi bi-info-circle-fill", id="pe-info", style={"margin-left": "0px","width":"50px"}), 
+                dbc.Tooltip("Price-to-Earnings ratio: measures a company's current share price relative to its per-share earnings.", target="pe-info", placement="top")
+            ], className="d-none d-md-table-cell"),  # Hide on mobile
             html.Th([
-                "Beta",
-                dbc.Tooltip(
-                    "Beta measures the stock's volatility relative to the overall market. "
-                    "A Beta of 1 means the stock moves with the market. Less than 1 means less volatility (lower risk), "
-                    "while greater than 1 means more volatility (higher risk).",
-                    target="beta", placement="top"
-                )
-            ], id="beta"),
+                "Beta", html.I(className="bi bi-info-circle-fill", id="beta-info", style={"margin-left": "5px"}), 
+                dbc.Tooltip("Beta measures the stock's volatility relative to the overall market.", target="beta-info", placement="top")
+            ]),
             html.Th([
-                "ROE",
-                dbc.Tooltip(
-                    "Return on Equity (ROE): shows how effectively a company uses shareholders' equity to generate profit. "
-                    "Higher values (>10%) are generally better, indicating the company is more efficient at generating profit.",
-                    target="roe", placement="top"
-                )
-            ], id="roe"),
+                "ROE", html.I(className="bi bi-info-circle-fill", id="roe-info", style={"margin-left": "5px"}), 
+                dbc.Tooltip("Return on Equity (ROE): shows how effectively a company uses shareholders' equity to generate profit.", target="roe-info", placement="top")
+            ]),
             html.Th([
-                "Debt/Equity",
-                dbc.Tooltip(
-                    "Debt-to-Equity ratio: indicates how much debt a company is using to finance its assets relative to shareholders' equity. "
-                    "Lower values (<1) are generally better, but values >2 could indicate high financial risk.",
-                    target="debt-to-equity", placement="top"
-                )
-            ], id="debt-to-equity"),
-            html.Th([
-                "Momentum",
-                dbc.Tooltip(
-                    "Momentum measures the stock's recent price performance. "
-                    "Higher momentum values mean the stock price has been increasing rapidly, suggesting positive investor sentiment.",
-                    target="momentum", placement="top"
-                )
-            ], id="momentum")
+                "Momentum", html.I(className="bi bi-info-circle-fill", id="momentum-info", style={"margin-left": "5px"}), 
+                dbc.Tooltip("Momentum measures the stock's recent price performance.", target="momentum-info", placement="top")
+            ])
         ]))
     ]
 
-    # Build the table rows with progress bars for ROE and Beta
+    # Build the table rows with progress bars and labels side by side in one row using flexbox
     rows = []
     for idx, stock in enumerate(stock_data):
         # Conditional styling for P/E Ratio (green for low values)
         pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {"backgroundColor": "lightcoral"}
 
-        # Adjust Debt/Equity coloring to handle high values
-        debt_style = {"backgroundColor": "lightgreen"} if stock.debt_to_equity and stock.debt_to_equity < 2 else {"backgroundColor": "lightcoral"}
-
-        # Normalize the momentum for the progress bar
+        # Normalize the progress bar values
         momentum_normalized = (stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
-        
-        # Convert ROE to percentage from 0.xx
         roe_percentage = stock.roe * 100 if stock.roe else 0
-        roe_normalized = roe_percentage if roe_percentage else 0  # Progress bar will use percentage format
+        beta_normalized = (stock.beta / 3) * 100 if stock.beta else 0
 
-        # Normalize Beta for progress bar (assuming typical values between 0 and 3 for normal stocks)
-        beta_normalized = (stock.beta / 3) * 100 if stock.beta else 0  # Normalize Beta assuming 0 to 3 scale
-
-        # Add row with progress bars for Momentum, ROE, and Beta
+        # Add row with flexbox layout to place text and progress bar side by side
         rows.append(html.Tr([
-            html.Td(stock.symbol),
-            html.Td(f"{stock.pe_ratio:.2f}" if stock.pe_ratio else "N/A", style=pe_style),
-            html.Td(dbc.Progress(value=beta_normalized, striped=True, color="info", style={"height": "20px"}, label=f"{stock.beta:.2f}" if stock.beta else "N/A")),
-            html.Td(dbc.Progress(value=roe_normalized, striped=True, color="success", style={"height": "20px"}, label=f"{roe_percentage:.2f}%")),
-            html.Td(f"{stock.debt_to_equity:.2f}" if stock.debt_to_equity else "N/A", style=debt_style),
-            html.Td(dbc.Progress(value=momentum_normalized, striped=True, color="info", style={"height": "20px"}, label=f"{stock.price_momentum:.2f}"))
+            html.Td(stock.symbol, style={"width": "20px", "white-space": "nowrap", "text-overflow": "ellipsis", "overflow": "hidden"}),  # Fixed and reduced width for Stock column
+            html.Td(f"{stock.pe_ratio:.1f}" if stock.pe_ratio else "N/A", style=pe_style, className="d-none d-md-table-cell"),  # Hide on mobile, round to 1 digit after comma
+
+            # Beta column with small number and progress bar
+            html.Td([
+                html.Div([
+                    html.Span(f"{stock.beta:.1f}", style={"margin-right": "5px", "font-size": "10px", "min-width": "25px", "text-align": "right"}),  # Fixed width for Beta number
+                    dbc.Progress(value=beta_normalized, striped=True, color="info", style={"height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
+                ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
+            ]),
+
+            # ROE column with small number and progress bar
+            html.Td([
+                html.Div([
+                    html.Span(f"{roe_percentage:.1f}%", style={"margin-right": "5px", "font-size": "10px", "min-width": "25px", "text-align": "right"}),  # Fixed width for ROE number
+                    dbc.Progress(value=roe_percentage, striped=True, color="success", style={"height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
+                ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
+            ]),
+
+            # Momentum column with small number and progress bar
+            html.Td([
+                html.Div([
+                    html.Span(f"{stock.price_momentum:.1f}", style={"margin-right": "5px", "font-size": "10px", "min-width": "25px", "text-align": "right"}),  # Fixed width for Momentum number
+                    dbc.Progress(value=momentum_normalized, striped=True, color="info", style={"height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
+                ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
+            ])
         ]))
 
     table_body = [html.Tbody(rows)]
 
-    # Return the complete table with headers and body
-    return dbc.Table(table_header + table_body, bordered=True, hover=True, striped=True, responsive=True, className="table-sm")
+    # Return the complete table with headers and body, responsive for mobile
+    return dbc.Table(
+        table_header + table_body,
+        bordered=True,
+        hover=True,
+        striped=True,
+        responsive=True,  # Enable responsive behavior
+        className="table-sm table-responsive"
+    )
 
-
-# @app.callback(
-#     Output('top-stocks-table', 'children'),
-#     [Input('risk-tolerance-dropdown', 'value')]
-# )
-# def get_top_stocks(risk_tolerance):
-#     if risk_tolerance is None:
-#         raise PreventUpdate
-
-#     # Fetch top 20 stocks for the selected risk tolerance from the database
-#     stock_data = StockKPI.query.filter_by(risk_tolerance=risk_tolerance).all()
-
-#     # If no data found
-#     if not stock_data:
-#         return html.Div(f"No top stocks available for {risk_tolerance} risk tolerance.", style={"color": "red"})
-
-#     # Normalize the momentum for the progress bar
-#     max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum]) if stock_data else 0
-
-#     # Table headers with tooltips for beginner investors
-#     # Table headers with beginner-friendly explanations and tooltips (same as before)
-#     table_header = [
-#         html.Thead(html.Tr([
-#             html.Th([
-#                 "Stock",
-#                 dbc.Tooltip("The stock symbol or ticker for the company.", target="stock-symbol", placement="top")
-#             ], id="stock-symbol"),
-#             html.Th([
-#                 "P/E Ratio",
-#                 dbc.Tooltip(
-#                     "Price-to-Earnings ratio: measures a company's current share price relative to its per-share earnings. "
-#                     "Lower values (<20) generally indicate a better value, but very low values could signal financial trouble.",
-#                     target="pe-ratio", placement="top"
-#                 )
-#             ], id="pe-ratio"),
-#             html.Th([
-#                 "Beta",
-#                 dbc.Tooltip(
-#                     "Beta measures the stock's volatility relative to the overall market. "
-#                     "A Beta of 1 means the stock moves with the market. Less than 1 means less volatility (lower risk), "
-#                     "while greater than 1 means more volatility (higher risk).",
-#                     target="beta", placement="top"
-#                 )
-#             ], id="beta"),
-#             html.Th([
-#                 "ROE",
-#                 dbc.Tooltip(
-#                     "Return on Equity (ROE): shows how effectively a company uses shareholders' equity to generate profit. "
-#                     "Higher values (>10%) are generally better, indicating the company is more efficient at generating profit.",
-#                     target="roe", placement="top"
-#                 )
-#             ], id="roe"),
-#             html.Th([
-#                 "Debt/Equity",
-#                 dbc.Tooltip(
-#                     "Debt-to-Equity ratio: indicates how much debt a company is using to finance its assets relative to shareholders' equity. "
-#                     "Lower values (<1) are generally better, meaning the company has less debt compared to equity. Higher values (>2) could indicate financial risk.",
-#                     target="debt-to-equity", placement="top"
-#                 )
-#             ], id="debt-to-equity"),
-#             html.Th([
-#                 "Momentum",
-#                 dbc.Tooltip(
-#                     "Momentum measures the stock's recent price performance. "
-#                     "Higher momentum values mean the stock price has been increasing rapidly, suggesting positive investor sentiment.",
-#                     target="momentum", placement="top"
-#                 )
-#             ], id="momentum")
-#         ]))
-#     ]
-    
-#     # Build the table rows, adding progress bars for Beta and ROE
-#     rows = []
-#     for idx, stock in enumerate(stock_data):
-#         pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {"backgroundColor": "lightcoral"}
-#         debt_style = {"backgroundColor": "lightgreen"} if stock.debt_to_equity and stock.debt_to_equity < 1 else {"backgroundColor": "lightcoral"}
-        
-#         momentum_normalized = (stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
-#         roe_normalized = (stock.roe / 100) * 100 if stock.roe else 0  # Assuming ROE is a percentage
-#         beta_normalized = (stock.beta / 3) * 100 if stock.beta else 0  # Normalize Beta assuming 0 to 3 scale
-    
-#         # Add row with progress bars for Momentum, Beta, and ROE
-#         rows.append(html.Tr([
-#             html.Td(stock.symbol),
-#             html.Td(f"{stock.pe_ratio:.2f}" if stock.pe_ratio else "N/A", style=pe_style),
-#             html.Td(dbc.Progress(value=beta_normalized, striped=True, color="info", style={"height": "20px"}, label=f"{stock.beta:.2f}" if stock.beta else "N/A")),
-#             html.Td(dbc.Progress(value=roe_normalized, striped=True, color="success", style={"height": "20px"}, label=f"{stock.roe:.2f}" if stock.roe else "N/A")),
-#             html.Td(f"{stock.debt_to_equity:.2f}" if stock.debt_to_equity else "N/A", style=debt_style),
-#             html.Td(dbc.Progress(value=momentum_normalized, striped=True, color="info", style={"height": "20px"}, label=f"{stock.price_momentum:.2f}"))
-#         ]))
-    
-#     table_body = [html.Tbody(rows)]
-
-
-
-#     # Return the complete table with headers and body
-#     return dbc.Table(table_header + table_body, bordered=True, hover=True, striped=True, responsive=True, className="table-sm")
 
 
 # Add a callback to update the active-tab store
@@ -2618,7 +2467,8 @@ from datetime import datetime, timedelta
 def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, remove_clicks, chart_type, movag_input, benchmark_selection, predefined_range, selected_comparison_stocks, selected_prices_stocks, selected_news_stocks ,selected_watchlist, plotly_theme, new_stock, individual_stocks):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return (dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update, dash.no_update, dash.no_update,dash.no_update,dash.no_update)
 
     trigger = ctx.triggered[0]['prop_id']
 
@@ -3108,7 +2958,6 @@ def update_plotly_theme(theme):
     elif theme == dbc.themes.SOLAR:
         return 'plotly_dark'
     return 'plotly_white'
-
 
 
 app.clientside_callback(
