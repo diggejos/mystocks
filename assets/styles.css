@@ -634,3 +634,9 @@ a:hover {
 .custom-dropdown .Select__single-value, .custom-dropdown .css-1uccc91-singleValue {
     color: #333333 !important; /* Text color */
 }
+
+.custom-progress .progress-bar {
+    color: var(--bs-alarm) !important;
+    /*color: black !important; /* Set the text color to black */
+    font-size: 12px; /* Adjust font size if needed */
+}
