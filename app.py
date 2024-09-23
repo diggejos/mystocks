@@ -682,7 +682,8 @@ dashboard_layout = dbc.Container([
                                         {'label': 'High Risk', 'value': 'high'},
                                     ],
                                     value='medium',  # Default to medium risk
-                                    placeholder="Select Risk Tolerance"
+                                    placeholder="Select Risk Tolerance",
+                                    clearable = False
                                 ),
                                 # dbc.Button('get it', id='get-top-stocks-button', className="small-button"),
                                 dcc.Loading(
