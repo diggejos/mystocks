@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-from app import db, StockKPI, app  # Only import the necessary pieces
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 import yfinance as yf
 import pandas as pd
 from dotenv import load_dotenv
@@ -12,6 +13,32 @@ load_dotenv()
 
 # Database URI from environment variable
 db_uri = os.getenv('DATABASE_URL')
+
+# Fix the URL format if needed (Render uses a `postgres://` URI)
+if db_uri.startswith("postgres://"):
+    db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+
+# Initialize a minimal Flask app and SQLAlchemy
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Define the StockKPI model
+class StockKPI(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(10), nullable=False)
+    pe_ratio = db.Column(db.Float)
+    pb_ratio = db.Column(db.Float)
+    beta = db.Column(db.Float)
+    dividend_yield = db.Column(db.Float)
+    market_cap = db.Column(db.Float)
+    roe = db.Column(db.Float)
+    debt_to_equity = db.Column(db.Float)
+    price_momentum = db.Column(db.Float)
+    risk_tolerance = db.Column(db.String(10), nullable=False)  # "low", "medium", or "high"
+    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    batch_id = db.Column(db.Integer)
 
 # Function to fetch KPI data
 def fetch_kpi_for_stock(symbol):
@@ -39,6 +66,7 @@ def fetch_kpi_for_stock(symbol):
         print(f"Failed to fetch data for {symbol}: {e}")
         return None
 
+# Function to get stock list (S&P 500, etc.)
 def get_stock_list():
     # S&P 500
     url_sp500 = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
@@ -85,17 +113,15 @@ def get_stock_list():
     print(f"Number of unique tickers: {len(unique_tickers)}")  # To verify uniqueness
     return unique_tickers
 
-
-
 # Store top 20 stocks in the database
 def store_top_20_stocks(stock_symbols):
-    with app.server.app_context():  # Use app.server.app_context() to get Flask app context
+    with app.app_context():  # Use Flask app context
         kpi_data = []
         batch_id = int(datetime.utcnow().timestamp())  # Create a unique batch ID
 
         for symbol in stock_symbols:
             kpis = fetch_kpi_for_stock(symbol)
-            if kpis and kpis['P/E Ratio'] is not None:  # Or any other condition you want to impose
+            if kpis and kpis['P/E Ratio'] is not None:
                 kpis['Symbol'] = symbol
                 kpi_data.append(kpis)
             else:
@@ -141,7 +167,7 @@ def store_top_20_stocks(stock_symbols):
                     price_momentum=row['Price Momentum'],
                     risk_tolerance=risk_tolerance,
                     last_updated=datetime.utcnow(),
-                    batch_id=batch_id  # Add the new batch ID here
+                    batch_id=batch_id
                 )
                 db.session.add(stock_kpi)
 
@@ -161,16 +187,15 @@ def update_stock_data():
 # Initialize and start the scheduler
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
-    
+
     # First-time update
     print("Updating stock data for the first time...")
     update_stock_data()
 
     # Set up the scheduler for weekly updates
-    #1scheduler.add_job(func=update_stock_data, trigger="interval", weeks=1)
-    
+    scheduler.add_job(func=update_stock_data, trigger="interval", weeks=1)
+
     # Start the scheduler and allow it to finish the task before exiting
     scheduler.start()
-
-    # Allow enough time for the job to complete and then shut down
     scheduler.shutdown(wait=True)
+
