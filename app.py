@@ -1123,8 +1123,16 @@ def get_top_stocks(risk_tolerance):
     if risk_tolerance is None:
         raise PreventUpdate
 
-    # Fetch top 20 stocks for the selected risk tolerance from the database
-    stock_data = StockKPI.query.filter_by(risk_tolerance=risk_tolerance).all()
+    # Get the latest batch_id from the database
+    latest_batch = db.session.query(StockKPI.batch_id).order_by(StockKPI.batch_id.desc()).first()
+
+    if latest_batch is None:
+        return html.Div("No stock data available.", style={"color": "red"})
+
+    latest_batch_id = latest_batch[0]  # Extract batch_id from the tuple
+
+    # Fetch top 20 stocks for the selected risk tolerance and latest batch_id
+    stock_data = StockKPI.query.filter_by(risk_tolerance=risk_tolerance, batch_id=latest_batch_id).all()
 
     # If no data found
     if not stock_data:
@@ -1132,6 +1140,7 @@ def get_top_stocks(risk_tolerance):
 
     # Normalize the momentum for the progress bar
     max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum], default=1)
+
 
     # Table headers with info icons and tooltips
     table_header = [
