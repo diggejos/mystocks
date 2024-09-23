@@ -16,4 +16,5 @@ dash_extensions
 flask_session
 openai
 apscheduler
+psycopg2-binary
 
