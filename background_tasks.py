@@ -47,10 +47,10 @@ def get_stock_list():
     sp500_tickers = sp500_table['Symbol'].tolist()
 
     # FTSE 100
-    url_ftse100 = 'https://en.wikipedia.org/wiki/FTSE_100_Index'
-    ftse100_tables = pd.read_html(url_ftse100)
-    ftse100_table = ftse100_tables[4]  # Table 4 typically contains the tickers
-    ftse100_tickers = ftse100_table['Ticker'].tolist()
+    #url_ftse100 = 'https://en.wikipedia.org/wiki/FTSE_100_Index'
+    #ftse100_tables = pd.read_html(url_ftse100)
+    #ftse100_table = ftse100_tables[4]  # Table 4 typically contains the tickers
+    #ftse100_tickers = ftse100_table['Ticker'].tolist()
 
     # DAX (Germany)
     url_dax = 'https://en.wikipedia.org/wiki/DAX'
@@ -58,10 +58,10 @@ def get_stock_list():
     dax_table = dax_tables[4]  # Table 2 typically contains the tickers
     dax_tickers = dax_table['Ticker'].tolist()
     
-    url_asx = 'https://en.wikipedia.org/wiki/S%26P/ASX_200'
-    asx_tables = pd.read_html(url_asx)
-    asx_table = asx_tables[2]  # First table typically contains the tickers
-    asx_tickers = asx_table['Code'].tolist()
+    #url_asx = 'https://en.wikipedia.org/wiki/S%26P/ASX_200'
+    #asx_tables = pd.read_html(url_asx)
+    #asx_table = asx_tables[2]  # First table typically contains the tickers
+    #asx_tickers = asx_table['Code'].tolist()
     
     # Sensex (India)
     url_sensex = 'https://en.wikipedia.org/wiki/BSE_SENSEX'
@@ -77,7 +77,7 @@ def get_stock_list():
     smi_tickers = smi_table['Ticker'].tolist()
 
     # Combine all tickers
-    combined_tickers = sp500_tickers + ftse100_tickers + dax_tickers  + smi_tickers + asx_tickers + sensex_tickers
+    combined_tickers = sp500_tickers +  dax_tickers  + smi_tickers + sensex_tickers
 
     # Remove duplicates using a set
     unique_tickers = list(set(combined_tickers))
