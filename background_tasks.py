@@ -167,7 +167,7 @@ if __name__ == "__main__":
     update_stock_data()
 
     # Set up the scheduler for weekly updates
-    scheduler.add_job(func=update_stock_data, trigger="interval", weeks=1)
+    #1scheduler.add_job(func=update_stock_data, trigger="interval", weeks=1)
     
     # Start the scheduler and allow it to finish the task before exiting
     scheduler.start()
