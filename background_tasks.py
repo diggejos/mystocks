@@ -87,9 +87,9 @@ def get_stock_list():
     #dax_tickers = dax_table['Ticker'].tolist()
     
     #url_asx = 'https://en.wikipedia.org/wiki/S%26P/ASX_200'
-    #asx_tables = pd.read_html(url_asx)
-    #asx_table = asx_tables[2]  # First table typically contains the tickers
-    #asx_tickers = asx_table['Code'].tolist()
+    asx_tables = pd.read_html(url_asx)
+    asx_table = asx_tables[2]  # First table typically contains the tickers
+    asx_tickers = asx_table['Code'].tolist()
     
     # Sensex (India)
     #url_sensex = 'https://en.wikipedia.org/wiki/BSE_SENSEX'
@@ -105,7 +105,7 @@ def get_stock_list():
     #smi_tickers = smi_table['Ticker'].tolist()
 
     # Combine all tickers
-    combined_tickers = sp500_tickers 
+    combined_tickers = sp500_tickers + asx_tickers
 
     # Remove duplicates using a set
     unique_tickers = list(set(combined_tickers))
