@@ -86,7 +86,7 @@ def get_stock_list():
     #dax_table = dax_tables[4]  # Table 2 typically contains the tickers
     #dax_tickers = dax_table['Ticker'].tolist()
     
-    #url_asx = 'https://en.wikipedia.org/wiki/S%26P/ASX_200'
+    url_asx = 'https://en.wikipedia.org/wiki/S%26P/ASX_200'
     asx_tables = pd.read_html(url_asx)
     asx_table = asx_tables[2]  # First table typically contains the tickers
     asx_tickers = asx_table['Code'].tolist()
