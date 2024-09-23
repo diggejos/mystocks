@@ -42,7 +42,7 @@ themes = {
 
 
 # Initialize the Dash app with a default Bootstrap theme
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
 server = app.server
 
 # load robots.txt file for SEO
