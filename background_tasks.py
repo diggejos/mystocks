@@ -5,6 +5,7 @@ import yfinance as yf
 import pandas as pd
 from dotenv import load_dotenv
 import os
+from yfinance.exceptions import YFException
 
 # Load environment variables
 load_dotenv()
@@ -14,21 +15,29 @@ db_uri = os.getenv('DATABASE_URL')
 
 # Function to fetch KPI data
 def fetch_kpi_for_stock(symbol):
-    ticker = yf.Ticker(symbol)
-    info = ticker.info
-    kpis = {
-        'P/E Ratio': info.get('trailingPE'),
-        'P/B Ratio': info.get('priceToBook'),
-        'Beta': info.get('beta'),
-        'Dividend Yield': info.get('dividendYield'),
-        'Market Cap': info.get('marketCap'),
-        'ROE': info.get('returnOnEquity'),
-        'Debt-to-Equity': info.get('debtToEquity'),
-        'Price Momentum': info.get('fiftyTwoWeekHigh') - info.get('fiftyTwoWeekLow') if info.get('fiftyTwoWeekHigh') and info.get('fiftyTwoWeekLow') else None
-    }
-    print(f"Fetched KPIs for {symbol}: {kpis}")
-    return kpis
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        if not info:
+            print(f"No data found for {symbol}")
+            return None
 
+        kpis = {
+            'P/E Ratio': info.get('trailingPE'),
+            'P/B Ratio': info.get('priceToBook'),
+            'Beta': info.get('beta'),
+            'Dividend Yield': info.get('dividendYield'),
+            'Market Cap': info.get('marketCap'),
+            'ROE': info.get('returnOnEquity'),
+            'Debt-to-Equity': info.get('debtToEquity'),
+            'Price Momentum': info.get('fiftyTwoWeekHigh') - info.get('fiftyTwoWeekLow') if info.get('fiftyTwoWeekHigh') and info.get('fiftyTwoWeekLow') else None
+        }
+
+        print(f"Fetched KPIs for {symbol}: {kpis}")
+        return kpis
+    except YFException as e:
+        print(f"Failed to fetch data for {symbol}: {e}")
+        return None
 
 def get_stock_list():
     # S&P 500
@@ -85,8 +94,11 @@ def store_top_20_stocks(stock_symbols):
         
         for symbol in stock_symbols:
             kpis = fetch_kpi_for_stock(symbol)
-            kpis['Symbol'] = symbol
-            kpi_data.append(kpis)
+            if kpis and kpis['P/E Ratio'] is not None:  # Or any other condition you want to impose
+                kpis['Symbol'] = symbol
+                kpi_data.append(kpis)
+            else:
+                print(f"Skipping {symbol} due to incomplete KPI data.")
 
         df = pd.DataFrame(kpi_data)
 
