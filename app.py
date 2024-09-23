@@ -1115,6 +1115,7 @@ import dash_bootstrap_components as dbc
 from dash import html
 from dash.exceptions import PreventUpdate
 
+
 @app.callback(
     Output('top-stocks-table', 'children'),
     [Input('risk-tolerance-dropdown', 'value')]
@@ -1220,7 +1221,6 @@ def get_top_stocks(risk_tolerance):
         responsive=True,  # Enable responsive behavior
         className="table-sm table-responsive"
     )
-
 
 
 # Add a callback to update the active-tab store
