@@ -22,6 +22,7 @@ from models import db, bcrypt, User, Watchlist, StockKPI  # Import User model an
 from layouts import themes, login_layout, dashboard_layout, register_layout, carousel_layout, about_layout,profile_layout
 from flask_mail import Mail
 import auth_callbacks
+from flask import send_from_directory
 
 
 # Initialize the Dash app with a default Bootstrap theme
