@@ -30,7 +30,7 @@ server = app.server
 
 @server.route('/sitemap.xml')
 def sitemap_xml():
-    return send_from_directory('static', 'sitemap.xml')
+    return send_from_directory(os.path.join(os.getcwd(), 'static'), 'sitemap.xml')
 
 # load robots.txt file for SEO
 @server.route('/robots.txt')
