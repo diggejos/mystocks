@@ -124,85 +124,8 @@ def register_auth_callbacks(app, server, mail):
             except Exception as e:
                 return dbc.Alert(f"Error: {str(e)}", color="danger")
         return dash.no_update
-       
-    # @app.callback(
-    #     [Output('login-status', 'data', allow_duplicate=True),
-    #      Output('login-username-store', 'data', allow_duplicate=True),
-    #      Output('login-link', 'style', allow_duplicate=True),
-    #      Output('logout-button', 'style', allow_duplicate=True),
-    #      Output('profile-link', 'style', allow_duplicate=True),
-    #      Output('theme-store', 'data', allow_duplicate=True),
-    #      Output('plotly-theme-store', 'data', allow_duplicate=True),
-    #      Output('page-content', 'children'),  # Redirect by changing the content
-    #      Output('url', 'pathname')],  # Use this to redirect on login success
-    #     [Input('login-button', 'n_clicks')],
-    #     [State('login-username', 'value'),
-    #      State('login-password', 'value')],
-    #     prevent_initial_call=True
-    # )
-    # def handle_login(login_clicks, username, password):
-    #     if login_clicks:
-    #         user = User.query.filter_by(username=username).first()
-    #         if user and bcrypt.check_password_hash(user.password, password):
-    #             # Set session values and return dashboard content + redirection
-    #             session['logged_in'] = True
-    #             session['username'] = username
-
-    #             user_theme = user.theme if user.theme else 'MATERIA'
-    #             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-
-    #             return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"},
-    #                     themes[user_theme]['dbc'], plotly_theme, dashboard_layout, '/')  # Redirect to '/'
-    #         else:
-    #             return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"},
-    #                     themes['MATERIA']['dbc'], 'plotly_white', login_layout, no_update)
-
-    #     # If no clicks yet, ensure to return 9 values:
-    #     return no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
-    
-    
-    # @app.callback(
-    #     Output('register-output', 'children'),
-    #     [Input('register-button', 'n_clicks')],
-    #     [State('username', 'value'),
-    #       State('email', 'value'),
-    #       State('password', 'value'),
-    #       State('confirm_password', 'value')]
-    # )
-    # def register_user(n_clicks, username, email, password, confirm_password):
-    #     if n_clicks:
-    #         if not username:
-    #             return dbc.Alert("Username is required.", color="danger")
-    #         if not email:
-    #             return dbc.Alert("Email is required.", color="danger")
-    #         if not password:
-    #             return dbc.Alert("Password is required.", color="danger")
-    #         if password != confirm_password:
-    #             return dbc.Alert("Passwords do not match.", color="danger")
-            
-    #         # Validate the password
-    #         password_error = ut.validate_password(password)
-    #         if password_error:
-    #             return dbc.Alert(password_error, color="danger")
-
-    #         # If validation passes, hash the password and save the user
-    #         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    #         new_user = User(username=username, email=email, password=hashed_password)
-
-    #         try:
-    #             db.session.add(new_user)
-    #             db.session.commit()
-    #             return dbc.Alert("Registration successful!", color="success")
-    #         except Exception as e:
-    #             return dbc.Alert(f"Error: {str(e)}", color="danger")
-    #     return dash.no_update
-    
 
     
-
-
-
-
     @app.callback(
         [Output('req-length', 'className'),
           Output('req-uppercase', 'className'),
