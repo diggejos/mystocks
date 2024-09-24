@@ -17,4 +17,4 @@ flask_session
 openai
 apscheduler
 psycopg2-binary
-
+flask_mail
