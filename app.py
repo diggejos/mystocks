@@ -39,7 +39,7 @@ def serve_robots_txt():
     
 
 # Define a custom 404 error handler
-@app.server.errorhandler(404)
+@server.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
