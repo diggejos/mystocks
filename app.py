@@ -32,9 +32,14 @@ server = app.server
 def sitemap():
     return send_from_directory(directory='static', path='sitemap.xml')
 
+# load robots.txt file for SEO
+@server.route('/robots.txt')
+def serve_robots_txt():
+    return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
+
 @server.route('/robots.txt')
 def serve_robots():
-    return send_from_directory(directory='static', 'robots.txt')
+    return send_from_directory(project_root, 'robots.txt')
 
 # Define a custom 404 error handler
 @app.server.errorhandler(404)
