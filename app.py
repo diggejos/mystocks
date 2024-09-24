@@ -1,44 +1,27 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL, MATCH
 import yfinance as yf
 import plotly.express as px
 import pandas as pd
 from datetime import datetime, timedelta
-import requests
 import plotly.graph_objects as go
 from dotenv import load_dotenv
 import os
 from plotly.subplots import make_subplots
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
 import json
-from flask_migrate import Migrate
-import psycopg2
-from prophet import Prophet
-import re
-from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 from dash_extensions import DeferScript
 from flask import session
 from flask_session import Session
-import dash_table
-from flask import send_from_directory
-from flask import render_template
-
-
-# List of available Bootstrap themes and corresponding Plotly themes
-themes = {
-    'CYBORG': {'dbc': dbc.themes.CYBORG, 'plotly': 'plotly_dark'},
-    'JOURNAL': {'dbc': dbc.themes.JOURNAL, 'plotly': 'simple_white'},
-    'MATERIA': {'dbc': dbc.themes.MATERIA, 'plotly': 'simple_white'},
-    'MINTY': {'dbc': dbc.themes.MINTY, 'plotly': 'simple_white'},
-    'SPACELAB': {'dbc': dbc.themes.SPACELAB, 'plotly': 'simple_white'},
-    'DARKLY': {'dbc': dbc.themes.DARKLY, 'plotly': 'plotly_dark'},
-    'LITERA': {'dbc': dbc.themes.LITERA, 'plotly': 'plotly_white'},
-    'SOLAR': {'dbc': dbc.themes.SOLAR, 'plotly': 'plotly_dark'},
-}
+import layouts as ly
+from layouts import themes
+import utils as ut
+from models import db, bcrypt, User, Watchlist, StockKPI  # Import User model and bcrypt instance
+from layouts import themes, login_layout, dashboard_layout, register_layout, carousel_layout, about_layout,profile_layout
+from flask_mail import Mail
+import auth_callbacks
 
 
 # Initialize the Dash app with a default Bootstrap theme
@@ -65,9 +48,22 @@ app.server.config['SESSION_TYPE'] = 'filesystem'
 
 Session(app.server)
 
-db = SQLAlchemy(server)
-# Initialize Bcrypt for password hashing
-bcrypt = Bcrypt(server)
+# Email configuration
+server.config['MAIL_SERVER'] = 'smtp.gmail.com'
+server.config['MAIL_PORT'] = 587
+server.config['MAIL_USE_TLS'] = True
+server.config['MAIL_USERNAME'] = 'mystocks.monitoring@gmail.com'
+server.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+
+# Initialize the database with Flask app context
+db.init_app(app.server)
+bcrypt.init_app(app.server)
+mail = Mail(app.server)
+      
+# Create the database tables
+with app.server.app_context():
+    db.create_all()
+
 
 @server.route('/sitemap.xml')
 def sitemap():
@@ -77,122 +73,55 @@ def sitemap():
 def serve_robots():
     return send_from_directory(project_root, 'robots.txt')
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    theme = db.Column(db.String(200), nullable=True)  # New field for storing the theme
-    watchlists = db.relationship('Watchlist', backref='user', lazy=True)
+app.layout = html.Div([
+    dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
+    dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
+    dcc.Store(id='theme-store', data=dbc.themes.MATERIA),
+    dcc.Store(id='plotly-theme-store', data='plotly_white'),
+    dcc.Store(id='login-status', data=False),  # Store to track login status
+    dcc.Store(id='login-username-store', data=None),  # Store to persist the username
+    html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
+    ly.create_navbar(themes),  # Navbar
+    ly.create_overlay(),  # Access Restricted Overlay
+    dcc.Location(id='url', refresh=False),
+    dbc.Container(id='page-content', fluid=True),
+    dcc.Store(id='active-tab', data='📈 Prices'), 
+    dcc.Store(id='forecast-data-store'),
+    dcc.Location(id='url-refresh', refresh=True),
+    DeferScript(src='assets/script.js'),
+    ly.create_floating_chatbot_button(),  # Floating Chatbot Button
+    ly.create_chatbot_modal(),  # Chatbot Modal
+    ly.create_financials_modal(),  # Financials Modal
+    html.Div(ly.create_sticky_footer_mobile(), id="sticky-footer-container"),
+    ly.create_footer(),  # Footer
+    ly.create_modal_register()
 
-class Watchlist(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    stocks = db.Column(db.Text, nullable=False)  # JSON list of stock symbols
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    is_default = db.Column(db.Boolean, default=False)  # New field to mark as default
+])
 
-# Define your StockKPI model
-class StockKPI(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    symbol = db.Column(db.String(10), nullable=False)
-    pe_ratio = db.Column(db.Float)
-    pb_ratio = db.Column(db.Float)
-    beta = db.Column(db.Float)
-    dividend_yield = db.Column(db.Float)
-    market_cap = db.Column(db.Float)
-    roe = db.Column(db.Float)
-    debt_to_equity = db.Column(db.Float)
-    price_momentum = db.Column(db.Float)
-    risk_tolerance = db.Column(db.String(10), nullable=False)  # "low", "medium", or "high"
-    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    batch_id = db.Column(db.Integer, nullable=False)
-     
-# Create the database tables
-with server.app_context():
-    db.create_all()
+auth_callbacks.register_auth_callbacks(app, server, mail)
 
-navbar = dbc.Navbar(
-    dbc.Container(
-        [
-            # Row for the brand logo with left margin
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.NavbarBrand([
-                            html.Img(src='/assets/logo_with_transparent_background.png', height='50px'),
-                            "MySTOCKS", 
-                        ], href="/", className="ms-3", style={"font-size": "16px"})  # Add margin on the left side of the logo
-                    ),
-                ],
-                align="center",
-                className="g-0 flex-grow-1"
-            ),
-            
-            # Fullscreen button (smaller size with size="sm")
-            dbc.Row(
-                dbc.Col(
-                    dbc.Button("⛶ 🖥️", id='fullscreen-button', color='secondary', size="sm", className="me-2 order-1"),  # Smaller fullscreen button
-                    className="d-flex align-items-center"
-                ),
-                align="center",
-                className="g-0 flex-grow-1"
-            ),
-            
-            # NavbarToggler and Collapse aligned to the right
-            dbc.NavbarToggler(id="navbar-toggler", className="order-2 me-3"),  # Adjust toggler order and add right margin
-            
-            dbc.Collapse(
-                dbc.Nav(
-                    [
-                        dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
-                        dbc.NavItem(dbc.NavLink("ℹ️ Demo", href="/about", active="exact")),
-                        dbc.NavItem(dbc.NavLink("👤 Profile", href="/profile", active="exact", id='profile-link', style={"display": "none"})),
-                        dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
-                        dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
-                        # Group Logout button
-                        html.Div(
-                            [
-                                dbc.Button("Logout", id='logout-button', color='secondary', style={"display": "none"}, className="me-2"),
-                            ],
-                            className="d-flex align-items-center"
-                        ),
-                        # Theme selection dropdown
-                        html.Div(
-                            dbc.DropdownMenu(
-                                children=[dbc.DropdownMenuItem(theme, id=f'theme-{theme}') for theme in themes],
-                                nav=True,
-                                in_navbar=True,
-                                label="🎨 Select Theme",
-                                id='theme-dropdown',
-                            ),
-                            id='theme-dropdown-wrapper',
-                            n_clicks=0,
-                            className="d-flex align-items-center",
-                           
-                        )
-                    ],
-                    className="ms-auto",  # Align nav items to the right
-                    navbar=True
-                ),
-                id="navbar-collapse",
-                is_open=False,  # Initially collapsed on mobile
-                navbar=True,
-                className="order-3"  # Ensure the collapse stays on the far right
-            ),
-            
-            # Separate dcc.Store for fullscreen trigger
-            dcc.Store(id="trigger-fullscreen")
-        ],
-        fluid=True  # Ensure proper responsiveness
-    ),
-    color="primary",
-    dark=True,
-    className="sticky-top mb-4"
-)
+from flask import redirect, url_for
+from flask import render_template
 
 
-from dash import Input, Output, State
+@app.server.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        # Validate the token
+        email = ut.confirm_token(token, server)
+    except:
+        return render_template('email_confirmation.html', message="The confirmation link is invalid or has expired.")
+
+    user = User.query.filter_by(email=email).first_or_404()
+    if user.confirmed:
+        return render_template('email_confirmation.html', message="Account already confirmed. Please log in.")
+    else:
+        user.confirmed = True
+        user.confirmed_on = datetime.now()
+        db.session.commit()
+        return render_template('email_confirmation.html', message="You have confirmed your account. Thanks!")
+
+
 
 @app.callback(
     Output("navbar-collapse", "is_open"),
@@ -203,801 +132,6 @@ def toggle_navbar(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
-
-
-
-sticky_footer_mobile = dbc.Nav(
-    [
-        dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
-        dbc.NavItem(dbc.NavLink("📰 News", href="#news", id="footer-news-tab")),
-        dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="footer-compare-tab")),
-        dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="footer-forecast-tab")),
-        dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="footer-simulate-tab")),
-        dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
-        dbc.NavItem(dbc.NavLink("🔥 Hot Stocks", href="#topshots", id="footer-topshots-tab"))
-
-    ],
-    pills=True,
-    justified=True,
-    # className= "footer-nav",
-    className="footer-nav flex-nowrap overflow-auto",
-    style={"white-space": "nowrap"}
-)
-
-modal_register = html.Div([
-    # Your existing layout components here
-    dcc.Store(id='modal-shown-store', data=False),  # Store to track if modal has been shown
-    dcc.Interval(id='register-modal-timer', interval=5*1000, n_intervals=0),  # 30 seconds
-    dbc.Modal(
-    [
-        dbc.ModalHeader(dbc.ModalTitle("Don't Miss Out!")),
-        dbc.ModalBody("Register now for free to unlock all features: Save your personal watchlist(s), get analyst recommendations and more."),
-        dbc.ModalFooter(
-            dbc.Button("Register", href="/register", color="primary", className="ms-auto", id="close-register-modal-button"),
-        ),
-    ],
-    id="register-modal",
-    is_open=False,  # Initially closed
-    backdrop="static",  # Prevent the modal from closing when clicking outside
-    keyboard=False  # Prevent the modal from closing when pressing escape key
-    )
-])
-
-
-
-overlay = dbc.Modal(
-    [
-        dbc.ModalHeader(dbc.ModalTitle("Access Restricted")),
-        dbc.ModalBody("Please register or log in to use this feature."),
-        dbc.ModalFooter(
-            dbc.Button("Please register or login", href="/login", color="primary", id="overlay-registerP-button")
-        ),
-    ],
-    id="login-overlay",
-    is_open=False,  # Initially closed
-)
-
-
-floating_chatbot_button = html.Div(
-    dbc.Button("💬 ask me", id="open-chatbot-button", color="primary", className="chatbot-button"),
-    style={
-        "position": "fixed",
-        "bottom": "100px",
-        "right": "20px",
-        "z-index": "1002",
-    }
-)
-
-financials_modal = dbc.Modal(
-    [
-        dbc.ModalHeader(dbc.ModalTitle(id="financials-modal-title")),
-        dbc.ModalBody(id="financials-modal-body"),
-        dbc.ModalFooter(
-            dbc.Button("Close", id="close-financials-modal", className="ms-auto", n_clicks=0)
-        ),
-    ],
-    id="financials-modal",
-    size="lg",
-    is_open=False,
-)
-
-
-chatbot_modal = dbc.Modal(
-    [
-        dbc.ModalHeader(dbc.ModalTitle("🤖 Financio")),
-        dbc.ModalBody([
-            html.Div(id='chatbot-conversation',
-                     style={'border': '1px solid #ccc', 'border-radius': '10px', 'padding': '10px',
-                            'height': '400px', 'overflow-y': 'scroll', 'background-color': '#f8f9fa', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
-            dcc.Textarea(id='chatbot-input',
-                         placeholder='Ask your financial question...',
-                         style={'width': '100%', 'height': '100px', 'border-radius': '10px', 'border': '1px solid #ccc',
-                                'padding': '10px', 'margin-top': '10px', 'resize': 'none', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'}),
-            dbc.Button("Send", id='send-button', color='primary', className='mt-2'),
-            dbc.Button("Clear Conversation", id='clear-button', color='danger', className='mt-2 ms-2'),
-        ])
-    ],
-    id="chatbot-modal",
-    size="lg",
-    is_open=False,
-    className="bg-primary"# Start closed
-)
-
-footer = html.Footer([
-    dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                html.H5("Direction", style={"display": "none"}),  # Hide the heading
-                html.Ul([
-                    html.Li(html.A("About MyStocks", href="/about", className="footer-link")),
-                    html.Li(html.A("Contact Us", href="mailto:diggelmann.josua@gmail.com?subject=mystocks%20request", className="footer-link")),
-                    html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
-                ], className="list-unstyled")
-            ], md=12, className="d-flex justify-content-center")  # Center the column
-        ]),
-        dbc.Row([
-            dbc.Col([
-                html.P("© 2024 MyStocks. All rights reserved.", className="text-center")
-            ], className="d-flex justify-content-center")
-        ])
-    ], fluid=True)
-], className="footer")
-
-
-app.layout = html.Div([
-    dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
-    dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
-    dcc.Store(id='theme-store', data=dbc.themes.MATERIA),
-    dcc.Store(id='plotly-theme-store', data='plotly_white'),
-    dcc.Store(id='login-status', data=False),  # Store to track login status
-    dcc.Store(id='login-username-store', data=None),  # Store to persist the username
-    html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
-    navbar,
-    overlay,  # Add the overlay to the layout
-    dcc.Location(id='url', refresh=False),
-    dbc.Container(id='page-content', fluid=True),
-    dcc.Store(id='active-tab', data='📈 Prices'), 
-    dcc.Store(id='forecast-data-store'),
-    dcc.Location(id='url-refresh', refresh=True),
-    DeferScript(src='assets/script.js'),
-    
-    floating_chatbot_button,  # Add the floating button
-    chatbot_modal ,
-    financials_modal,
-    modal_register,
-    html.Div(sticky_footer_mobile, id="sticky-footer-container"),
-    # sticky_footer_mobile,
-    # watchlist_management_layout,
-    footer
-
-])
-
-watchlist_management_layout = dbc.Container([
-    html.Label(" Saved Watchlists:", className="font-weight-bold",style={"margin-top": "10px"}),
-    html.Div([
-        dcc.Dropdown(id='saved-watchlists-dropdown', placeholder="Select a Watchlist", options=[],disabled=True, searchable=False,
-                     style={"margin-bottom": "10px"})
-        ])
-    ,
-    dcc.Input(id='new-watchlist-name', placeholder="Enter Watchlist Name", className="form-control",disabled=True),
-    dbc.Button("💾 save", id='create-watchlist-button', color='primary', className='',disabled=False),
-    dbc.Button("X delete", id='delete-watchlist-button', color='danger', className='',disabled=False)
-])
-
-
-dashboard_layout = dbc.Container([
-    dbc.Row([
-        # Sidebar Filters (for both mobile and desktop)
-        dbc.Col([
-            html.H1("Stocks monitoring dashboard - MyStocks", style={"display": "none"}), 
-            html.H2("Stocks monitoring made easy. Create multiple personal watchlists", style={"display": "none"}), 
-            html.Div([
-                html.P("Welcome to MyStocks - the ultimate platform for stock monitoring. Track stock prices, analyze market trends, and create personalized watchlists with ease. Our dashboard is designed to provide real-time data, forecasts, and insights tailored to your investment portfolio."),
-                html.P("With MyStocks, you can compare stock performance, simulate investments, and access the latest news and analyst recommendations. Whether you're a seasoned trader or a beginner, MyStocks offers tools and features that help you make informed investment decisions."),
-                html.P("Create multiple custom watchlists and monitor your stocks with real-time updates. MyStocks allows you to easily manage and organize your investments across different watchlists."),
-                html.P("Get access to historical stock data and perform in-depth analysis with our comprehensive charting tools. MyStocks also offers forecasting features, allowing you to predict future stock prices using advanced algorithms."),
-                html.P("Our platform also integrates with popular news sources to provide you with up-to-date news and information on your favorite stocks."),
-                html.P("MyStocks is your one-stop solution for stock monitoring, forecasting, news aggregation, and personalized investment tools. Try MyStocks today and take control of your investments like never before."),
-                html.P("Key Features: Historical Stock Price Tracking, Stock Market News, Profit/Loss Simulation, Analyst Recommendations, Time Series Forecasting, Personalized Watchlist, Stock Performance Comparison, Intelligent Financial Chatbot."),
-            ], style={"display": "none"}),  # This text is hidden but available for SEO
-
-            # Toggle button (only visible on mobile)
-            dbc.Button(
-                "⚙️ Manage your Stocks here", 
-                id="toggle-filters-button", 
-                color="danger", 
-                outline=False, 
-                size="sm", 
-                className="mobile-only", 
-                style={
-                    "position": "fixed",  
-                    "top": "90px",        
-                    "left": "10px",      
-                    "z-index": "1001",     
-                    "margin-bottom": "15px",
-                    "font-weight": "bold"
-                }
-            ),
-            
-            html.Div(id="mobile-overlay", className="mobile-overlay", style={"display": "none"}),
-
-            # Offcanvas Filters (for mobile and hidden on desktop)
-            dbc.Collapse(
-                dbc.Card([
-                    dbc.CardBody([
-                        html.H2("Filter stocks, create custom watchlist", style={"display": "none"}),  # for SEO
-
-                        html.Div([
-                            # html.Label("Add Stock Symbol:", className="font-weight-bold"),
-                            # Modify the input field to be a dropdown for suggestions
-                            dcc.Dropdown(
-                                id='stock-suggestions-input',
-                                options=[],
-                                placeholder="Enter Company or Symbol",
-                                className='custom-dropdown',
-                                multi=False,
-                                searchable=True,
-                                style={
-                                    'border': '2px solid var(--bs-danger)',  # Highlighted border color
-                                    'border-radius': '5px',  # Optional: to make the border rounded
-                                    'padding': '0px',  # Optional: padding for spacing
-                                }
-                            ),
-
-                            dbc.Button("➕ Stock", id='add-stock-button', color='primary', className='small-button'),
-                            dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
-                            html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),
-                        ], className='mb-3'),
-                        
-                        dcc.Loading(id="loading-watchlist", type="default", children=[
-                            html.Div(id='watchlist-summary', className='mb-3')
-                        ]),
-                        
-                        html.Div([
-                            html.Label("Select Date Range:", className="font-weight-bold"),
-                            dcc.Dropdown(
-                                id='predefined-ranges',searchable=False,
-                                options=[
-                                    {'label': 'Intraday', 'value': '1D_15m'},
-                                    {'label': 'Last 5D', 'value': '5D_15m'},
-                                    {'label': 'Last Month', 'value': '1M'},
-                                    {'label': 'Last 3M', 'value': '3M'},
-                                    {'label': 'Year to Date', 'value': 'YTD'},
-                                    {'label': 'Last 12M', 'value': '12M'},
-                                    {'label': 'Last 24M', 'value': '24M'},
-                                    {'label': 'Last 5Y', 'value': '5Y'},
-                                    {'label': 'Last 10Y', 'value': '10Y'}
-                                ],
-                                value='12M',  # Default selection
-                                
-                                # className='form-control',
-                            )
-                        ], className='mb-3'),
-                    ]),
-                    watchlist_management_layout
-                ], className="sidebar-card"),
-                id="filters-collapse",
-                is_open=False  # Initially closed (for mobile use case)
-            ),
-        ], width=12, md=3, style={"margin-top": "10px", "buttom":"50px"}),
-
-        # Main content area (Tabs for Prices, News, Comparison, etc.)
-        dbc.Col([
-            dbc.Tabs(
-                id="tabs",
-                active_tab="prices-tab",  # This should be the id of the active tab
-                children=[
-                    dbc.Tab(label='📈 Prices', tab_id="prices-tab", children=[
-                        dbc.Card(
-                            dbc.CardBody([
-                                dcc.Dropdown(
-                                    id='prices-stock-dropdown',
-                                    options=[],  
-                                    value=[],  
-                                    multi=True,
-                                    placeholder="Select stocks to display",
-                                    searchable=False
-                                    # style={'width': '70%'}
-                                ),
-                                dcc.RadioItems(
-                                    id='chart-type',
-                                    options=[
-                                        {'label': 'Line Chart', 'value': 'line'},
-                                        {'label': 'Candlestick Chart', 'value': 'candlestick'}
-                                    ],
-                                    value='line',
-                                    inline=True,
-                                    inputStyle={"margin-right": "10px"},
-                                    labelStyle={"margin-right": "20px"}
-                                ),
-                                dcc.Checklist(
-                                    id='movag_input',
-                                    options=[
-                                        {'label': '30D Moving Average', 'value': '30D_MA'},
-                                        {'label': '100D Moving Average', 'value': '100D_MA'},
-                                        {'label': 'Volume', 'value': 'Volume'}
-                                    ],
-                                    value=[],
-                                    inline=True,
-                                    inputStyle={"margin-right": "10px"},
-                                    labelStyle={"margin-right": "20px"}
-                                ),
-                                dcc.Loading(id="loading-prices", type="default", children=[
-                                    dcc.Graph(id='stock-graph', style={'height': '500px', 'backgroundColor': 'transparent'})
-                                ])
-                            ])
-                        )
-                    ]),
-                    dbc.Tab(label='📰 News', tab_id="news-tab", children=[
-                        dbc.Card(
-                            dbc.CardBody([
-                                dcc.Dropdown(
-                                    id='news-stock-dropdown',
-                                    options=[],  
-                                    value=[],  
-                                    multi=True,
-                                    placeholder="Select stocks to display",
-                                    searchable=False
-                                ),
-                                
-                                dcc.Loading(id="loading-news", type="default", children=[
-                                    html.Div(id='stock-news', className='news-container')
-                                ])
-                            ])
-                        )
-                    ]),
-                    dbc.Tab(label='⚖️ Compare', tab_id="compare-tab", children=[
-                        dbc.Card(
-                            dbc.CardBody([
-                                html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
-                                dcc.Dropdown(
-                                    id='indexed-comparison-stock-dropdown',
-                                    options=[],  # Populated dynamically
-                                    value=[],  # Default selected stocks
-                                    multi=True,
-                                    searchable=False
-                                    # style={'width': '70%'}
-                                    # className='form-control',
-                                ),
-                                dcc.RadioItems(
-                                    id='benchmark-selection',
-                                    options=[
-                                        {'label': 'None', 'value': 'None'},
-                                        {'label': 'S&P 500', 'value': '^GSPC'},
-                                        {'label': 'NASDAQ 100', 'value': '^NDX'},
-                                        {'label': 'SMI', 'value': '^SSMI'}
-                                    ],
-                                    value='None',
-                                    inline=True,
-                                    # className='form-control',
-                                    inputStyle={"margin-right": "10px"},
-                                    labelStyle={"margin-right": "20px"}
-                                ),
-                                dcc.Loading(id="loading-comparison", type="default", children=[
-                                    dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})
-                                ])
-                            ])
-                        )
-                    ]),
-                    dbc.Tab(label='🌡️ Forecast', tab_id='forecast-tab', children=[
-                        dbc.Card(
-                            dbc.CardBody([
-                                html.H3("Forecast stocks prices", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                html.Div([
-                                    html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
-                                    dcc.Dropdown(
-                                        id='forecast-stock-input',
-                                        options=[],  # Options will be populated dynamically
-                                        value=[],  # Default selected stocks
-                                        multi=True,
-                                        className='form-control',
-                                        searchable=False
-                                    ),
-                                    html.Div(id='forecast-stock-warning', style={'color': 'red'}),
-                                    html.Label("Forecast Horizon (days):", className="font-weight-bold"),
-                                    dcc.Input(
-                                        id='forecast-horizon-input',
-                                        type='number',
-                                        value=90,
-                                        className='form-control',
-                                        min=1,
-                                        max=365
-                                    ),
-                                    dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
-                                ], className='mb-3'),
-                                dcc.Markdown('''
-                                    **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
-                                    While this tool is useful for identifying potential trends based on historical data, stock markets are influenced by 
-                                    a wide range of unpredictable factors. These predictions should be considered with caution and should not be used 
-                                    as financial advice. Always conduct your own research or consult with a financial advisor before making investment decisions.
-                                ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
-
-                                dcc.Loading(
-                                    id="loading-forecast",
-                                    type="default",
-                                    children=[dcc.Graph(id='forecast-graph', style={'height': '500px'})]
-                                ),
-                                # Blur overlay for the Forecast tab
-                                html.Div(id='forecast-blur-overlay', style={
-                                    'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                    'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                    'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                    'backdrop-filter': 'blur(5px)'
-                                }, children=[
-                                    html.Div([
-                                        html.P("Please ", style={'display': 'inline'}),
-                                        html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
-                                        html.P(" to view this content.", style={'display': 'inline'}),
-                                    ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
-                                ])
-                            ], style={'position': 'relative'})
-                        )
-                    ]),
-                     dbc.Tab(label='❤️ Recommendations', tab_id='recommendations-tab', children=[
-                         dbc.Card(
-                             dbc.CardBody([
-                                 html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                 dcc.Loading(
-                                     id="loading-analyst-recommendations",
-                                     type="default",
-                                     children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
-                                 ),
-                                 html.Div(id='blur-overlay', style={
-                                     'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                     'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                     'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                     'backdrop-filter': 'blur(5px)'
-                                 }, children=[
-                                     html.Div([
-                                         html.P("Please ", style={'display': 'inline'}),
-                                         html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
-                                         html.P(" to view this content.", style={'display': 'inline'}),
-                                     ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
-                                 ])
-                             ], style={'position': 'relative'})
-                         )
-                     ]),
-                    dbc.Tab(label='📊 Simulate', tab_id="simulate-tab", children=[
-                        dbc.Card(
-                            dbc.CardBody([
-                                html.H3("Simulate stock profits and losses over historical time period", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                                html.Label("Stock Symbol:", className="font-weight-bold"),
-                                dcc.Dropdown(
-                                    id='simulation-stock-input',
-                                    options=[],  
-                                    value=[],  
-                                    className='form-control',
-                                    searchable=False
-                                ),
-                                html.Label("Investment Amount ($):", className="font-weight-bold"),
-                                dcc.Input(
-                                    id='investment-amount',
-                                    type='number',
-                                    value=1000,
-                                    className='form-control',
-                                ),
-                                html.Label("Investment Date:", className="font-weight-bold"),
-                                dcc.DatePickerSingle(
-                                    id='investment-date',
-                                    date=pd.to_datetime('2024-01-01'),
-                                    className='form-control'
-                                ),
-                                dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
-                                dcc.Loading(id="loading-simulation", type="default", children=[
-                                    html.Div(id='simulation-result', className='mt-4')
-                                ])
-                            ])
-                        )
-                    ]),
-                   dbc.Tab(label='🔥 Hot Stocks', tab_id="topshots-tab", children=[
-                       dbc.Card(
-                           dbc.CardBody([
-                               html.H3("The hottest stocks to invest in at the moment based on financial KPIs", style={"display": "none"}),  # for SEO purpose (visually hidden)
-                               html.P("Find the hottest stocks at the moment to consider investing in based on financial KPIs. This list is updated once a week. Currently the model looks at all SP500 companies and ranks them accordingly."),  # for SEO purpose (visually hidden)
-                                dcc.Dropdown(
-                                    id='risk-tolerance-dropdown',
-                                    options=[
-                                        {'label': 'Low Risk', 'value': 'low'},
-                                        {'label': 'Medium Risk', 'value': 'medium'},
-                                        {'label': 'High Risk', 'value': 'high'},
-                                    ],
-                                    value='medium',  # Default to medium risk
-                                    placeholder="Select Risk Tolerance",
-                                    clearable = False,
-                                    searchable=False
-
-                                ),
-                                # dbc.Button('get it', id='get-top-stocks-button', className="small-button"),
-                                dcc.Loading(
-                                    id="loading-top-stocks",
-                                    children=[html.Div(id='top-stocks-table')],
-                                    type="default"
-                                ),
-                                 html.Div(id='topshots-blur-overlay', style={
-                                     'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                     'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                     'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                     'backdrop-filter': 'blur(5px)'
-                                 }, children=[
-                                     html.Div([
-                                         html.P("Please ", style={'display': 'inline'}),
-                                         html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue'}),
-                                         html.P(" to view this content.", style={'display': 'inline'}),
-                                     ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '50px'})
-                                 ])
-                           ])
-                       )
-                   ]),
-                ], className="desktop-tabs bg-secondary" #className="desktop-tabs" 
-            )
-        ], width=12, md=9, xs=12)
-    ], className='mb-4'),
-    
-    # Welcome section
-    dbc.Row([
-        dbc.Col([
-            html.H3("Welcome to Your Stock Monitoring Dashboard. Save your watchlists, monitoring stocks made easy", className="text-center mb-4", style={"display": "none"}),
-            html.P([
-                "Track and analyze your favorite stocks with real-time data, forecasts, and personalized recommendations. ",
-                html.A("Learn more about the features.", href="/about", className="text-primary"),
-                html.Br(),  # Line break
-                " Want to save your personal Watchlist or get access to forecasts and analyst recommendations?",
-                html.A(" Register for free.", href="/register", className="text-primary"),
-            ], className="text-center"),
-        ], width=12)
-    ], className="mb-4")
-], fluid=True)
-
-                           
-profile_layout = dbc.Container([
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1("👩🏻‍💻 User Profile", className="text-center"),
-
-                    # Username field
-                    dbc.Label("Username"),
-                    dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
-
-                    # Email field
-                    dbc.Label("Email"),
-                    dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
-
-                    # Current Password field (Required to change the password)
-                    dbc.Label("Current Password"),
-                    dcc.Input(id='profile-current-password', type='password', disabled=True, placeholder="Enter current password", className='form-control mb-3'),
-
-                    # New Password field
-                    dbc.Label("New Password"),
-                    dcc.Input(id='profile-password', type='password', disabled=True, placeholder="Enter new password", className='form-control mb-3'),
-
-                    html.Ul([
-                        html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
-                        html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
-                        html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
-                        html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
-                        html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
-                    ], className='mb-3', style={"display": "none"}),  # Initially hidden
-
-                    # Confirm New Password field
-                    dbc.Label("Confirm New Password"),
-                    dcc.Input(id='profile-confirm-password', type='password', disabled=True, placeholder="Confirm new password", className='form-control mb-3'),
-
-                    # Edit and Save buttons
-                    dbc.Button("Edit", id='edit-profile-button', color='primary', className='mt-2'),
-                    dbc.Button("Save", id='save-profile-button', color='success', className='mt-2 ms-2', style={"display": "none"}),
-                    dbc.Button("Cancel", id='cancel-edit-button', color='danger', className='mt-2 ms-2', style={"display": "none"}),
-
-                    # Output area for messages
-                    html.Div(id='profile-output', className='mt-3')
-                ])
-            ])
-        ], width=12, md=6, className="mx-auto")
-    ])
-], fluid=True)
-
-
-# Layout for Registration page
-register_layout = dbc.Container([
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    # New h3 paragraph with a sentence and link to the About page
-                    html.H1("📝 Register", className="text-center mt-4"),
-                    dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
-                    dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
-                    dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
-                    html.Ul([
-                        html.Li("At least 8 characters", id='req-length', className='text-muted'),
-                        html.Li("At least one uppercase letter", id='req-uppercase', className='text-muted'),
-                        html.Li("At least one lowercase letter", id='req-lowercase', className='text-muted'),
-                        html.Li("At least one digit", id='req-digit', className='text-muted'),
-                        html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='req-special', className='text-muted')
-                    ], className='mb-3'),
-                    dcc.Input(id='confirm_password', type='password', placeholder='Confirm Password', className='form-control mb-3'),
-                    dbc.Button("Register", id='register-button', color='primary', className='mt-2 w-100'),
-                    html.Div(id='register-output', className='mt-3'),
-                ])
-            ])
-        ], width=12, md=6, className="mx-auto")
-    ]),
-    dbc.Row([
-        dbc.Col([
-            html.H3("Login here", className="text-center mt-5 mb-4"),
-            html.P([
-                "Successfully registered? ",
-                html.A("Login here", href="/login", className="text-primary")
-            ], className="text-center"),
-
-            html.H3("Why Register?", className="text-center mt-5 mb-4"),  # Add mt-5 for space above
-            html.P([
-                "Registering allows you to save your stock watchlist, access personalized recommendations, and more. ",
-                html.A("Learn more on the About page.", href="/about", className="text-primary")
-            ], className="text-center")
-        ], width=12, md=6, className="mx-auto")
-    ])
-], fluid=True)
-
-                           
-# Layout for Login page
-login_layout = dbc.Container([
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1("🔐 Login", className="text-center"),
-                    dcc.Input(id='login-username', type='text', placeholder='Username', className='form-control mb-3'),
-                    dcc.Input(id='login-password', type='password', placeholder='Password', className='form-control mb-3'),
-                    dbc.Button("Login", id='login-button', color='primary', className='mt-2 w-100'),
-                    html.Div(id='login-output', className='mt-3'),
-                    html.Div([
-                        html.P("Don't have an account?", className="text-center"),
-                        html.A("Register here", href="/register", className="text-center", style={"display": "block"})
-                    ], className='mt-3')
-                ])
-            ])
-        ], width=12, md=6, className="mx-auto")
-    ]),
-    dbc.Row([
-        dbc.Col([
-            html.H3("Welcome to MyStocks Dashboard", className="text-center mt-5 mb-4"),  # Add mt-5 for space above
-            html.P([
-                "Learn more about the application on the ",
-                html.A("About page.", href="/about", className="text-primary")
-            ], className="text-center")
-        ], width=12, md=6, className="mx-auto")
-    ])
-], fluid=True)
-
-
-carousel = dbc.Carousel(
-    items=[
-        {
-            "key": "1",
-            "src": "/assets/gif1.gif",
-            "alt": "Demo 1",
-            "header": "Analyse and compare Stocks",
-            "caption": "Financial indicators, custom time windows, and more."
-        },
-        {
-            "key": "2",
-            "src": "/assets/gif4.gif",
-            "alt": "Demo 2",
-            "header": "Save your Watchlist(s)",
-            "caption": "Create your Account, save your Watchlist(s) and your custom Theme."
-        },
-        {
-            "key": "3",
-            "src": "/assets/gif2.gif",
-            "alt": "Demo 3",
-            "header": "Get latest Stock News",
-            "caption": "Get tailored News Updates."
-        },
-        {
-            "key": "4",
-            "src": "/assets/gif3.gif",
-            "alt": "Demo 4",
-            "header": "Stock Forecasts and Recommendations",
-            "caption": "Visualize forecasts and access analyst recommendations."
-        },
-        {
-            "key": "5",
-            "src": "/assets/gif5.gif",
-            "alt": "Demo 5",
-            "header": "Gen AI powered Chatbot",
-            "caption": "Chat with your financial advisor bot powered by Chat GPT-3.5 Turbo."
-        }
-        
-    ],
-    controls=True,
-    indicators=True,
-    interval=20000,  # Time in ms for each slide
-    ride="carousel",
-    className="custom-carousel",  # Add custom-carousel class
-    id="custom-carousel"
-)
-
-# Modernized About Layout
-about_layout = dbc.Container([
-    dbc.Row([
-        dbc.Col(html.Div([
-            # Hidden H1 for SEO
-            html.H1("MyStock Dashboard Demo", className="text-center mt-4", style={"display": "none"}),
-
-            # Section: Why Choose MyStocks?
-            html.Div([
-                html.H2("Why Choose MyStocks?", className="text-center mt-5 mb-3",style={"color":"black"}),
-                html.P("Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. "
-                       "User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. "
-                       "Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. "
-                       "Real-Time Updates: Stay informed with up-to-date news and market data.", className="lead text-center"),
-            ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px"}),
-
-            # Carousel
-            # html.Div(carousel, className="mt-5 mb-3"),
-            html.Div(carousel, className="custom-carousel"),
-
-            # Section: Key Features
-            html.Div([
-                html.H3("Key Features", className="text-center mt-5 mb-3",style={"color":"black"}),
-                html.P("This application provides a comprehensive platform for tracking stock market performance and related news. "
-                       "Here are some of the key features:", className="text-center", style={"display": "none"}),
-                html.Ul([
-                    html.Li("Historical Stock Price Tracking: Compare stock prices over historical periods. Perform indexed comparisons against major indices."),
-                    html.Li("Stock Market News: Stay updated with the latest news for your selected stocks from reliable sources."),
-                    html.Li("Profit/Loss Simulation: Simulate potential profit and loss scenarios for stocks in your watchlist."),
-                    html.Li("Analyst Recommendations: Access buy, sell, and hold ratings from industry experts."),
-                    html.Li("Time Series Forecasting: Predict future stock prices using advanced forecasting models."),
-                    html.Li("Personalized Watchlist(s): Register and save your stock watchlist(s) to monitor your favorite stocks."),
-                    html.Li("Stock Performance Comparison: Compare stock performance vs. NASDAQ100, S&P 500, or SMI."),
-                    html.Li("Intelligent Financial Chatbot: Get instant answers to your stock-related queries."),
-                    html.Li("Select and save your custom Theme"),
-                ], className="checked-list"),
-            ], style={"padding": "20px", "background-color": "#ffffff", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
-            
-            html.P(
-                [
-                    "Don't have an account yet? ",
-                    html.A("Register here", href="/register", className="text-center", style={"color": "blue", "text-decoration": "underline"}),
-                    " to access more features!"
-                ],
-                style={
-                    "font-size": "24px",  # Increase text size
-                    "font-weight": "bold",  # Make it bold
-                    "text-align": "center",  # Center the text
-                    "margin": "20px 0"  # Add some margin around the paragraph
-                }
-            ),
-                        
-
-        ], className="mx-auto", style={"max-width": "800px"}))
-    ]),
-], fluid=True)
-
-from dash.dependencies import Input, Output, State, MATCH
-
-
-def fetch_news(symbols, max_articles=4):
-    news_content = []
-
-    for symbol in symbols:
-        ticker = yf.Ticker(symbol)
-        news = ticker.news  # Fetch news using yfinance
-
-        if news:
-            news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
-
-            for idx, article in enumerate(news[:max_articles]):  # Display only the first `max_articles` news articles
-                related_tickers = ", ".join(article.get('relatedTickers', []))
-                publisher = article.get('publisher', 'Unknown Publisher')  # Get the publisher information
-                news_card = dbc.Col(
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.H5(html.A(article['title'], href=article['link'], target="_blank")),
-                            html.Img(src=article['thumbnail']['resolutions'][0]['url'], style={"width": "250px", "height": "auto"})
-                            if 'thumbnail' in article else html.Div(),
-                            html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
-                            html.Footer(
-                                f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
-                                style={"margin-bottom": "0px", "padding-bottom": "0px"}
-                            )
-                        ])
-                    ), width=12, md=6, className="mb-2"
-                )
-                news_content.append(news_card)
-
-            if len(news) > max_articles:
-                # Add a "Load More" button if there are more articles available
-                news_content.append(
-                    dbc.Button("Load More", id={'type': 'load-more-button', 'index': symbol}, color='primary', size='sm', className='mb-2')
-                )
-                news_content.append(html.Div(id={'type': 'additional-news', 'index': symbol}))
-        else:
-            news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
-
-    return dbc.Row(news_content, className="news-row")
 
 @app.callback(
     [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
@@ -1052,71 +186,6 @@ def load_more_articles(n_clicks, button_id, current_articles):
     
     return current_articles + additional_articles, "Load More", dash.no_update
 
-
-def fetch_analyst_recommendations(symbol):
-    ticker = yf.Ticker(symbol)
-    rec = ticker.recommendations
-    if rec is not None and not rec.empty:
-        return rec.tail(10)  # Fetch the latest 10 recommendations
-    return pd.DataFrame()  # Return an empty DataFrame if no data
-
-
-def generate_recommendations_heatmap(dataframe, plotly_theme):
-    # Ensure the periods and recommendations are in the correct order
-    periods_order = ['-3m', '-2m', '-1m', '0m']  # Adjust according to your actual periods
-    recommendations_order = ['strongBuy', 'buy', 'hold', 'sell', 'strongSell']
-    
-    # Reshape the DataFrame to have the recommendations types as rows and the periods as columns
-    df_melted = dataframe.melt(id_vars=['period'], 
-                                value_vars=recommendations_order,
-                                var_name='Recommendation', 
-                                value_name='Count')
-    
-    # Ensure the period and recommendation type columns are categorical with a fixed order
-    df_melted['period'] = pd.Categorical(df_melted['period'], categories=periods_order, ordered=True)
-    df_melted['Recommendation'] = pd.Categorical(df_melted['Recommendation'], categories=recommendations_order, ordered=True)
-
-    # Pivot the DataFrame to get the correct format for the heatmap
-    df_pivot = df_melted.pivot(index='Recommendation', columns='period', values='Count')
-
-    # Create the heatmap using plotly.graph_objects to add text
-    fig = go.Figure(data=go.Heatmap(
-        z=df_pivot.values,
-        x=df_pivot.columns,
-        y=df_pivot.index,
-        colorscale='RdYlGn',  # Green for high, Red for low
-        reversescale=False,
-        text=df_pivot.values,  # Show numbers within the cells
-        texttemplate="%{text}",  # Format the text to show as is
-        hoverinfo="z",
-        showscale=False  # Disable the color scale
-    ))
-
-    # Update layout for better visuals, ensuring labels and grid lines are visible
-    fig.update_layout(
-        title=None,
-        autosize=True,  # Automatically adjust the size based on the container
-        xaxis_title="Period",
-        yaxis_title=None,
-        height=300,
-    
-        xaxis=dict(
-            autorange=False,
-            ticks="",
-            showticklabels=True,
-            automargin=True,  # Automatically adjust margins to fit labels
-            constrain='domain',  # Keep the heatmap within the plot area
-            domain=[0,0.85]
-        ),
-        template= plotly_theme,
-        margin=dict(l=0, r=0, t=0, b=0),  # Increase left and top margins to avoid cutting off
-    )
-
-    return fig
-
-import dash_bootstrap_components as dbc
-from dash import html
-from dash.exceptions import PreventUpdate
 
 
 @app.callback(
@@ -1226,6 +295,7 @@ def get_top_stocks(risk_tolerance):
     )
 
 
+
 # Add a callback to update the active-tab store
 @app.callback(
     Output('active-tab', 'data'),
@@ -1255,6 +325,7 @@ def control_modal(n_intervals, n_clicks, login_status, modal_shown, is_open):
     # Keep modal open or closed based on current state
     return is_open
 
+
 @app.callback(
     Output('modal-shown-store', 'data'),
     [Input('register-modal', 'is_open')],
@@ -1265,92 +336,6 @@ def update_modal_shown(is_open, modal_shown):
         return True  # Mark that the modal has been shown
     return modal_shown  # Keep the current state
 
-
-
-def format_number(value):
-    """Format the number into thousands (K), millions (M), or billions (B)."""
-    if pd.isnull(value):
-        return "N/A"
-    elif value >= 1_000_000_000:
-        return f"{value / 1_000_000_000:.1f}B"
-    elif value <= -1_000_000_000:
-        return f"{value / 1_000_000_000:.1f}B"
-    elif value >= 1_000_000:
-        return f"{value / 1_000_000:.1f}M"
-    elif value <= -1_000_000:
-        return f"{value / 1_000_000:.1f}M"
-    elif value >= 100_000:
-        return f"{value / 1_000:.1f}K"
-    elif value <= -100_000:
-        return f"{value / 1_000:.1f}K"
-    else:
-        return f"{value:.0f}"
-
-def create_financials_table(data):
-    # Transpose the financials data
-    data = data.T
-    data.index = pd.to_datetime(data.index).year
-    
-    # Format numbers as thousands, millions, or billions
-    data = data.applymap(format_number)
-
-    # Transpose again to switch rows and columns, then reverse the rows
-    data = data.T.reset_index()
-    data.columns.name = None  # Remove the name of the index column
-    data = data.iloc[::-1]  # Reverse the order of the rows
-    
-    # Ensure all column names are strings
-    data.columns = data.columns.astype(str)
-    
-    # Limit to the latest 4 years
-    data = data.iloc[:, :5]  # [:, :5] to include the 'index' column plus 4 years
-
-    # Create Dash DataTable for displaying financial data
-    financials_table = dash_table.DataTable(
-        data=data.to_dict('records'),
-        columns=[{"name": str(i), "id": str(i)} for i in data.columns],
-        style_table={'overflowX': 'auto'},
-        style_cell={'textAlign': 'left', 'whiteSpace': 'normal', 'height': 'auto'},
-        style_header={'fontWeight': 'bold'},
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},  # Apply this style to odd rows
-                'backgroundColor': 'rgb(248, 248, 248)'
-            }
-        ],
-    )
-
-    return dbc.Container([
-        html.Hr(),
-        financials_table
-    ])
-
-def create_company_info(info):
-    """Generate a simple table of company info."""
-    info_table = dbc.Table(
-        [
-            html.Tbody([
-                html.Tr([html.Th("Company Name"), html.Td(info.get("longName", "N/A"))]),
-                html.Tr([html.Th("Sector"), html.Td(info.get("sector", "N/A"))]),
-                html.Tr([html.Th("Industry"), html.Td(info.get("industry", "N/A"))]),
-                html.Tr([html.Th("Market Cap"), html.Td(format_number(info.get("marketCap", None)))]),
-                html.Tr([html.Th("Revenue"), html.Td(format_number(info.get("totalRevenue", None)))]),
-                html.Tr([html.Th("Gross Profits"), html.Td(format_number(info.get("grossProfits", None)))]),
-                html.Tr([html.Th("EBITDA"), html.Td(format_number(info.get("ebitda", None)))]),
-                html.Tr([html.Th("Net Income"), html.Td(format_number(info.get("netIncomeToCommon", None)))]),
-                html.Tr([html.Th("Dividend Yield"), html.Td(f"{info.get('dividendYield', 'N/A'):.2%}" if info.get("dividendYield") else "N/A")]),
-            ])
-        ],
-        bordered=True,
-        striped=True,
-        hover=True,
-    )
-
-    return dbc.Container([
-        # html.H5("Company Information"),
-        html.Hr(),
-        info_table
-    ])
 
 
 @app.callback(
@@ -1385,10 +370,10 @@ def display_financials_modal(n_clicks, watchlist, is_open):
     info = ticker.info
 
     if financials is not None and not financials.empty:
-        income_statement_content = create_financials_table(financials)
-        balance_sheet_content = create_financials_table(balance_sheet)
-        cashflow_content = create_financials_table(cashflow)
-        company_info_content = create_company_info(info)
+        income_statement_content = ut.create_financials_table(financials)
+        balance_sheet_content = ut.create_financials_table(balance_sheet)
+        cashflow_content = ut.create_financials_table(cashflow)
+        company_info_content = ut.create_company_info(info)
         
         # Create tabs for the modal
         modal_content = dbc.Tabs([
@@ -1414,29 +399,6 @@ def close_financials_modal(n_clicks, is_open):
         return not is_open
     return is_open
 
-
-
-def get_stock_performance(symbols):
-    performance_data = {}
-    for symbol in symbols:
-        ticker = yf.Ticker(symbol)
-        # Fetch historical data
-        hist = ticker.history(period="1y")
-        # Fetch basic stock info
-        info = ticker.info
-        
-        # Fetch performance-related data
-        performance_data[symbol] = {
-            "latest_close": hist['Close'].iloc[-1] if not hist.empty else None,
-            "one_year_return": (hist['Close'].iloc[-1] / hist['Close'].iloc[0] - 1) * 100 if not hist.empty else None,
-            "52_week_high": info.get("fiftyTwoWeekHigh"),
-            "52_week_low": info.get("fiftyTwoWeekLow"),
-            "market_cap": info.get("marketCap"),
-            "pe_ratio": info.get("trailingPE"),
-            "dividend_yield": info.get("dividendYield"),
-        }
-
-    return performance_data
 
 @app.callback(
     [Output("chatbot-modal", "is_open"),
@@ -1470,7 +432,7 @@ def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_histo
             # Check if the watchlist is selected and stocks are available
             if selected_watchlist and watchlist_stocks:
                 # Generate the stock performance summaries for the selected watchlist
-                performance_data = get_stock_performance(watchlist_stocks)
+                performance_data = ut.get_stock_performance(watchlist_stocks)
                 performance_summaries = [
                     f"{symbol}: Latest - ${data['latest_close']:.2f}" 
                     for symbol, data in performance_data.items()
@@ -1540,7 +502,7 @@ def manage_chatbot_interaction(send_clicks, user_input, conversation_history, us
         if "performance" in user_input.lower() and username:
             if selected_watchlist and watchlist_stocks:
                 # Fetch stock performance for the selected watchlist
-                performance_data = get_stock_performance(watchlist_stocks)
+                performance_data = ut.get_stock_performance(watchlist_stocks)
                 performance_summaries = [
                     f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data['latest_close'] is not None else f"{symbol}: Latest Close - N/A"
                     for symbol, data in performance_data.items()
@@ -1605,9 +567,9 @@ def update_analyst_recommendations(stock_symbols, plotly_theme):
     )
     
     for symbol in stock_symbols:
-        df = fetch_analyst_recommendations(symbol)
+        df = ut.fetch_analyst_recommendations(symbol)
         if not df.empty:
-            fig = generate_recommendations_heatmap(df, plotly_theme)
+            fig = ut.generate_recommendations_heatmap(df, plotly_theme)
             recommendations_content.append(html.H4(f"{symbol}", className='mt-3'))
             recommendations_content.append(dcc.Graph(figure=fig))
         else:
@@ -1625,12 +587,16 @@ def update_analyst_recommendations(stock_symbols, plotly_theme):
 def update_recommendations_visibility(login_status):
     if not login_status:
         blur_style = {
-            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
+            'background-color': 'rgba(255, 255, 255, 0.2)', 'display': 'flex',
             'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(5px)'
+            'backdrop-filter': 'blur(2px)'
         }
-        content_style = {'filter': 'blur(5px)'}
+        content_style = {
+            'filter': 'blur(2px)',  # Global blur
+            'mask-image': 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 10%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.8) 100%)',  # Simulating exponential transparency
+            '-webkit-mask-image': 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 10%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.8) 100%)',  # For Safari
+        }
     else:
         blur_style = {'display': 'none'}
         content_style = {'filter': 'none'}
@@ -1640,24 +606,30 @@ def update_recommendations_visibility(login_status):
 
 @app.callback(
     [Output('topshots-blur-overlay', 'style'),
-      Output('top-stocks-table', 'style')],
+     Output('top-stocks-table', 'style')],
     Input('login-status', 'data')
 )
 def update_topshots_visibility(login_status):
     if not login_status:
         blur_style = {
-            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
+            'background-color': 'rgba(255, 255, 255, 0.2)', 'display': 'flex',
             'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(5px)'
+            'backdrop-filter': 'blur(1px)'
         }
-        content_style = {'filter': 'blur(5px)'}
+        
+        # Gradient blur effect for content
+        content_style = {
+            'filter': 'blur(1px)',  # Global blur
+            'mask-image': 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 10%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.9) 60%, rgba(0,0,0,1) 100%)',  # Simulating exponential transparency
+            '-webkit-mask-image': 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 10%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.9) 60%, rgba(0,0,0,1) 100%)',  # For Safari
+        }
+
     else:
         blur_style = {'display': 'none'}
         content_style = {'filter': 'none'}
-    
-    return blur_style, content_style
 
+    return blur_style, content_style
 
 
 @app.callback(
@@ -1688,100 +660,95 @@ def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefi
         if len(selected_stocks) > 3:
             return dash.no_update, "Please select up to 3 stocks only.", dash.no_update
 
+        # Use the modularized forecast generation function
+        forecast_data = ut.generate_forecast_data(selected_stocks, horizon)
+
         forecast_figures = []
         today = pd.to_datetime('today')
 
         for symbol in selected_stocks:
-            try:
-                df = yf.download(symbol, period='5y')  # Extended the window to 5 years
-                if df.empty:
-                    raise ValueError(f"No data found for {symbol}")
-
-                df.reset_index(inplace=True)
-                df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
-                model = Prophet()
-                model.fit(df_prophet)
-
-                future = model.make_future_dataframe(periods=horizon)
-                forecast = model.predict(future)
-
-                # Filtering based on predefined-range for display
-                if predefined_range == 'YTD':
-                    start_date = datetime(today.year, 1, 1)
-                elif predefined_range == '1M':
-                    start_date = today - timedelta(days=30)
-                elif predefined_range == '3M':
-                    start_date = today - timedelta(days=3*30)
-                elif predefined_range == '12M':
-                    start_date = today - timedelta(days=365)
-                elif predefined_range == '24M':
-                    start_date = today - timedelta(days=730)
-                elif predefined_range == '5Y':
-                    start_date = today - timedelta(days=1825)
-                else:
-                    start_date = pd.to_datetime('2024-01-01')  # Default range if no match
-
-                df_filtered = df[df['Date'] >= start_date]
-                forecast_filtered = forecast[forecast['ds'] >= start_date]
-
+            if 'error' in forecast_data[symbol]:
+                # Create an empty figure with an error message
                 fig = go.Figure()
                 fig.update_layout(template=plotly_theme)
-
-                # Add forecast mean line
-                fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'], 
-                    y=forecast_filtered['yhat'], 
-                    mode='lines', 
-                    name=f'{symbol} Forecast',
-                    line=dict(color='blue')
-                ))
-
-                # Add the confidence interval (bandwidth)
-                fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'],
-                    y=forecast_filtered['yhat_upper'],
-                    mode='lines',
-                    name='Upper Bound',
-                    line=dict(width=0),
-                    showlegend=False
-                ))
-
-                fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'],
-                    y=forecast_filtered['yhat_lower'],
-                    fill='tonexty',  # Fill to the next trace (yhat_upper)
-                    mode='lines',
-                    name='Lower Bound',
-                    line=dict(width=0),
-                    fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
-                    showlegend=False
-                ))
-
-                # Add historical data
-                fig.add_trace(go.Scatter(
-                    x=df_filtered['Date'], 
-                    y=df_filtered['Close'], 
-                    mode='lines', 
-                    name=f'{symbol} Historical',
-                    line=dict(color='green')
-                ))
-
-                fig.update_layout(
-                    title=f"Stock Price Forecast for {symbol}",
-                    xaxis_title="Date",
-                    yaxis_title="Price",
-                    height=600,
-                    showlegend=False,
-                    template=plotly_theme  # Ensure theme is applied
-                )
-
+                fig.add_annotation(text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}", showarrow=False)
                 forecast_figures.append(fig)
+                continue
 
-            except Exception as e:
-                fig = go.Figure()
-                fig.update_layout(template=plotly_theme)
-                fig.add_annotation(text=f"Could not generate forecast for {symbol}: {e}", showarrow=False)
-                forecast_figures.append(fig)
+            df = forecast_data[symbol]['historical']
+            forecast = forecast_data[symbol]['forecast']
+
+            # Set start date based on predefined range
+            if predefined_range == 'YTD':
+                start_date = datetime(today.year, 1, 1)
+            elif predefined_range == '1M':
+                start_date = today - timedelta(days=30)
+            elif predefined_range == '3M':
+                start_date = today - timedelta(days=3 * 30)
+            elif predefined_range == '12M':
+                start_date = today - timedelta(days=365)
+            elif predefined_range == '24M':
+                start_date = today - timedelta(days=730)
+            elif predefined_range == '5Y':
+                start_date = today - timedelta(days=1825)
+            else:
+                start_date = pd.to_datetime('2024-01-01')  # Default range if no match
+
+            df_filtered = df[df['Date'] >= start_date]
+            forecast_filtered = forecast[forecast['ds'] >= start_date]
+
+            fig = go.Figure()
+            fig.update_layout(template=plotly_theme)
+
+            # Add forecast mean line
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'], 
+                y=forecast_filtered['yhat'], 
+                mode='lines', 
+                name=f'{symbol} Forecast',
+                line=dict(color='blue')
+            ))
+
+            # Add the confidence interval (bandwidth)
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'],
+                y=forecast_filtered['yhat_upper'],
+                mode='lines',
+                name='Upper Bound',
+                line=dict(width=0),
+                showlegend=False
+            ))
+
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'],
+                y=forecast_filtered['yhat_lower'],
+                fill='tonexty',  # Fill to the next trace (yhat_upper)
+                mode='lines',
+                name='Lower Bound',
+                line=dict(width=0),
+                fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
+                showlegend=False
+            ))
+
+            # Add historical data
+            fig.add_trace(go.Scatter(
+                x=df_filtered['Date'], 
+                y=df_filtered['Close'], 
+                mode='lines', 
+                name=f'{symbol} Historical',
+                line=dict(color='green')
+            ))
+
+            fig.update_layout(
+                title=f"Stock Price Forecast for {symbol}",
+                xaxis_title="Date",
+                yaxis_title="Price",
+                height=600,
+                showlegend=False,
+                template=plotly_theme  # Ensure theme is applied
+            )
+
+            forecast_figures.append(fig)
 
         if not forecast_figures:
             return dash.no_update, dash.no_update, dash.no_update
@@ -1849,11 +816,12 @@ def switch_tabs_footer_to_tabs(n_clicks_footer_prices, n_clicks_footer_news, n_c
         return current_tab  # No tab change if nothing is clicked
     
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    if triggered_id == 'footer-prices-tab':
-        return 'prices-tab'
-    elif triggered_id == 'footer-news-tab':
+    
+    
+    if triggered_id == 'footer-news-tab':
         return 'news-tab'
+    elif triggered_id == 'footer-prices-tab':
+        return 'prices-tab'
     elif triggered_id == 'footer-compare-tab':
         return 'compare-tab'
     elif triggered_id == 'footer-forecast-tab':
@@ -1900,123 +868,6 @@ def update_forecast_visibility(login_status):
         content_style = {'filter': 'none'}
     
     return blur_style, content_style
-
-@app.callback(
-    Output('register-output', 'children'),
-    [Input('register-button', 'n_clicks')],
-    [State('username', 'value'),
-      State('email', 'value'),
-      State('password', 'value'),
-      State('confirm_password', 'value')]
-)
-def register_user(n_clicks, username, email, password, confirm_password):
-    if n_clicks:
-        if not username:
-            return dbc.Alert("Username is required.", color="danger")
-        if not email:
-            return dbc.Alert("Email is required.", color="danger")
-        if not password:
-            return dbc.Alert("Password is required.", color="danger")
-        if password != confirm_password:
-            return dbc.Alert("Passwords do not match.", color="danger")
-        
-        # Validate the password
-        password_error = validate_password(password)
-        if password_error:
-            return dbc.Alert(password_error, color="danger")
-
-        # If validation passes, hash the password and save the user
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, email=email, password=hashed_password)
-
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-            return dbc.Alert("Registration successful!", color="success")
-        except Exception as e:
-            return dbc.Alert(f"Error: {str(e)}", color="danger")
-    return dash.no_update
-
-@app.callback(
-    [Output('req-length', 'className'),
-      Output('req-uppercase', 'className'),
-      Output('req-lowercase', 'className'),
-      Output('req-digit', 'className'),
-      Output('req-special', 'className')],
-    Input('password', 'value')
-)
-def update_password_requirements(password):
-    if password is None:
-        password = ""
-
-    length_class = 'text-muted' if len(password) < 8 else 'text-success'
-    uppercase_class = 'text-muted' if not re.search(r"[A-Z]", password) else 'text-success'
-    lowercase_class = 'text-muted' if not re.search(r"[a-z]", password) else 'text-success'
-    digit_class = 'text-muted' if not re.search(r"\d", password) else 'text-success'
-    special_class = 'text-muted' if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password) else 'text-success'
-
-    return length_class, uppercase_class, lowercase_class, digit_class, special_class
-
-
-def validate_password(password):
-    # Check for minimum length
-    if len(password) < 8:
-        return "Password must be at least 8 characters long."
-    
-    # Check for at least one uppercase letter
-    if not re.search(r"[A-Z]", password):
-        return "Password must contain at least one uppercase letter."
-    
-    # Check for at least one lowercase letter
-    if not re.search(r"[a-z]", password):
-        return "Password must contain at least one lowercase letter."
-    
-    # Check for at least one digit
-    if not re.search(r"\d", password):
-        return "Password must contain at least one digit."
-    
-    # Check for at least one special character
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password):
-        return "Password must contain at least one special character."
-    
-    # If all conditions are met
-    return None
-
-
-@app.callback(
-    [Output('login-status', 'data', allow_duplicate=True),
-     Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style', allow_duplicate=True),
-     Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True),
-     Output('theme-store', 'data', allow_duplicate=True),
-     Output('plotly-theme-store', 'data', allow_duplicate=True),
-     Output('page-content', 'children'),  # Redirect by changing the content
-     Output('url', 'pathname')],  # Use this to redirect on login success
-    [Input('login-button', 'n_clicks')],
-    [State('login-username', 'value'),
-     State('login-password', 'value')],
-    prevent_initial_call=True
-)
-def handle_login(login_clicks, username, password):
-    if login_clicks:
-        user = User.query.filter_by(username=username).first()
-        if user and bcrypt.check_password_hash(user.password, password):
-            # Set session values and return dashboard content + redirection
-            session['logged_in'] = True
-            session['username'] = username
-
-            user_theme = user.theme if user.theme else 'MATERIA'
-            plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-
-            return (True, username, {"display": "none"}, {"display": "block"}, {"display": "block"},
-                    themes[user_theme]['dbc'], plotly_theme, dashboard_layout, '/')  # Redirect to '/'
-        else:
-            return (False, None, {"display": "block"}, {"display": "none"}, {"display": "none"},
-                    dbc.themes.MATERIA, 'plotly_white', login_layout, dash.no_update)
-    
-    # If no clicks yet, ensure to return 9 values:
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -2097,7 +948,7 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, em
 
         # Validate the new password
         if new_password:
-            password_error = validate_password(new_password)
+            password_error = ut.validate_password(new_password)
             if password_error:
                 return (False, False, False, False, False,
                         {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
@@ -2125,171 +976,6 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, em
                 "")
 
     raise PreventUpdate
-
-
-
-@app.callback(
-    [Output('profile-req-length', 'className'),
-     Output('profile-req-uppercase', 'className'),
-     Output('profile-req-lowercase', 'className'),
-     Output('profile-req-digit', 'className'),
-     Output('profile-req-special', 'className')],
-    Input('profile-password', 'value')
-)
-def update_profile_password_requirements(password):
-    return update_password_requirements(password)
-
-
-
-@app.callback(
-    [Output('login-status', 'data', allow_duplicate=True),
-     Output('login-link', 'style', allow_duplicate=True),
-     Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True),
-     Output('individual-stocks-store', 'data', allow_duplicate=True),
-     Output('theme-store', 'data', allow_duplicate=True),
-     Output('plotly-theme-store', 'data', allow_duplicate=True),
-     Output('url', 'pathname', allow_duplicate=True)],  # Redirect on logout
-    [Input('logout-button', 'n_clicks')],
-    prevent_initial_call=True
-)
-def handle_logout(logout_clicks):
-    if logout_clicks:
-        session.pop('logged_in', None)
-        session.pop('username', None)
-        return False, {"display": "block"}, {"display": "none"}, {"display": "none"}, ['AAPL','MSFT'], dbc.themes.MATERIA, 'plotly_white', '/login'  # Redirect to login
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
-
-@app.callback(
-    [Output('login-status', 'data'),
-     Output('login-username-store', 'data'),
-     Output('login-link', 'style'),
-     Output('logout-button', 'style'),
-     Output('profile-link', 'style')],  # Add output for profile link
-    [Input('url', 'pathname')]
-)
-def check_session(pathname):
-    logged_in = session.get('logged_in', False)
-    username = session.get('username', None)
-
-    if logged_in and username:
-        return True, username, {"display": "none"}, {"display": "block"}, {"display": "block"}  # Show profile link
-    else:
-        return False, None, {"display": "block"}, {"display": "none"}, {"display": "none"}  # Hide profile link
-
-
-@app.callback(
-    Output('theme-dropdown', 'disabled'),
-    Input('login-status', 'data')
-)
-def update_dropdown_status(login_status):
-    return not login_status  # Disable dropdown if not logged in
-
-
-
-@app.callback(
-    Output('login-overlay', 'is_open'),
-    [Input('theme-dropdown-wrapper', 'n_clicks'),
-      Input('create-watchlist-button', 'n_clicks'),
-      Input('delete-watchlist-button', 'n_clicks')],
-    [State('login-status', 'data')]
-)
-def show_overlay_if_logged_out(theme_n_clicks, create_n_clicks, delete_n_clicks, login_status):
-    # Ensure no NoneType errors
-    theme_n_clicks = theme_n_clicks or 0
-    create_n_clicks = create_n_clicks or 0
-    delete_n_clicks = delete_n_clicks or 0
-
-    # Show the overlay if the user is not logged in and clicks on either element
-    if (theme_n_clicks > 0  or create_n_clicks > 0 or delete_n_clicks > 0) and not login_status:
-        return True  # Show overlay
-    return False  # Don't show overlay
-
-@app.callback(
-    [
-     Output('create-watchlist-button', 'className'),
-     Output('delete-watchlist-button', 'className')],
-    Input('login-status', 'data')
-)
-def style_save_button(login_status):
-    if not login_status:
-        return 'grayed-out','grayed-out'  # Apply the grayed-out class when logged out
-    return 'small-button','small-button'  # No class when logged in
-
-
-
-def fetch_stock_data_watchlist(symbol):
-    """Fetch latest stock data for a given symbol."""
-    try:
-        stock = yf.Ticker(symbol)
-        hist = stock.history(period="5d")
-        if len(hist) < 2:
-            return None, None, None
-        latest_close = hist['Close'].iloc[-1]
-        previous_close = hist['Close'].iloc[-2]
-        change_percent = ((latest_close - previous_close) / previous_close) * 100
-        return previous_close, latest_close, change_percent
-    except Exception as e:
-        print(f"Error fetching data for {symbol}: {e}")
-        return None, None, None
-    
-def generate_watchlist_table(watchlist):
-    rows = []
-    for i, stock in enumerate(watchlist):
-        prev_close, latest_close, change_percent = fetch_stock_data_watchlist(stock)
-        if prev_close is not None:
-            # Determine the color based on the change percentage
-            color = 'green' if change_percent > 0 else 'red' if change_percent < 0 else 'black'
-            rows.append(
-                html.Tr([
-                    html.Td(html.A(stock, href="#", id={'type': 'stock-symbol', 'index': i}, 
-                                   style={"text-decoration": "none", "color": "bg-primary"}), 
-                            style={"verticalAlign": "middle"}),  # Vertically center the link
-                    html.Td(f"{latest_close:.2f}", style={"verticalAlign": "middle"}),  # Vertically center the text
-                    html.Td(f"{change_percent:.2f}%", style={"color": color, "verticalAlign": "middle"}),  # Vertically center the text
-                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}),
-                            style={"verticalAlign": "middle"})  # Vertically center the button
-                ])
-            )
-        else:
-            rows.append(
-                html.Tr([
-                    html.Td(stock, style={"verticalAlign": "middle"}),  # Vertically center the text
-                    html.Td("N/A", style={"verticalAlign": "middle"}),  # Vertically center the text
-                    html.Td("N/A", style={"verticalAlign": "middle"}),  # Vertically center the text
-                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}),
-                            style={"verticalAlign": "middle"})  # Vertically center the button
-                ])
-            )
-
-    return dbc.Table(
-        children=[
-            html.Thead(html.Tr([html.Th("Symbol"), html.Th("Latest"), html.Th("daily %"), html.Th("")])),
-            html.Tbody(rows)
-        ],
-        bordered=True,
-        hover=True,
-        responsive=True,
-        striped=True,
-        size="sm",
-        className="custom-table"  # Apply the custom class for the table
-    )
-
-
-# @app.callback(
-#     [Output('new-watchlist-name', 'disabled',allow_duplicate=True),
-#       Output('saved-watchlists-dropdown', 'disabled',allow_duplicate=True),
-#       Output('create-watchlist-button', 'disabled',allow_duplicate=True),
-#       Output('delete-watchlist-button', 'disabled',allow_duplicate=True)],
-#     [Input('login-status', 'data')],
-#     prevent_initial_call='initial_duplicate'
-# )
-# def update_watchlist_management_layout(login_status):
-#     if login_status:
-#         return False, False, False, False  # Enable the components when logged in
-#     else:
-#         return True, True, False, False  # Keep them disabled when logged out
 
 
 @app.callback(
@@ -2401,23 +1087,6 @@ def load_watchlist(pathname, watchlist_id, login_status, username):
 
 
 
-def get_ticker(company_name):
-    yfinance = "https://query2.finance.yahoo.com/v1/finance/search"
-    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
-    params = {"q": company_name, "quotes_count": 3}
-
-    res = requests.get(url=yfinance, params=params, headers={'User-Agent': user_agent})
-    data = res.json()
-
-    # Extract multiple ticker symbols, if available
-    company_codes = [quote['symbol'] for quote in data['quotes'][:3]]
-    
-    return company_codes
-
-
-from dash.exceptions import PreventUpdate
-from dash import dcc
-
 @app.callback(
     Output('stock-suggestions-input', 'options'),
     Input('stock-suggestions-input', 'search_value')  # Triggers as the user types
@@ -2428,7 +1097,7 @@ def update_stock_suggestions(company_name):
 
     try:
         # Get a list of ticker suggestions (multiple tickers)
-        tickers = get_ticker(company_name)
+        tickers = ut.get_ticker(company_name)
         
         # Format the suggestions for dcc.Dropdown
         if tickers:
@@ -2442,8 +1111,7 @@ def update_stock_suggestions(company_name):
         return [{'label': 'Error retrieving stock suggestions', 'value': ''}]
 
 
-from dash import dcc, html, Input, Output, State, callback_context, ALL
-from datetime import datetime, timedelta
+
 
 @app.callback(
     [Output('individual-stocks-store', 'data', allow_duplicate=True),
@@ -2532,7 +1200,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     if not individual_stocks and benchmark_selection == 'None':
         return (
             individual_stocks,
-            generate_watchlist_table(individual_stocks),
+            ut.generate_watchlist_table(individual_stocks),
             px.line(title="Please add at least one stock symbol.", template=plotly_theme),
             {'height': '400px'},
             html.Div("Please add at least one stock symbol."),
@@ -2617,7 +1285,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     if not data and benchmark_selection == 'None':
         return (
             individual_stocks,
-            generate_watchlist_table(individual_stocks),
+            ut.generate_watchlist_table(individual_stocks),
             px.line(title="No data found for the given stock symbols and date range.", template=plotly_theme),
             {'height': '400px'},
             html.Div("No news found for the given stock symbols."),
@@ -2631,12 +1299,6 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
             ""
         )
 
-    # Combine the data into a single DataFrame
-    # if data:
-    #     common_index = pd.date_range(start=start_date, end=end_date, freq=interval)
-    #     data = [df.reindex(common_index, method='pad') for df in data]
-    #     df_all = pd.concat(data)
-    
     df_all = pd.concat(data) if data else pd.DataFrame()
 
 
@@ -2664,7 +1326,7 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
         if not available_stocks:
             return (
                 individual_stocks,
-                generate_watchlist_table(individual_stocks),
+                ut.generate_watchlist_table(individual_stocks),
                 px.line(title="Selected stocks are not available in the data.", template=plotly_theme),
                 {'height': '400px'},
                 html.Div("No data found for the selected comparison stocks."),
@@ -2801,13 +1463,12 @@ def update_watchlist_and_graphs(add_n_clicks, reset_n_clicks, refresh_n_clicks, 
     fig_stock.update_yaxes(title_text=None, secondary_y=True, showgrid=False)
 
     # Fetch related news for the stocks in the watchlist
-    # news_content = fetch_news(individual_stocks)
-    news_content = fetch_news(selected_news_stocks)
+    news_content = ut.fetch_news(selected_news_stocks)
 
 
     return (
         individual_stocks,
-        generate_watchlist_table(individual_stocks),
+        ut.generate_watchlist_table(individual_stocks),
         fig_stock,
         {'height': f'{graph_height}px', 'overflow': 'auto'},
         news_content,
@@ -2915,14 +1576,13 @@ def display_page(pathname, login_status):
 def update_active_tab_class(current_tab):
     # Determine which tab is active and apply the "active" class accordingly
     return [
-        "nav-link active" if current_tab == '📈 Prices' else "nav-link",
         "nav-link active" if current_tab == '📰 News' else "nav-link",
+        "nav-link active" if current_tab == '📈 Prices' else "nav-link",
         "nav-link active" if current_tab == '⚖️ Compare' else "nav-link",
         "nav-link active" if current_tab == '🌡️ Forecast' else "nav-link",
         "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
         "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
     ]
-
 
 
 @app.callback(
@@ -2952,12 +1612,15 @@ def update_theme(*args, login_status=None, username=None):
     return dbc.themes.MATERIA, 'plotly_white'
 
 
+
 @app.callback(
     Output('theme-switch', 'href'),
     Input('theme-store', 'data')
 )
 def update_stylesheet(theme):
     return theme
+
+
 
 @app.callback(
     Output('plotly-theme-store', 'data',allow_duplicate=True),
@@ -2972,6 +1635,7 @@ def update_plotly_theme(theme):
     return 'plotly_white'
 
 
+
 app.clientside_callback(
     """
     function(n_clicks) {
@@ -2981,6 +1645,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 app.index_string = '''
 <!DOCTYPE html>
