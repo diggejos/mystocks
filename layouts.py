@@ -217,6 +217,7 @@ def create_chatbot_modal():
         className="bg-primary"  # Start closed
     )
 
+
 def create_footer():
     return html.Footer(
         dbc.Container([
@@ -230,6 +231,18 @@ def create_footer():
                     ], className="list-unstyled")
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
+            html.A(
+                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "auto"}),
+                href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out MyStocks!",
+                target="_blank",
+                style={"margin-right": "10px"}
+            ),
+            html.A(
+                html.Img(src="/assets/linkedin.png", alt="Share on LinkedIn", style={"width": "30px", "height": "30px"}),
+                href="https://www.linkedin.com/sharing/share-offsite/?url=https://mystocksportfolio.io",
+                target="_blank",
+                style={"margin-right": "10px"}
+            ),
             dbc.Row([
                 dbc.Col([
                     html.P("© 2024 MyStocks. All rights reserved.", className="text-center")
@@ -238,7 +251,6 @@ def create_footer():
         ], fluid=True),
         className="footer"
     )
-
 
 
 def create_watchlist_management_layout():
