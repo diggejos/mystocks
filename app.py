@@ -1676,6 +1676,8 @@ app.index_string = '''
         <meta property="og:url" content="https://mystocksportfolio.io/" />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://mystocksportfolio.io/" />
+        <link rel="icon" href="/assets/logo_with_transparent_background.png" type="image/x-icon">
+
         {%favicon%}
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
