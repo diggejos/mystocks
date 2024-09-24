@@ -39,7 +39,7 @@ def serve_robots():
 # Define a custom 404 error handler
 @app.server.errorhandler(404)
 def page_not_found(e):
-    return render_template('404.html'), 404
+    return render_template(directory='templates','404.html'), 404
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
