@@ -28,10 +28,13 @@ import auth_callbacks
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
 server = app.server
 
-# load robots.txt file for SEO
+@server.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory(directory='static', path='sitemap.xml')
+
 @server.route('/robots.txt')
-def serve_robots_txt():
-    return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
+def serve_robots():
+    return send_from_directory(directory='static', 'robots.txt')
 
 # Define a custom 404 error handler
 @app.server.errorhandler(404)
@@ -64,14 +67,6 @@ mail = Mail(app.server)
 with app.server.app_context():
     db.create_all()
 
-
-@server.route('/sitemap.xml')
-def sitemap():
-    return send_from_directory(directory='static', path='sitemap.xml')
-
-@server.route('/robots.txt')
-def serve_robots():
-    return send_from_directory(project_root, 'robots.txt')
 
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
