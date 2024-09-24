@@ -35,8 +35,8 @@ def sitemap():
 # load robots.txt file for SEO
 @server.route('/robots.txt')
 def serve_robots_txt():
-    return send_from_directory(os.path.join(server.root_path, 'static'), 'robots.txt')
-
+       return send_from_directory('static', 'robots.txt')
+    
 @server.route('/robots.txt')
 def serve_robots():
     return send_from_directory(project_root, 'robots.txt')
