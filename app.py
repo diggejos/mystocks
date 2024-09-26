@@ -1678,6 +1678,8 @@ app.index_string = '''
         <!-- End Google Tag Manager -->
         {%metas%}
         <title>Stocks monitoring and recommendation made easy - MyStocks</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
         <meta name="keywords" content="stock, stocks, stock dashboard, finance, stock forecasting, stock news, stocks monitoring, stocks recommendations, finance, financial advisor">
         <meta name="author" content="myStocksportoflio">
