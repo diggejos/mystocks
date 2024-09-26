@@ -226,7 +226,7 @@ def create_footer():
                     html.H5("Direction", style={"display": "none"}),  # Hide the heading
                     html.Ul([
                         html.Li(html.A("About MyStocks", href="/about", className="footer-link")),
-                        html.Li(html.A("Contact Us", href="mailto:diggelmann.josua@gmail.com?subject=mystocks%20request", className="footer-link")),
+                        html.Li(html.A("Contact Us", href="mailto:mystocks.monitoring@gmail.com?subject=mystocks%20request", className="footer-link")),
                         html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
                     ], className="list-unstyled")
                 ], md=12, className="d-flex justify-content-center")  # Center the column
