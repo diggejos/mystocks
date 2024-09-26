@@ -1689,7 +1689,6 @@ app.index_string = '''
         <link rel="canonical" href="https://mystocksportfolio.io/" />
         <link rel="icon" href="/assets/logo_with_transparent_background_favicon.png" type="image/png">
 
-        {%favicon%}
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
         <style>
