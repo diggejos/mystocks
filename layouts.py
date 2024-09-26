@@ -121,7 +121,7 @@ def create_modal_register():
         dcc.Store(id='modal-shown-store', data=False),
         
         # Interval to trigger modal after a certain time
-        dcc.Interval(id='register-modal-timer', interval=5*1000, n_intervals=0),  # 30 seconds
+        dcc.Interval(id='register-modal-timer', interval=30*1000, n_intervals=0),  # 30 seconds
         
         # Register modal with header, body, and footer
         dbc.Modal(
