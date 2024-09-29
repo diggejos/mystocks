@@ -366,7 +366,7 @@
     overflow-x: auto; /* Enable horizontal scrolling */
     -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
     background-color: var(--bs-secondary); /* Light background */
-    border-top: 1px solid #e9ecef; /* Border at the top of the footer */
+    border-top: 5px solid var(--bs-primary); /* Border at the top of the footer */
     padding: 10px 0; /* Padding for the entire footer nav */
     position: fixed;
     bottom: 0;
@@ -401,7 +401,7 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     background-color: var(--bs-secondary);
-    border-top: 1px solid #e9ecef;
+    border-top: 2px solid var(--bs-primary);
     padding: 10px 0;
     position: fixed;
     bottom: 0;
@@ -410,7 +410,36 @@
     white-space: nowrap; /* Prevent wrapping of nav items */
     scroll-behavior: smooth;
     overflow-y: hidden;
+    box-shadow: 0 -10px 10px rgba(0, 0, 0, 0.3);  /* Horizontal offset, Vertical offset, Blur radius, Color */
 }
+
+/* Wrapper to hold the footer and gradient */
+.footer-nav-wrapper {
+    position: relative; /* Relative positioning for gradient */
+    width: 100%;
+}
+
+/* The gradient stays fixed at the right of the screen */
+.footer-gradient-right {
+    content: "";
+    position: fixed; /* Stay fixed to the viewport */
+    right: 0;
+    bottom: 5px;
+    top: auto; /* Ensure it's at the bottom of the viewport */
+    width: 50px; /* Adjust width as needed */
+    height: 60px; /* Adjust height if needed */
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.3), transparent);
+    pointer-events: none; /* Ensure it doesn't block scrolling */
+    z-index: 1600; /* Ensure it's on top of the footer */
+}
+
+/* Show the gradient only on mobile viewports */
+@media (min-width: 768px) {
+    .footer-gradient-right {
+        display: none; /* Hide the gradient on larger screens */
+    }
+}
+
 
 .footer-nav .nav-item {
     flex: 0 0 auto;
@@ -493,7 +522,7 @@
 
 #filters-collapse {
     /*position: fixed;*/
-    top: 90px; /* Adjust this value to leave space for the button */
+    top: 80px; /* Adjust this value to leave space for the button */
     left: 0;
     width: 85%; /* Set to 80% width for mobile */
     z-index: 1000; /* Ensure it stays above other elements */
@@ -526,7 +555,7 @@
     #filters-collapse {
         display: none; /* Initially hidden */
         position: fixed;
-        top: 120px; /* Ensure collapse starts below the button */
+        top: 135px; /* Ensure collapse starts below the button */
         width: 70%; /* Set the width to 80% for mobile */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);*/
         height: 60%; /* Shadow around the entire box */
@@ -639,4 +668,46 @@ a:hover {
     color: var(--bs-alarm) !important;
     /*color: black !important; /* Set the text color to black */
     font-size: 12px; /* Adjust font size if needed */
+}
+
+
+.bg-primary-with-shadow {
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    padding: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important; /* Add shadow */
+    border-radius: 10px; /* Optional: rounded corners */
+    margin-top: -350px;
+}
+
+.custom-margin {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+}
+
+.stylish-modal {
+    max-width: 600px;
+}
+
+.benefits-list {
+    margin-left: 20px;
+    list-style-type: none;
+}
+
+.benefits-list li:before {
+    content: "✔️";
+    margin-right: 10px;
+}
+
+.modal-content-container {
+    padding: 10px 20px;
+    text-align: left;
+}
+
+.register-button {
+    background-color: #28a745;
+    color: white;
+    /*border-radius: 5px;*/
 }
