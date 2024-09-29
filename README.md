@@ -1,5 +1,5 @@
-# MyStocks: Stock Market monitoring made easy
-MyStocks is an application designed for (beginner)investors, traders, and financial enthusiasts to track, compare, and analyze stock prices over time. With a variety of tools and features, MyStocks offers a complete solution for anyone looking to stay ahead in the stock market.
+# WatchMyStocks: Stock Market monitoring made easy
+WatchMyStocks is an application designed for (beginner)investors, traders, and financial enthusiasts to track, compare, and analyze stock prices over time. With a variety of tools and features, MyStocks offers a complete solution for anyone looking to stay ahead in the stock market.
 
 ## Features
 1. Historical Stock Price Tracking and Comparison
@@ -24,7 +24,7 @@ Monitor your favorite stocks and receive tailored insights.
 Interact with our intelligent financial chatbot powered by OpenAI's GPT-3.5-turbo.
 Get instant answers to your stock-related queries and financial advice within the app.
 
-## Why Choose MyStocks?
+## Why Choose WatchMyStocks?
 Comprehensive Data: Access to a wide range of financial data and tools for better decision-making.
 User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate.
 Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge.
@@ -44,4 +44,4 @@ OpenAI GPT-3.5
  
 https://mystocksportfolio.io
 
-![gif](https://github.com/user-attachments/assets/6348e136-1e74-44ed-b53f-5141428287a7)
+![gif5](https://github.com/user-attachments/assets/ffb3fe12-b38a-4f82-9faa-4346b257c293)
