@@ -1,3 +1,7 @@
+![gif4](https://github.com/user-attachments/assets/364f28fe-98d2-4622-9df4-6243ed24c9cf)
+![gif3](https://github.com/user-attachments/assets/7c900de4-1465-4373-b064-24a9dc18112e)
+![gif2](https://github.com/user-attachments/assets/8efdafcc-eb3d-4c81-bd70-30aba3283b3c)
+![gif1](https://github.com/user-attachments/assets/9aaeb683-0bf6-4a39-a410-539d8069aaf5)
 # WatchMyStocks: Stock Market monitoring made easy
 WatchMyStocks is an application designed for (beginner)investors, traders, and financial enthusiasts to track, compare, and analyze stock prices over time. With a variety of tools and features, MyStocks offers a complete solution for anyone looking to stay ahead in the stock market.
 
