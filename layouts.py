@@ -98,21 +98,35 @@ def create_navbar(themes):
 
 
 def create_sticky_footer_mobile():
-    return dbc.Nav(
+    return html.Div(
         [
-            dbc.NavItem(dbc.NavLink("📰 News", href="#news", id="footer-news-tab")),
-            dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
-            dbc.NavItem(dbc.NavLink("🔥 Hot Stocks", href="#topshots", id="footer-topshots-tab")),
-            dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="footer-compare-tab")),
-            dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="footer-forecast-tab")),
-            dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="footer-simulate-tab")),
-            dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
+            # Footer navigation bar
+            dbc.Nav(
+                [
+                    dbc.NavItem(dbc.NavLink("📰 News", href="#news", id="footer-news-tab")),
+                    dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
+                    dbc.NavItem(dbc.NavLink("🔥 Hot Stocks", href="#topshots", id="footer-topshots-tab")),
+                    dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="footer-compare-tab")),
+                    dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="footer-forecast-tab")),
+                    dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="footer-simulate-tab")),
+                    dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
+                ],
+                pills=True,
+                justified=True,
+                className="footer-nav flex-nowrap overflow-auto",
+                style={"white-space": "nowrap"},
+            ),
+            
+            # Right gradient for visual indication
+            html.Div(
+                className="footer-gradient-right"
+            )
         ],
-        pills=True,
-        justified=True,
-        className="footer-nav flex-nowrap overflow-auto",
-        style={"white-space": "nowrap"}
+        className="footer-nav-wrapper"
     )
+
+
+
 
 
 def create_modal_register():
