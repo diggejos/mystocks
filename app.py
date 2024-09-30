@@ -390,7 +390,7 @@ def update_ui_on_page_load(pathname):
      Input('login-status', 'data'),
      Input('login-username-store', 'data')
      ],
-    prevent_initial_call=True
+    prevent_initial_call='initial_duplicate'
 )
 def display_page(pathname, login_status, username):
     # Set a default layout in case no conditions are met
