@@ -424,10 +424,10 @@
     content: "";
     position: fixed; /* Stay fixed to the viewport */
     right: 0;
-    bottom: 5px;
+    bottom: 0px;
     top: auto; /* Ensure it's at the bottom of the viewport */
     width: 50px; /* Adjust width as needed */
-    height: 60px; /* Adjust height if needed */
+    height: 64px; /* Adjust height if needed */
     background: linear-gradient(to left, rgba(0, 0, 0, 0.3), transparent);
     pointer-events: none; /* Ensure it doesn't block scrolling */
     z-index: 1600; /* Ensure it's on top of the footer */
@@ -522,7 +522,7 @@
 
 #filters-collapse {
     /*position: fixed;*/
-    top: 80px; /* Adjust this value to leave space for the button */
+    top: 65px; /* Adjust this value to leave space for the button */
     left: 0;
     width: 85%; /* Set to 80% width for mobile */
     z-index: 1000; /* Ensure it stays above other elements */
@@ -555,7 +555,7 @@
     #filters-collapse {
         display: none; /* Initially hidden */
         position: fixed;
-        top: 135px; /* Ensure collapse starts below the button */
+        top: 75px; /* Ensure collapse starts below the button */
         width: 70%; /* Set the width to 80% for mobile */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);*/
         height: 60%; /* Shadow around the entire box */
@@ -710,4 +710,9 @@ a:hover {
     background-color: #28a745;
     color: white;
     /*border-radius: 5px;*/
+}
+.sticky-tabs {
+    position: sticky !important;
+    top: 75px;
+    z-index: 1000;  /* Ensures it stays on top */
 }
