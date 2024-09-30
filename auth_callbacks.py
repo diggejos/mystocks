@@ -19,12 +19,11 @@ def register_auth_callbacks(app, server, mail):
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
      Output('profile-link', 'style', allow_duplicate=True),
-     Output('register-link', 'style', allow_duplicate=True),  # Register link visibility
+     Output('register-link', 'style', allow_duplicate=True),
      Output('theme-store', 'data', allow_duplicate=True),
      Output('plotly-theme-store', 'data', allow_duplicate=True),
-     Output('page-content', 'children'),  # Redirect by changing the content
-     Output('login-output', 'children'),  # Output for the error message
-     Output('url', 'pathname')],  # Use this to redirect on login success
+     Output('login-output', 'children'),
+     Output('url', 'pathname')],
     [Input('login-button', 'n_clicks')],
     [State('login-username', 'value'),
      State('login-password', 'value')],
@@ -46,11 +45,10 @@ def register_auth_callbacks(app, server, mail):
                     {"display": "block"},  # Show register link
                     themes['MATERIA']['dbc'],  # Reset theme
                     'plotly_white',  # Reset plotly theme
-                    login_layout,  # Return to login layout
                     error_message,  # Display error message
                     dash.no_update  # Don't change the URL
                 )
-            
+    
             # Email verification check
             if not user.confirmed:
                 return (
@@ -62,7 +60,6 @@ def register_auth_callbacks(app, server, mail):
                     {"display": "block"},  # register-link
                     themes['MATERIA']['dbc'],  # theme-store
                     'plotly_white',  # plotly-theme-store
-                    login_layout,  # Return to login layout
                     dbc.Alert("Please confirm your email address.", color="warning", className="mt-2"),  # Email confirmation alert
                     dash.no_update  # Don't change the URL
                 )
@@ -71,7 +68,6 @@ def register_auth_callbacks(app, server, mail):
             session['logged_in'] = True
             session['username'] = username
             session.modified = True
-
     
             # Handle premium users without payment
             if user.subscription_status == 'premium' and not user.payment_status:
@@ -84,7 +80,6 @@ def register_auth_callbacks(app, server, mail):
                     {"display": "none"},  # hide register-link
                     themes['MATERIA']['dbc'],  # theme-store
                     'plotly_white',  # plotly-theme-store
-                    html.Div(),  # Page content (optional: a message about payment)
                     dash.no_update,  # Stay on current page
                     '/create-checkout-session'  # Redirect to the payment page
                 )
@@ -103,7 +98,6 @@ def register_auth_callbacks(app, server, mail):
                     {"display": "block"},  # register-link remains visible for upgrade
                     themes[user_theme]['dbc'],  # theme-store
                     plotly_theme,  # plotly-theme-store
-                    dashboard_layout,  # Redirect to dashboard
                     dash.no_update,  # No error message
                     '/'  # Redirect to dashboard
                 )
@@ -121,122 +115,12 @@ def register_auth_callbacks(app, server, mail):
                 {"display": "none"},  # register-link hidden for premium users
                 themes[user_theme]['dbc'],  # theme-store
                 plotly_theme,  # plotly-theme-store
-                dashboard_layout,  # Redirect to dashboard
                 dash.no_update,  # No error message
                 '/'  # Redirect to dashboard
             )
     
         # If no clicks yet, prevent updates
         raise PreventUpdate()
-
-    
-    
-    # @app.callback(
-    # [Output('login-status', 'data', allow_duplicate=True),
-    #  Output('login-username-store', 'data', allow_duplicate=True),
-    #  Output('login-link', 'style', allow_duplicate=True),
-    #  Output('logout-button', 'style', allow_duplicate=True),
-    #  Output('profile-link', 'style', allow_duplicate=True),
-    #  Output('register-link', 'style', allow_duplicate=True),  # Register link visibility
-    #  Output('theme-store', 'data', allow_duplicate=True),
-    #  Output('plotly-theme-store', 'data', allow_duplicate=True),
-    #  Output('page-content', 'children'),  # Redirect by changing the content
-    #  Output('url', 'pathname')],  # Use this to redirect on login success
-    # [Input('login-button', 'n_clicks')],
-    # [State('login-username', 'value'),
-    #  State('login-password', 'value')],
-    # prevent_initial_call=True
-    # )
-    # def handle_login(login_clicks, username, password):
-    #     if login_clicks:
-    #         user = User.query.filter_by(username=username).first()
-    #         if user and bcrypt.check_password_hash(user.password, password):
-    #             # Check if the user has verified their email
-    #             if not user.confirmed:
-    #                 return (
-    #                     False,  # login-status
-    #                     None,  # login-username-store
-    #                     {"display": "block"},  # login-link
-    #                     {"display": "none"},  # logout-button
-    #                     {"display": "none"},  # profile-link
-    #                     {"display": "block"},  # register-link visible
-    #                     themes['MATERIA']['dbc'],  # theme-store
-    #                     'plotly_white',  # plotly-theme-store
-    #                     login_layout,  # page-content
-    #                     dash.no_update  # url.pathname
-    #                 )
-    
-    #             # Set session values
-    #             session['logged_in'] = True
-    #             session['username'] = username
-    
-    #             # Handle premium users without payment
-    #             if user.subscription_status == 'premium' and not user.payment_status:
-    #                 # Redirect to payment page
-    #                 return (
-    #                     True,  # login-status
-    #                     username,  # login-username-store
-    #                     {"display": "none"},  # login-link
-    #                     {"display": "block"},  # logout-button
-    #                     {"display": "block"},  # profile-link
-    #                     {"display": "none"},  # hide register-link
-    #                     themes['MATERIA']['dbc'],  # theme-store
-    #                     'plotly_white',  # plotly-theme-store
-    #                     html.Div(),  # Page content (optional: a message about payment)
-    #                     '/create-checkout-session'  # Redirect to the payment page
-    #                 )
-    
-    #             # Handle free users (Keep register link visible for upgrading to premium)
-    #             if user.subscription_status == 'free':
-    #                 user_theme = user.theme if user.theme else 'MATERIA'
-    #                 plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-    
-    #                 return (
-    #                     True,  # login-status
-    #                     username,  # login-username-store
-    #                     {"display": "none"},  # login-link
-    #                     {"display": "block"},  # logout-button
-    #                     {"display": "block"},  # profile-link
-    #                     {"display": "block"},  # register-link remains visible for upgrade
-    #                     themes[user_theme]['dbc'],  # theme-store
-    #                     plotly_theme,  # plotly-theme-store
-    #                     dashboard_layout,  # page-content
-    #                     '/'  # Redirect to dashboard
-    #                 )
-    
-    #             # Handle premium users (who have paid)
-    #             user_theme = user.theme if user.theme else 'MATERIA'
-    #             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-    
-    #             return (
-    #                 True,  # login-status
-    #                 username,  # login-username-store
-    #                 {"display": "none"},  # login-link
-    #                 {"display": "block"},  # logout-button
-    #                 {"display": "block"},  # profile-link
-    #                 {"display": "none"},  # register-link hidden for premium users
-    #                 themes[user_theme]['dbc'],  # theme-store
-    #                 plotly_theme,  # plotly-theme-store
-    #                 dashboard_layout,  # page-content
-    #                 '/'  # Redirect to dashboard
-    #             )
-    #         else:
-    #             # Login failed, return to login page
-    #             return (
-    #                 False,  # login-status
-    #                 None,  # login-username-store
-    #                 {"display": "block"},  # login-link
-    #                 {"display": "none"},  # logout-button
-    #                 {"display": "none"},  # profile-link
-    #                 {"display": "block"},  # register-link visible
-    #                 themes['MATERIA']['dbc'],  # theme-store
-    #                 'plotly_white',  # plotly-theme-store
-    #                 login_layout,  # page-content
-    #                 dash.no_update  # url.pathname
-    #             )
-    
-    #     # If no clicks yet, prevent updates
-    #     raise PreventUpdate()
 
 
     @app.callback(
