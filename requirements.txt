@@ -18,3 +18,5 @@ openai
 apscheduler
 psycopg2-binary
 flask_mail
+stripe
+logging
