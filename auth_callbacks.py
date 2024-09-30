@@ -14,8 +14,8 @@ from dash import dcc, html
 # Define a function to register the callback
 def register_auth_callbacks(app, server, mail):
     @app.callback(
-    [Output('login-status', 'data', allow_duplicate=True),
-     Output('login-username-store', 'data', allow_duplicate=True),
+    [Output('login-status', 'data'),
+     Output('login-username-store', 'data'),
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
      Output('profile-link', 'style', allow_duplicate=True),
@@ -30,11 +30,32 @@ def register_auth_callbacks(app, server, mail):
     prevent_initial_call=True
     )
     def handle_login(login_clicks, username, password):
+        # Log the username and password to check their values
+        print(f"Username: {username}, Password: {password}")
+    
         if login_clicks:
+            # Check if the username or password is missing
+            if not username or not password:
+                error_message = dbc.Alert("Username and password are required.", color="danger", className="mt-2")
+                return (
+                    False,  # login-status
+                    None,  # login-username-store
+                    {"display": "block"},  # Show login link
+                    {"display": "none"},  # Hide logout button
+                    {"display": "none"},  # Hide profile link
+                    {"display": "block"},  # Show register link
+                    themes['MATERIA']['dbc'],  # Reset theme
+                    'plotly_white',  # Reset plotly theme
+                    error_message,  # Display error message
+                    dash.no_update  # Don't change the URL
+                )
+    
+            # Fetch the user from the database
             user = User.query.filter_by(username=username).first()
-            
+    
+            # Check if user exists and if password matches
             if not user or not bcrypt.check_password_hash(user.password, password):
-                # Login failed, return error message
+                # Invalid credentials, return error message
                 error_message = dbc.Alert("Invalid username or password.", color="danger", className="mt-2")
                 return (
                     False,  # login-status
@@ -325,10 +346,10 @@ def register_auth_callbacks(app, server, mail):
     
     @app.callback(
     [Output('login-status', 'data'),
-     Output('login-username-store', 'data'),
-     Output('login-link', 'style'),
-     Output('logout-button', 'style'),
-     Output('profile-link', 'style')],
+      Output('login-username-store', 'data'),
+      Output('login-link', 'style'),
+      Output('logout-button', 'style'),
+      Output('profile-link', 'style')],
     [Input('url', 'pathname')]
     )
     def check_session(pathname):
@@ -362,5 +383,3 @@ def register_auth_callbacks(app, server, mail):
     )
     def enable_disable_theme_dropdown(login_status):
         return not login_status
-
-    
