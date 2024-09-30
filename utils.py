@@ -13,6 +13,65 @@ from itsdangerous import URLSafeTimedSerializer
 from flask import url_for, redirect, flash
 from itsdangerous import URLSafeTimedSerializer
 import numpy as np
+from flask_mail import Mail, Message
+from flask import redirect, url_for
+from flask import render_template
+from flask_session import Session
+from models import User
+from flask import session
+
+
+
+
+
+def get_user_role():
+    # Check if user is logged in
+    logged_in = session.get('logged_in', False)
+    username = session.get('username', None)
+    
+    if not logged_in:
+        return 'logged_out'
+    
+    user = User.query.filter_by(username=username).first()
+    
+    # Define user roles based on subscription status
+    if user and user.subscription_status == 'premium':
+        return 'premium'
+    elif user:
+        return 'free'
+    else:
+        return 'logged_out'
+
+
+def send_welcome_email(user_email, username, mail):
+    msg = Message("Welcome to WatchMyStocks!", 
+                  sender="mystocks.monitoring@gmail.com", 
+                  recipients=[user_email])
+    msg.html = render_template('welcome_email.html', username=username)
+    mail.send(msg)
+    
+def send_confirmation_email(email, token, mail):
+     msg = Message('Confirm Your Email', sender='mystocks.monitoring@gmail.com', recipients=[email])
+     link = url_for('confirm_email', token=token, _external=True)
+     msg.body = f'Please confirm your email by clicking the link: {link}'
+     mail.send(msg)
+ 
+def send_reset_email(user_email, reset_url, mail):
+    msg = Message("Password Reset Request", 
+                  sender="mystocks.monitoring@gmail.com", 
+                  recipients=[user_email])
+    msg.html = render_template('reset_password_email.html', reset_url=reset_url)
+    mail.send(msg)
+    
+    
+def send_cancellation_email(user_email, username,mail):
+    msg = Message(
+        subject="Your WatchMyStocks Subscription Has Been Cancelled",
+        recipients=[user_email],
+        sender='mystocks.portfolio@gmail.com'
+    )
+    msg.html = render_template('cancellation_email.html', username=username)
+    mail.send(msg)   
 
 
 
@@ -383,8 +442,3 @@ def confirm_token(token, server, expiration=3600):
     return email
 
 
-def send_confirmation_email(email, token, mail):
-    msg = Message('Confirm Your Email', sender='mystocks.monitoring@gmail.com', recipients=[email])
-    link = url_for('confirm_email', token=token, _external=True)
-    msg.body = f'Please confirm your email by clicking the link: {link}'
-    mail.send(msg)
