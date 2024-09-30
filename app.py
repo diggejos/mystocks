@@ -393,6 +393,13 @@ def update_ui_on_page_load(pathname):
     prevent_initial_call=True
 )
 def display_page(pathname, login_status, username):
+    # Set a default layout in case no conditions are met
+    return_layout = (dashboard_layout, {"display": "block"}, 
+                     {"display": "block"},  # Default for register link
+                     {"display": "block"},  # Default for login link
+                     {"display": "none"},  # Default for logout button
+                     {"display": "none"})  # Default for profile link
+    
     user = User.query.filter_by(username=username).first() if username else None
     is_free_user = user and user.subscription_status == 'free'
 
