@@ -72,8 +72,6 @@ SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
 with app.server.app_context():
     db.create_all()
 
-
-
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
@@ -355,15 +353,14 @@ def subscription_success():
     """
 
 
-    
-  
+
 @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
-     Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style', allow_duplicate=True),
-     Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True),
-     Output('register-link', 'style', allow_duplicate=True)],
+      Output('login-username-store', 'data', allow_duplicate=True),
+      Output('login-link', 'style', allow_duplicate=True),
+      Output('logout-button', 'style', allow_duplicate=True),
+      Output('profile-link', 'style', allow_duplicate=True),
+      Output('register-link', 'style', allow_duplicate=True)],
     [Input('url', 'pathname')],
     prevent_initial_call=True
 )
@@ -1137,6 +1134,7 @@ def update_plotly_theme(theme):
     elif theme == dbc.themes.SOLAR:
         return 'plotly_dark'
     return 'plotly_white'
+
 
 app.clientside_callback(
     """
