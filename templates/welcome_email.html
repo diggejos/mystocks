@@ -1,0 +1,91 @@
+<!-- templates/welcome_email.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            background-color: #ffffff;
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 24px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .advantages {
+            margin-top: 20px;
+            padding-left: 0;
+        }
+        .advantages li {
+            list-style: none;
+            font-size: 16px;
+            margin: 10px 0;
+            color: #2c3e50;
+        }
+        .advantages li:before {
+            content: '✓';
+            color: green;
+            font-weight: bold;
+            display: inline-block; 
+            width: 20px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #999;
+            margin-top: 30px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1abc9c;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .button:hover {
+            background-color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to MyStocks!</h1>
+        <p>Hi {{ username }},</p>
+        <p>We're excited to have you on board! As a registered member, you gain access to a wealth of tools and insights designed to help you make better stock market decisions. Here’s what you can expect:</p>
+
+        <ul class="advantages">
+            <li>Real-time stock tracking for your favorite companies</li>
+            <li>Customized watchlists and personalized alerts</li>
+            <li>Top stock recommendations based on KPIs and risk tolerance</li>
+            <li>Access to exclusive financial news and insights</li>
+            <li>Priority access to new features and updates</li>
+        </ul>
+
+        <p>Click the button below to get started and explore your dashboard:</p>
+
+        <div style="text-align: center;">
+            <a href="https://mystocksportfolio.io/dashboard" class="button">Go to Dashboard</a>
+        </div>
+
+        <p class="footer">If you have any questions, feel free to contact us at mystocks.portfolio@gmail.com.<br>Happy investing!<br>The MyStocks Team</p>
+    </div>
+</body>
+</html>

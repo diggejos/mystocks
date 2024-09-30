@@ -1,0 +1,83 @@
+<!-- templates/cancellation_email.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            background-color: #ffffff;
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #e74c3c;
+            text-align: center;
+            font-size: 24px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .farewell {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #999;
+            margin-top: 30px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #e74c3c;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .button:hover {
+            background-color: #c0392b;
+        }
+        .container .note {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-left: 5px solid #f39c12;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>We're sorry to see you go, {{ username }}.</h1>
+        <p>Hi {{ username }},</p>
+        <p>We noticed that you’ve cancelled your subscription to MyStocks. We want to thank you for being part of our community, and we hope that MyStocks has been valuable in your stock trading journey.</p>
+
+        <div class="note">
+            <p>If there's anything we could have done better or any reason for your cancellation, we'd love to hear from you. Your feedback is important to us.</p>
+        </div>
+
+        <p class="farewell">Even though you’ve canceled your subscription, you’ll still have access to our free features. You can upgrade again at any time!</p>
+
+        <p>Click the button below to visit your account and rejoin the premium membership when you're ready:</p>
+
+        <div style="text-align: center;">
+            <a href="https://mystocksportfolio.io/profile" class="button">Manage Account</a>
+        </div>
+
+        <p class="footer">If you have any questions or concerns, don’t hesitate to reach out to us at mystocks.portfolio@gmail.com.<br>Thanks again for using MyStocks!<br>The MyStocks Team</p>
+    </div>
+</body>
+</html>
