@@ -9,6 +9,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -18,7 +19,9 @@ class User(db.Model):
     watchlists = db.relationship('Watchlist', backref='user', lazy=True)
     confirmed = db.Column(db.Boolean, default=False)
     confirmed_on = db.Column(db.DateTime, nullable=True)
-
+    subscription_status = db.Column(db.String(50), default="inactive")  # Track subscription status
+    payment_status = db.Column(db.Boolean, default=False)  # Added field for payment status
+    stripe_subscription_id = db.Column(db.String(100), nullable=True)  # Add stripe_subscription_id
 
 class Watchlist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,4 +45,5 @@ class StockKPI(db.Model):
     risk_tolerance = db.Column(db.String(10), nullable=False)  # "low", "medium", or "high"
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     batch_id = db.Column(db.Integer, nullable=False)  # New field to track load batches
+
 
