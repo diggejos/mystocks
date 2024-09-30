@@ -1,6 +1,8 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 import pandas as pd
+# from auth_callbacks import show_overlay_if_logged_out
+
 
 
 
@@ -25,8 +27,8 @@ def create_navbar(themes):
                     [
                         dbc.Col(
                             dbc.NavbarBrand([
-                                html.Img(src='/assets/logo_with_transparent_background.png', height='50px'),
-                                "MySTOCKS", 
+                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px'),
+                                "WatchMyStocks", 
                             ], href="/", className="ms-3", style={"font-size": "16px"})  # Add margin on the left side of the logo
                         ),
                     ],
@@ -53,7 +55,7 @@ def create_navbar(themes):
                             dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
                             dbc.NavItem(dbc.NavLink("ℹ️ Demo", href="/about", active="exact")),
                             dbc.NavItem(dbc.NavLink("👤 Profile", href="/profile", active="exact", id='profile-link', style={"display": "none"})),
-                            dbc.NavItem(dbc.NavLink("📝 Register", href="/register", active="exact", id='register-link')),
+                            dbc.NavItem(dbc.NavLink("📝 Sign up", href="/register", active="exact", id='register-link')),
                             dbc.NavItem(dbc.NavLink("🔐 Login", href="/login", active="exact", id='login-link', style={"display": "block"})),
                             # Group Logout button
                             html.Div(
@@ -70,6 +72,7 @@ def create_navbar(themes):
                                     in_navbar=True,
                                     label="🎨 Select Theme",
                                     id='theme-dropdown',
+                                    disabled=False
                                 ),
                                 id='theme-dropdown-wrapper',
                                 n_clicks=0,
@@ -94,6 +97,7 @@ def create_navbar(themes):
         dark=True,
         className="sticky-top mb-4"
     )
+
 
 
 
@@ -128,37 +132,63 @@ def create_sticky_footer_mobile():
 
 
 
-
 def create_modal_register():
     return html.Div([
         # Store to track if modal has been shown
         dcc.Store(id='modal-shown-store', data=False),
         
         # Interval to trigger modal after a certain time
-        dcc.Interval(id='register-modal-timer', interval=90*1000, n_intervals=0),  # 30 seconds
+        dcc.Interval(id='register-modal-timer', interval=90*1000, n_intervals=0),  # 7 seconds
         
         # Register modal with header, body, and footer
         dbc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("Don't Miss Out!")),
-                dbc.ModalBody("Register now for free to unlock all features: Save your personal watchlist(s), get analyst recommendations and more."),
+                dbc.ModalHeader(
+                    dbc.ModalTitle("🚀 Unlock Your Full Potential!"),
+                    className="bg-primary text-white text-center"
+                ),
+                dbc.ModalBody([
+                    html.Div(
+                        [
+                            html.H4("Why Register?", className="text-center mb-4"),
+                            html.Ul([
+                                html.Li("🔒 Personalized Watchlists"),
+                                html.Li("📈 Analyst recommendations"),
+                                html.Li("🚀 Stock suggestions based on KPIs"),
+                            ], className="benefits-list", style={"line-height": "1.8", "font-size": "1rem", "text-align": "left"}),
+                            html.P("Don't miss out on these powerful tools designed for smart investors!", 
+                                   className="text-center mt-4")
+                        ],
+                        className="modal-content-container"
+                    )
+                ]),
                 dbc.ModalFooter(
-                    dbc.Button("Register", href="/register", color="primary", className="ms-auto", id="close-register-modal-button"),
+                    dbc.Button(
+                        "Sign Up for Free",
+                        href="/register",
+                        color="success",
+                        className="ms-auto register-button text-center",
+                        id="close-register-modal-button",
+                        # style={"font-size": "1.2rem", "padding": "0.8rem 1.5rem"}
+                    ),
                 ),
             ],
             id="register-modal",
             is_open=False,  # Initially closed
             backdrop="static",  # Prevent closing by clicking outside
-            keyboard=False  # Prevent closing with escape key
+            keyboard=False,  # Prevent closing with escape key
+            className="stylish-modal"
         )
     ])
+
+
 
 
 def create_overlay():
     return dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Access Restricted")),
-            dbc.ModalBody("Please register or log in to use this feature."),
+            dbc.ModalBody("Please register or log in to save watchlist or change themes"),
             dbc.ModalFooter(
                 dbc.Button("Please register or login", href="/login", color="primary", id="overlay-registerP-button")
             ),
@@ -170,7 +200,7 @@ def create_overlay():
 
 def create_floating_chatbot_button():
     return html.Div(
-        dbc.Button("💬 ask me", id="open-chatbot-button", color="primary", className="chatbot-button"),
+        dbc.Button("💬", id="open-chatbot-button", color="primary", className="chatbot-button"),
         style={
             "position": "fixed",
             "bottom": "100px",
@@ -228,7 +258,10 @@ def create_chatbot_modal():
         id="chatbot-modal",
         size="lg",
         is_open=False,
-        className="bg-primary"  # Start closed
+        className="bg-primary" , # Start closed
+        style={
+            "z-index": "2000",
+        }    
     )
 
 
@@ -239,7 +272,7 @@ def create_footer():
                 dbc.Col([
                     html.H5("Direction", style={"display": "none"}),  # Hide the heading
                     html.Ul([
-                        html.Li(html.A("About MyStocks", href="/about", className="footer-link")),
+                        html.Li(html.A("About WatchMyStocks", href="/about", className="footer-link")),
                         html.Li(html.A("Contact Us", href="mailto:mystocks.monitoring@gmail.com?subject=mystocks%20request", className="footer-link")),
                         html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
                     ], className="list-unstyled")
@@ -247,7 +280,7 @@ def create_footer():
             ]),
             html.A(
                 html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "auto"}),
-                href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out MyStocks!",
+                href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out WatchMyStocks!",
                 target="_blank",
                 style={"margin-right": "10px"}
             ),
@@ -259,7 +292,7 @@ def create_footer():
             ),
             dbc.Row([
                 dbc.Col([
-                    html.P("© 2024 MyStocks. All rights reserved.", className="text-center")
+                    html.P("© 2024 WatchMyStocks. All rights reserved.", className="text-center")
                 ], className="d-flex justify-content-center")
             ])
         ], fluid=True),
@@ -267,13 +300,19 @@ def create_footer():
     )
 
 
+
 def create_watchlist_management_layout():
     return dbc.Container([
-        html.Label("Saved Watchlists:", className="font-weight-bold", style={"margin-top": "10px"}),
+        
+        html.Label([
+            "Saved ",
+            html.Span("Watchlists", className="bg-success text-white rounded px-2")
+        ]),
+        # html.Label("Saved Watchlists:", className="font-weight-bold", style={"margin-top": "10px"}),
         html.Div([
             dcc.Dropdown(
                 id='saved-watchlists-dropdown',
-                placeholder="Select a Watchlist",
+                placeholder="Select a saved Watchlist",
                 options=[],
                 disabled=True,
                 searchable=False,
@@ -282,13 +321,143 @@ def create_watchlist_management_layout():
         ]),
         dcc.Input(
             id='new-watchlist-name',
-            placeholder="Enter Watchlist Name",
+            placeholder="Enter Watchlist Name and save it",
             className="form-control",
             disabled=True
         ),
-        dbc.Button("💾 save", id='create-watchlist-button', color='primary', className='', disabled=False),
-        dbc.Button("X delete", id='delete-watchlist-button', color='danger', className='', disabled=False)
+        dbc.Button("💾 save", id='create-watchlist-button', color='primary', className="grayed-out small-button"),
+        dbc.Button("X delete", id='delete-watchlist-button', color='danger', className="grayed-out small-button")
     ])
+
+
+def paywall_logged_out():
+    return html.Div(
+        className="bg-primary bg-primary-with-shadow",
+        children=[
+            html.Div([
+                html.P("Please ", style={'display': 'inline', 'font-size': '18px'}),
+                html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline', 'font-size': '18px'}),
+                html.P(" or ", style={'display': 'inline', 'font-size': '18px'}),
+                html.A("sign up", href="/register", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline', 'font-size': '18px'}),
+                html.P(" to Premium to view this content.", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
+            ], style={'text-align': 'center', 'margin-top': '50px'}),
+            
+            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+
+            html.Ul([
+                html.Li("🔥 Access to top-performing stocks based on KPIs", style={'font-size': '16px'}),
+                html.Li("📈 Weekly updates on the hottest stocks", style={'font-size': '16px'}),
+                html.Li("💼 Personalized recommendations based on your risk profile", style={'font-size': '16px'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            
+            html.Div([
+                dbc.Button("Sign Up", href="/register", color="success", size="lg", className="mt-3 me-3"),
+                dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
+            ], style={'text-align': 'center'}),
+        ],
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#007bff'}
+    )
+
+
+def paywall_free_user():
+    return html.Div(
+        className="bg-primary bg-primary-with-shadow",
+        children=[
+            html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '50px'}),
+
+            html.P("Upgrade to premium and you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+
+            html.Ul([
+                html.Li("🔥 Top-performing stocks based on financial KPIs", style={'font-size': '16px'}),
+                html.Li("📈 Weekly updates on the hottest stocks", style={'font-size': '16px'}),
+                html.Li("💼 Personalized recommendations based on your risk profile", style={'font-size': '16px'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            
+            html.Div([
+                dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
+            ], style={'text-align': 'center'}),
+        ],
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#ffc107'}
+    )
+
+def paywall_logged_out_forecast():
+    return html.Div(
+        className="bg-primary bg-primary-with-shadow",
+        children=[
+            html.Div([
+                html.P("Please ", style={'display': 'inline', 'font-size': '18px'}),
+                html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline', 'font-size': '18px'}),
+                html.P(" or ", style={'display': 'inline', 'font-size': '18px'}),
+                html.A("sign up", href="/register", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline', 'font-size': '18px'}),
+                html.P(" to Premium to view this content.", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
+            ], style={'text-align': 'center', 'margin-top': '50px'}),
+            
+            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+
+            html.Ul([
+                html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
+                html.Li("📈 Perform up to 3 forecasts simultaneously", style={'font-size': '16px', 'text-align': 'left'}),
+                html.Li("⏱️ Choose your individual forecast horizon", style={'font-size': '16px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            
+            html.Div([
+                dbc.Button("Sign Up", href="/register", color="success", size="lg", className="mt-3 me-3"),
+                dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
+            ], style={'text-align': 'center'}),
+        ],
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#007bff'}
+    )
+
+
+def paywall_free_user_forecast():
+    return html.Div(
+        className="bg-primary bg-primary-with-shadow",
+        children=[
+            html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '50px'}),
+
+            html.P("Upgrade to premium and you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+
+            html.Ul([
+                html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
+                html.Li("📈 Perform up to 3 forecasts simultaneously", style={'font-size': '16px', 'text-align': 'left'}),
+                html.Li("⏱️ Choose your individual forecast horizon", style={'font-size': '16px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            
+            html.Div([
+                dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
+            ], style={'text-align': 'center'}),
+        ],
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#ffc107'}
+    )
+
+
+def paywall_recommendation():
+    return html.Div(
+        className="bg-primary bg-primary-with-shadow",
+        children=[
+            html.Div([
+                html.P("Please ", style={'display': 'inline', 'font-size': '18px'}),
+                html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline', 'font-size': '18px'}),
+                html.P(" or ", style={'display': 'inline', 'font-size': '18px'}),
+                html.A("sign up", href="/register", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline', 'font-size': '18px'}),
+                html.P(" for free to view this content.", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
+            ], style={'text-align': 'center', 'margin-top': '50px'}),
+            
+            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+
+            html.Ul([
+                html.Li("💸 sell, hold and buy analyst recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
+                html.Li("📈 historical change of recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
+                html.Li("🔎 get recommendations for your watchlist", style={'font-size': '16px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            
+            html.Div([
+                dbc.Button("Sign Up", href="/register", color="success", size="lg", className="mt-3 me-3"),
+                dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
+            ], style={'text-align': 'center'}),
+        ],
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#007bff'}
+    )
 
 
 def create_dashboard_layout(watchlist_management_layout):
@@ -296,44 +465,53 @@ def create_dashboard_layout(watchlist_management_layout):
         dbc.Row([
             # Sidebar Filters (for both mobile and desktop)
             dbc.Col([
-                html.H1("Stocks monitoring dashboard - MyStocks", style={"display": "none"}),
+                html.H1("Stocks monitoring dashboard - WatchMyStocks", style={"display": "none"}),
                 html.H2("Stocks monitoring made easy. Create multiple personal watchlists", style={"display": "none"}), 
                 html.Div([
-                    html.P("Welcome to MyStocks - the ultimate platform for stock monitoring. Track stock prices, analyze market trends, and create personalized watchlists with ease. Our dashboard is designed to provide real-time data, forecasts, and insights tailored to your investment portfolio."),
-                    html.P("With MyStocks, you can compare stock performance, simulate investments, and access the latest news and analyst recommendations. Whether you're a seasoned trader or a beginner, MyStocks offers tools and features that help you make informed investment decisions."),
-                    html.P("Create multiple custom watchlists and monitor your stocks with real-time updates. MyStocks allows you to easily manage and organize your investments across different watchlists."),
-                    html.P("Get access to historical stock data and perform in-depth analysis with our comprehensive charting tools. MyStocks also offers forecasting features, allowing you to predict future stock prices using advanced algorithms."),
+                    html.P("Welcome to WatchMyStocks - the ultimate platform for stock monitoring. Track stock prices, analyze market trends, and create personalized watchlists with ease. Our dashboard is designed to provide real-time data, forecasts, and insights tailored to your investment portfolio."),
+                    html.P("With WatchMyStocks, you can compare stock performance, simulate investments, and access the latest news and analyst recommendations. Whether you're a seasoned trader or a beginner, MyStocks offers tools and features that help you make informed investment decisions."),
+                    html.P("Create multiple custom watchlists and monitor your stocks with real-time updates. WatchMyStocks allows you to easily manage and organize your investments across different watchlists."),
+                    html.P("Get access to historical stock data and perform in-depth analysis with our comprehensive charting tools. WatchMyStocks also offers forecasting features, allowing you to predict future stock prices using advanced algorithms."),
                     html.P("Our platform also integrates with popular news sources to provide you with up-to-date news and information on your favorite stocks."),
-                    html.P("MyStocks is your one-stop solution for stock monitoring, forecasting, news aggregation, and personalized investment tools. Try MyStocks today and take control of your investments like never before."),
+                    html.P("WatchMyStocks is your one-stop solution for stock monitoring, forecasting, news aggregation, and personalized investment tools. Try WatchMyStocks today and take control of your investments like never before."),
                     html.P("Key Features: Historical Stock Price Tracking, Stock Market News, Profit/Loss Simulation, Analyst Recommendations, Time Series Forecasting, Personalized Watchlist, Stock Performance Comparison, Intelligent Financial Chatbot."),
                 ], style={"display": "none"}),  # This text is hidden but available for SEO
 
                 # Toggle button (only visible on mobile)
                 dbc.Button(
-                    "⚙️ Manage your Stocks here",
                     id="toggle-filters-button",
-                    color="danger",
+                    color="success",
                     outline=False,
                     size="sm",
                     className="mobile-only",
                     style={
                         "position": "fixed",
-                        "top": "90px",
+                        "top": "85px",
                         "left": "10px",
                         "z-index": "1001",
-                        "margin-bottom": "15px",
-                        "font-weight": "bold"
-                    }
+                        "margin-bottom": "10px",
+                        "font-weight": "bold",
+                        "font-size": "14px"
+                    },
+                    children=html.Span([
+                        "🔽 Stock ",
+                        html.Span("Selection", className="bg-primary text-white rounded px-2 fs-5")
+                    ], className="fs-5")
                 ),
                 html.Div(id="mobile-overlay", className="mobile-overlay", style={"display": "none"}),
+                dcc.Store(id='button-state', data=False) , # False means closed, True means open
+
 
                 # Offcanvas Filters (for mobile and hidden on desktop)
                 dbc.Collapse(
                     dbc.Card([
                         dbc.CardBody([
                             html.H2("Filter stocks, create custom watchlist", style={"display": "none"}),  # for SEO
-
                             html.Div([
+                                html.H3([
+                                    "Stock ",
+                                    html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                ]),
                                 dcc.Dropdown(
                                     id='stock-suggestions-input',
                                     options=[],
@@ -357,7 +535,11 @@ def create_dashboard_layout(watchlist_management_layout):
                             ]),
                             
                             html.Div([
-                                html.Label("Select Date Range:", className="font-weight-bold"),
+                                html.Label([
+                                    "Select ",
+                                    html.Span("Date Range", className="bg-success text-white rounded px-2")
+                                ]),
+                                # html.Label("Select Date Range:", className="font-weight-bold"),
                                 dcc.Dropdown(
                                     id='predefined-ranges', searchable=False,
                                     options=[
@@ -391,6 +573,11 @@ def create_dashboard_layout(watchlist_management_layout):
                         dbc.Tab(label='📰 News', tab_id="news-tab", children=[
                             dbc.Card(
                                 dbc.CardBody([
+                                    # html.P("Filter your Stocks from selection here"),
+                                    html.P([
+                                        "Filter Stocks from ",
+                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
                                     dcc.Dropdown(
                                         id='news-stock-dropdown',
                                         options=[],  
@@ -408,6 +595,10 @@ def create_dashboard_layout(watchlist_management_layout):
                         dbc.Tab(label='📈 Prices', tab_id="prices-tab", children=[
                             dbc.Card(
                                 dbc.CardBody([
+                                    html.P([
+                                        "Filter Stocks from ",
+                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
                                     dcc.Dropdown(
                                         id='prices-stock-dropdown',
                                         options=[],  
@@ -459,40 +650,22 @@ def create_dashboard_layout(watchlist_management_layout):
                                         ],
                                         value='medium',  # Default to medium risk
                                         placeholder="Select Risk Tolerance",
-                                        clearable=False
+                                        clearable=False,
+                                        searchable=False
                                     ),
                                     dcc.Loading(
                                         id="loading-top-stocks",
-                                        children=[html.Div(id='top-stocks-table')],
+                                        children=[html.Div(id='top-stocks-table')],  # Placeholder for the stocks table
                                         type="default"
                                     ),
                         
+                                    # This Div will dynamically show the appropriate paywall (logged-out, free, or none)
                                     html.Div(id='topshots-blur-overlay', style={
-                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
                                         'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
                                         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
                                         'backdrop-filter': 'blur(5px)'
-                                    }, children=[
-                                        html.Div(
-                                            className="bg-primary",  # Add Bootstrap class for background color
-                                            children=[
-                                                # Call to action (Sign-up prompt) moved to the top
-                                                html.P("Please ", style={'display': 'inline'}),
-                                                html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline'}),
-                                                html.P(" or ", style={'display': 'inline'}),
-                                                html.A("sign up", href="/register", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline'}),
-                                                html.P(" to view this content.", style={'display': 'inline', 'margin-bottom': '20px'}),
-                        
-                                                # List of benefits with checkmarks
-                                                html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '18px', 'font-weight': 'bold', 'margin-top': '20px'}),
-                                                html.Ul([
-                                                    html.Li("🔥 top-performing stocks based on financial KPIs", style={'font-size': '16px', 'text-align': 'left'}),
-                                                    html.Li("📈 Weekly updates on the hottest stocks", style={'font-size': '16px', 'text-align': 'left'}),
-                                                    html.Li("💼 Recommendations based on your risk profile", style={'font-size': '16px', 'text-align': 'left'}),
-                                                ], style={'list-style-type': '"✔️ "', 'margin-top': '20px'}),
-                                            ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '-350px', 'color': 'white', 'padding': '30px'}
-                                        )
-                                    ])
+                                    })
                                 ])
                             )
                         ]),
@@ -500,6 +673,10 @@ def create_dashboard_layout(watchlist_management_layout):
                         dbc.Tab(label='⚖️ Compare', tab_id="compare-tab", children=[
                             dbc.Card(
                                 dbc.CardBody([
+                                    html.P([
+                                        "Filter Stocks from ",
+                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
                                     html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
                                     dcc.Dropdown(
                                         id='indexed-comparison-stock-dropdown',
@@ -530,6 +707,10 @@ def create_dashboard_layout(watchlist_management_layout):
                         dbc.Tab(label='🌡️ Forecast', tab_id='forecast-tab', children=[
                             dbc.Card(
                                 dbc.CardBody([
+                                    html.P([
+                                        "Filter Stocks from ",
+                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
                                     html.H3("Forecast stocks prices", style={"display": "none"}),  # for SEO
                                     html.Div([
                                         html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
@@ -567,27 +748,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
                                         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
                                         'backdrop-filter': 'blur(5px)'
-                                    },  children=[
-                                        html.Div(
-                                            className="bg-primary",  # Add Bootstrap class for background color
-                                            children=[
-                                                # Call to action (Sign-up prompt) moved to the top
-                                                html.P("Please ", style={'display': 'inline'}),
-                                                html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline'}),
-                                                html.P(" or ", style={'display': 'inline'}),
-                                                html.A("sign up", href="/register", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline'}),
-                                                html.P(" to view this content.", style={'display': 'inline', 'margin-bottom': '20px'}),
-                        
-                                                # List of benefits with checkmarks
-                                                html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '18px', 'font-weight': 'bold', 'margin-top': '20px'}),
-                                                html.Ul([
-                                                    html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
-                                                    html.Li("📈 Perform up to 3 forecasts simultaneously", style={'font-size': '16px', 'text-align': 'left'}),
-                                                    html.Li("⏱️ Choose your individual forecast horizon", style={'font-size': '16px', 'text-align': 'left'}),
-                                                ], style={'list-style-type': '"✔️ "', 'margin-top': '20px'}),
-                                            ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '-350px', 'color': 'white', 'padding': '30px'}
-                                        )
-                                    ])
+                                    })  
+                      
                                 ])
                                    
                             )
@@ -595,44 +757,33 @@ def create_dashboard_layout(watchlist_management_layout):
                         dbc.Tab(label='❤️ Recommendations', tab_id='recommendations-tab', children=[
                             dbc.Card(
                                 dbc.CardBody([
+                                    html.P([
+                                        "Find your Stocks from ",
+                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
                                     html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO
                                     dcc.Loading(
                                         id="loading-analyst-recommendations",
                                         type="default",
                                         children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
                                     ),
-                                    html.Div(id='blur-overlay', style={
+                                    html.Div(id='recommendation-blur-overlay', style={
                                         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
                                         'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
                                         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
                                         'backdrop-filter': 'blur(5px)'
-                                    }, children=[
-                                        html.Div(
-                                            className="bg-primary",  # Add Bootstrap class for background color
-                                            children=[
-                                                # Call to action (Sign-up prompt) moved to the top
-                                                html.P("Please ", style={'display': 'inline'}),
-                                                html.A("log in", href="/login", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline'}),
-                                                html.P(" or ", style={'display': 'inline'}),
-                                                html.A("sign up", href="/register", style={'display': 'inline', 'color': 'blue', 'text-decoration': 'underline'}),
-                                                html.P(" to view this content.", style={'display': 'inline', 'margin-bottom': '20px'}),
-                        
-                                                # List of benefits with checkmarks
-                                                html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '18px', 'font-weight': 'bold', 'margin-top': '20px'}),
-                                                html.Ul([
-                                                    html.Li("💸 sell, hold and buy analyst recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
-                                                    html.Li("📈 historical change of recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
-                                                    html.Li("🔎 get recommendations for your watchlist", style={'font-size': '16px', 'text-align': 'left'}),
-                                                ], style={'list-style-type': '"✔️ "', 'margin-top': '20px'}),
-                                            ], style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '-350px', 'color': 'white', 'padding': '30px'}
-                                        )
-                                    ])
+                                    })
+                                  
                                 ])
                             )
                         ]),
                         dbc.Tab(label='📊 Simulate', tab_id="simulate-tab", children=[
                             dbc.Card(
                                 dbc.CardBody([
+                                    html.P([
+                                        "Filter Stocks from ",
+                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
                                     html.H3("Simulate stock profits and losses over historical time period", style={"display": "none"}),  # for SEO
                                     html.Label("Stock Symbol:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -663,8 +814,8 @@ def create_dashboard_layout(watchlist_management_layout):
                             )
                         ])
 
-                    ], className="desktop-tabs bg-secondary"
-                )
+                    ], className="desktop-tabs bg-secondary sticky-tabs fs-5",                           
+                    )           
             ], width=12, md=9, xs=12)
         ], className='mb-4'),
 
@@ -685,6 +836,7 @@ def create_dashboard_layout(watchlist_management_layout):
 
 
 
+
 def create_profile_layout():
     return dbc.Container([
         dbc.Row([
@@ -697,35 +849,67 @@ def create_profile_layout():
                         dbc.Label("Username"),
                         dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
 
-                        # Email field
+                        # Email field (permanently disabled)
                         dbc.Label("Email"),
                         dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
 
-                        # Current Password field (Required to change the password)
-                        dbc.Label("Current Password"),
-                        dcc.Input(id='profile-current-password', type='password', disabled=True, placeholder="Enter current password", className='form-control mb-3'),
+                        # Subscription status
+                        dbc.Label("Subscription Status"),
+                        html.Div(id='profile-subscription', className='form-control mb-3'),
 
-                        # New Password field
-                        dbc.Label("New Password"),
-                        dcc.Input(id='profile-password', type='password', disabled=True, placeholder="Enter new password", className='form-control mb-3'),
+                        # Password section hidden initially
+                        dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),  # Hidden by default
+                        
+                        html.Div([
+                            dbc.Label("Current Password"),
+                            dcc.Input(id='profile-current-password', type='password', placeholder="Enter current password", className='form-control mb-3'),
 
-                        # Password requirement list
-                        html.Ul([
-                            html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
-                            html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
-                            html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
-                            html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
-                            html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
-                        ], className='mb-3', style={"display": "none"}),  # Initially hidden
+                            dbc.Label("New Password"),
+                            dcc.Input(id='profile-password', type='password', placeholder="Enter new password", className='form-control mb-3'),
 
-                        # Confirm New Password field
-                        dbc.Label("Confirm New Password"),
-                        dcc.Input(id='profile-confirm-password', type='password', disabled=True, placeholder="Confirm new password", className='form-control mb-3'),
+                            # Password requirement list
+                            html.Ul([
+                                html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
+                                html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
+                                html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
+                                html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
+                                html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
+                            ], className='mb-3'),
 
-                        # Edit and Save buttons
-                        dbc.Button("Edit", id='edit-profile-button', color='primary', className='mt-2'),
-                        dbc.Button("Save", id='save-profile-button', color='success', className='mt-2 ms-2', style={"display": "none"}),
-                        dbc.Button("Cancel", id='cancel-edit-button', color='danger', className='mt-2 ms-2', style={"display": "none"}),
+                            dbc.Label("Confirm New Password"),
+                            dcc.Input(id='profile-confirm-password', type='password', placeholder="Confirm new password", className='form-control mb-3'),
+                            
+                        ], id='password-fields-container', style={"display": "none"}),  # Password fields hidden by default
+                        dbc.Col(dbc.Button("Cancel Subscription", id="cancel-subscription-btn", color="danger", className="ml-auto")),
+                        dbc.Modal(
+                            [
+                                dbc.ModalHeader("Confirm Cancelation"),
+                                dbc.ModalBody([
+                                    html.P("Are you sure you want to cancel your subscription? You will lose access to the following features:"),
+                                    html.Ul([
+                                        html.Li("🔒 Personalized Watchlists"),
+                                        html.Li("📈 Analyst recommendations"),
+                                        html.Li("🚀 Stock suggestions based on KPIs"),
+                                    ]),
+                                ]),
+                                dbc.ModalFooter([
+                                    dbc.Button("No, Keep Subscription", id="close-cancel-modal-btn", className="ml-auto"),
+                                    dbc.Button("Yes, Cancel Subscription", id="confirm-cancel-btn", color="bg-secondary")
+                                ])
+                            ],
+                            id="cancel-subscription-modal",
+                            centered=True,
+                        ),
+                        html.Div(id="subscription-status", className="mt-4"),
+
+
+                        # Buttons aligned to the right
+                        html.Div([
+                            dbc.Button("Edit", id='edit-profile-button', color='primary', className='me-2'),
+                            dbc.Button("Save", id='save-profile-button', color='success', className='me-2', style={"display": "none"}),
+                            dbc.Button("Cancel", id='cancel-edit-button', color='danger', style={"display": "none"})
+                        ], style={"float": "right"}),
+                        
 
                         # Output area for messages
                         html.Div(id='profile-output', className='mt-3')
@@ -734,16 +918,79 @@ def create_profile_layout():
             ], width=12, md=6, className="mx-auto")
         ])
     ], fluid=True)
-             
 
-def create_register_layout():
+   
+
+
+            
+def create_subscription_selection_layout(is_free_user=False):
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.H1("Choose the Perfect Plan for You", className="text-center mt-5 mb-4"),
+                html.P("Unlock the best stock monitoring experience tailored to your needs.", className="text-center lead mb-5"),
+            ], width=12)
+        ]),
+
+        # Display both free and premium plan options
+        html.Div([
+            # Free Plan - greyed out for existing free users
+            dbc.Card([
+                dbc.CardHeader(html.H3("Free Plan", className="text-center text-success")),
+                dbc.CardBody([
+                    html.H4("What You Get", className="text-center mt-3"),
+                    html.Div([html.H5("Free access, no credit card", className="text-center text-success mb-4")]),
+                    html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
+                    html.Div(["🔍 Monitor your favorite stocks"], className="mb-3"),
+                    html.Div([html.Span("📈 Analyst recommendations", className="text-muted", style={'text-decoration': 'line-through'})], className="mb-3"),
+                    html.Div([html.Span("🚀 Stock suggestions based on KPIs", className="text-muted", style={'text-decoration': 'line-through'})], className="mb-3"),
+                    html.Div([html.Span("📊 Advanced stock forecasts", className="text-muted", style={'text-decoration': 'line-through'})], className="mb-3"),
+                    html.Div([
+                        dbc.Button("You are on Free Plan", color='secondary', className='w-100 mt-auto', disabled=is_free_user)
+                        if is_free_user else
+                        dbc.Button("Sign Up for Free", id='free-signup-button', color='success', className='w-100 mt-auto')
+                    ], className="d-grid gap-2 mb-3"),
+                ], className="p-4 d-flex flex-column h-100"),
+            ], className="shadow-sm h-100", style={"max-width": "400px"}),
+
+            # Premium Plan
+            dbc.Card([
+                dbc.CardHeader(html.H3("Premium Plan", className="text-center text-primary")),
+                dbc.CardBody([
+                    html.H4("What You Get", className="text-center mt-3"),
+                    html.Div([html.H5("$9.99 USD per month", className="text-center text-primary mb-4")]),
+                    html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
+                    html.Div(["🔍 Monitor your favorite stocks"], className="mb-3"),
+                    html.Div(["📈 Analyst recommendations"], className="mb-3"),
+                    html.Div(["🚀 Stock suggestions based on KPIs"], className="mb-3"),
+                    html.Div(["📊 Advanced stock forecasts"], className="mb-3"),
+                    html.Div([dbc.Button("Subscribe Now", id='paid-signup-button', color='primary', className='w-100 mt-auto')], className="d-grid gap-2 mb-3"),
+                ], className="p-4 d-flex flex-column h-100"),
+            ], className="shadow-lg h-100 border border-primary", style={"max-width": "400px"}),
+        ], style={
+            "display": "flex", 
+            "justify-content": "center", 
+            "gap": "30px",  
+            "flex-wrap": "wrap", 
+            "margin": "0 auto",
+        }),
+
+        dbc.Row([
+            dbc.Col([html.P("No credit card required for the Free Plan.", className="text-center text-muted mt-4")], width=12)
+        ]),
+    ], fluid=True)
+
+
+  
+
+def create_register_layout(plan):
     return dbc.Container([
         dbc.Row([
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
                         # Registration form fields
-                        html.H1("📝 Register", className="text-center mt-4"),
+                        html.H1(f"📝 Register ({plan.capitalize()} Plan)", className="text-center mt-4"),
                         dcc.Input(id='username', type='text', placeholder='Username', className='form-control mb-3'),
                         dcc.Input(id='email', type='email', placeholder='Email', className='form-control mb-3'),
                         dcc.Input(id='password', type='password', placeholder='Password', className='form-control mb-3'),
@@ -756,6 +1003,9 @@ def create_register_layout():
                             html.Li("At least one digit", id='req-digit', className='text-muted'),
                             html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='req-special', className='text-muted')
                         ], className='mb-3'),
+                        
+                        dcc.Store(id='selected-plan', data=plan),
+
 
                         # Confirm password
                         dcc.Input(id='confirm_password', type='password', placeholder='Confirm Password', className='form-control mb-3'),
@@ -793,16 +1043,19 @@ def create_login_layout():
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        # Login form fields
                         html.H1("🔐 Login", className="text-center"),
                         dcc.Input(id='login-username', type='text', placeholder='Username', className='form-control mb-3'),
                         dcc.Input(id='login-password', type='password', placeholder='Password', className='form-control mb-3'),
-                        
-                        # Login button
                         dbc.Button("Login", id='login-button', color='primary', className='mt-2 w-100'),
-                        html.Div(id='login-output', className='mt-3'),
-
-                        # Register link
+                        
+                        # Div for displaying error messages
+                        html.Div(id='login-output', className='mt-3'),  # Error message placeholder
+                        
+                        html.Div([
+                            html.P("Forgot your password?", className="text-center"),
+                            html.A("Reset Password", href="/forgot-password", className="text-center", style={"display": "block"}),
+                        ], className='mt-3'),
+                        
                         html.Div([
                             html.P("Don't have an account?", className="text-center"),
                             html.A("Register here", href="/register", className="text-center", style={"display": "block"})
@@ -811,10 +1064,10 @@ def create_login_layout():
                 ])
             ], width=12, md=6, className="mx-auto")
         ]),
+
         dbc.Row([
             dbc.Col([
-                # Welcome section
-                html.H3("Welcome to MyStocks Dashboard", className="text-center mt-5 mb-4"),
+                html.H3("Welcome to WatchMyStocks Dashboard", className="text-center mt-5 mb-4"),
                 html.P([
                     "Learn more about the application on the ",
                     html.A("About page.", href="/about", className="text-primary")
@@ -822,6 +1075,26 @@ def create_login_layout():
             ], width=12, md=6, className="mx-auto")
         ])
     ], fluid=True)
+
+
+
+def create_forgot_password_layout():
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H1("🔒 Reset Password", className="text-center"),
+                        html.P("Enter your email to reset your password.", className="text-center"),
+                        dcc.Input(id='reset-email', type='email', placeholder='Email', className='form-control mb-3'),
+                        dbc.Button("Send Reset Link", id='reset-button', color='primary', className='mt-2 w-100'),
+                        html.Div(id='reset-output', className='mt-3')
+                    ])
+                ])
+            ], width=12, md=6, className="mx-auto")
+        ])
+    ], fluid=True)
+
 
 
  
@@ -882,7 +1155,7 @@ def create_about_layout(create_carousel):
 
                 # Section: Why Choose MyStocks?
                 html.Div([
-                    html.H2("Why Choose MyStocks?", className="text-center mt-5 mb-3", style={"color": "black"}),
+                    html.H2("Why Choose WatchMyStocks?", className="text-center mt-5 mb-3", style={"color": "black"}),
                     html.P("Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. "
                            "User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. "
                            "Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. "
@@ -930,9 +1203,10 @@ def create_about_layout(create_carousel):
 watchlist_management_layout = create_watchlist_management_layout()
 dashboard_layout = create_dashboard_layout(watchlist_management_layout)
 login_layout = create_login_layout()
-register_layout = create_register_layout()
 carousel_layout = create_carousel()
 about_layout = create_about_layout(carousel_layout)
 profile_layout = create_profile_layout()
-                
-                    
+forgot_layout = create_forgot_password_layout()
+
+subscription_page = create_subscription_selection_layout()
+login_overlay = create_overlay()
