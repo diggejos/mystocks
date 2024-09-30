@@ -1144,16 +1144,6 @@ def update_plotly_theme(theme):
         return 'plotly_dark'
     return 'plotly_white'
 
-
-
-app.clientside_callback(
-    """
-    function(n_clicks) {
-        return window.dash_clientside.clientside.toggleFullScreen(n_clicks);
-    }
-    """,
-    Output("trigger-fullscreen", "data"),
-    [Input("fullscree
 app.clientside_callback(
     """
     function(n_clicks) {
