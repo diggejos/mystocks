@@ -783,31 +783,42 @@ def display_profile(pathname, login_status, username):
 
 
 @app.callback(
-    [Output('profile-username', 'disabled'),
-     Output('profile-email', 'disabled'),
-     Output('profile-current-password', 'disabled'),
-     Output('profile-password', 'disabled'),
-     Output('profile-confirm-password', 'disabled'),
-     Output('edit-profile-button', 'style'),
-     Output('save-profile-button', 'style'),
-     Output('cancel-edit-button', 'style'),
-     Output('profile-req-length', 'style'),
-     Output('profile-req-uppercase', 'style'),
-     Output('profile-req-lowercase', 'style'),
-     Output('profile-req-digit', 'style'),
-     Output('profile-req-special', 'style'),
-     Output('profile-output', 'children')],
-    [Input('edit-profile-button', 'n_clicks'),
-     Input('save-profile-button', 'n_clicks'),
-     Input('cancel-edit-button', 'n_clicks')],
-    [State('profile-username', 'value'),
-     State('profile-email', 'value'),
-     State('profile-current-password', 'value'),
-     State('profile-password', 'value'),
-     State('profile-confirm-password', 'value'),
-     State('login-username-store', 'data')]
+    [
+        Output('profile-username', 'disabled'),
+        Output('profile-email', 'disabled'),
+        Output('profile-current-password', 'disabled'),
+        Output('profile-password', 'disabled'),
+        Output('profile-confirm-password', 'disabled'),
+        Output('edit-profile-button', 'style'),
+        Output('save-profile-button', 'style'),
+        Output('cancel-edit-button', 'style'),
+        Output('profile-req-length', 'style'),
+        Output('profile-req-uppercase', 'style'),
+        Output('profile-req-lowercase', 'style'),
+        Output('profile-req-digit', 'style'),
+        Output('profile-req-special', 'style'),
+        Output('toggle-password-fields', 'style'),
+        Output('password-fields-container', 'style'),
+        Output('profile-output', 'children')
+    ],
+    [
+        Input('edit-profile-button', 'n_clicks'),
+        Input('save-profile-button', 'n_clicks'),
+        Input('cancel-edit-button', 'n_clicks'),
+        Input('toggle-password-fields', 'n_clicks')
+    ],
+    [
+        State('profile-username', 'value'),
+        State('profile-email', 'value'),
+        State('profile-current-password', 'value'),
+        State('profile-password', 'value'),
+        State('profile-confirm-password', 'value'),
+        State('login-username-store', 'data')
+    ],
+    prevent_initial_call=True
 )
-def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, email, current_password, new_password, confirm_password, current_username):
+def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_clicks, 
+                           username, email, current_password, new_password, confirm_password, current_username):
     ctx = dash.callback_context
     if not ctx.triggered:
         raise PreventUpdate
@@ -815,33 +826,52 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, em
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if triggered_id == 'edit-profile-button':
-        return (False, False, True, True, True, {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
-                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, "")
+        return (False, True, True, True, True,  # Disable email
+                {"display": "none"},  # Hide Edit button
+                {"display": "inline-block"},  # Show Save button
+                {"display": "inline-block"},  # Show Cancel button
+                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},  # Show requirements
+                {"display": "inline-block"},  # Show Change Password button
+                {"display": "none"},  # Hide password fields by default
+                "")
 
     elif triggered_id == 'save-profile-button':
+        # Handle validation and saving logic
         if not username or not email:
-            return (False, False, True, True, True, {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
-                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+            return (False, True, True, True, True,  # Disable email
+                    {"display": "inline-block"},  # Show Edit button
+                    {"display": "none"},  # Hide Save button
+                    {"display": "none"},  # Hide Cancel button
+                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},  # Hide requirements
+                    {"display": "none"},  # Hide Change Password button
+                    {"display": "none"},  # Hide password fields
                     dbc.Alert("Username and Email are required.", color="danger"))
 
         user = User.query.filter_by(username=current_username).first()
         if user and not bcrypt.check_password_hash(user.password, current_password):
-            return (False, False, True, True, True, {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+            return (False, True, True, True, True,
+                    {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
                     {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    {"display": "inline-block"}, {"display": "none"},
                     dbc.Alert("Current password is incorrect.", color="danger"))
 
         if new_password and new_password != confirm_password:
-            return (False, False, True, True, True, {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+            return (False, True, True, True, True,
+                    {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
                     {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    {"display": "inline-block"}, {"display": "none"},
                     dbc.Alert("New passwords do not match.", color="danger"))
 
         if new_password:
             password_error = ut.validate_password(new_password)
             if password_error:
-                return (False, False, True, True, True, {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                return (False, True, True, True, True,
+                        {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
                         {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                        {"display": "inline-block"}, {"display": "none"},
                         dbc.Alert(password_error, color="danger"))
 
+        # Save updated user details
         if user:
             user.username = username
             user.email = email
@@ -849,83 +879,33 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, username, em
                 user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
             db.session.commit()
             session['username'] = username
-            return (True, True, True, True, True, {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
+            return (True, True, True, True, True,
+                    {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
                     {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                    {"display": "none"}, {"display": "none"},
                     dbc.Alert("Profile updated successfully!", color="success"))
 
     elif triggered_id == 'cancel-edit-button':
-        return (True, True, True, True, True, {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
-                {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, "")
+        return (True, True, True, True, True,
+                {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
+                {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                {"display": "none"}, {"display": "none"}, "")
+
+    elif triggered_id == 'toggle-password-fields':
+        if toggle_pw_clicks % 2 == 1:
+            return (False, True, True, False, False,  # Enable password fields
+                    {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    {"display": "inline-block"}, {"display": "block"},  # Show password fields
+                    "")
+        return (False, True, True, True, True,  # Disable password fields
+                {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
+                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                {"display": "inline-block"}, {"display": "none"},  # Hide password fields
+                "")
 
     raise PreventUpdate
     
-    
-@app.callback(
-    [Output('profile-username', 'disabled', allow_duplicate=True),
-     Output('profile-email', 'disabled', allow_duplicate=True),  # Email stays disabled
-     Output('profile-current-password', 'disabled', allow_duplicate=True),
-     Output('profile-password', 'disabled', allow_duplicate=True),
-     Output('profile-confirm-password', 'disabled', allow_duplicate=True),
-     Output('toggle-password-fields', 'style', allow_duplicate=True),  # Control visibility of the Change Password button
-     Output('edit-profile-button', 'style', allow_duplicate=True),
-     Output('save-profile-button', 'style', allow_duplicate=True),
-     Output('cancel-edit-button', 'style', allow_duplicate=True)],
-    [Input('edit-profile-button', 'n_clicks'),
-     Input('save-profile-button', 'n_clicks'),
-     Input('cancel-edit-button', 'n_clicks')],
-    [State('profile-username', 'value')],
-    prevent_initial_call=True
-)
-def toggle_edit_mode(edit_clicks, save_clicks, cancel_clicks, username):
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        raise PreventUpdate
-
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    if triggered_id == 'edit-profile-button':
-        # Enable fields and show the Change Password button
-        return (False, True, True, True, True,  # Keep email disabled
-                {"display": "inline-block"},  # Show the Change Password button
-                {"display": "none"},  # Hide the Edit button
-                {"display": "inline-block"},  # Show the Save button
-                {"display": "inline-block"})  # Show the Cancel button
-    
-    elif triggered_id == 'save-profile-button' or triggered_id == 'cancel-edit-button':
-        # Disable fields and hide the Change Password button
-        return (True, True, True, True, True,  # Keep email disabled
-                {"display": "none"},  # Hide the Change Password button
-                {"display": "inline-block"},  # Show the Edit button
-                {"display": "none"},  # Hide the Save button
-                {"display": "none"})  # Hide the Cancel button
-
-    raise PreventUpdate
-
-
-@app.callback(
-    Output('toggle-password-fields', 'style', allow_duplicate=True),
-    [Input('edit-profile-button', 'n_clicks')],
-    prevent_initial_call=True
-)
-def toggle_password_button_visibility(edit_clicks):
-    if edit_clicks:
-        return {"display": "inline-block"}
-    raise PreventUpdate
-
-
-@app.callback(
-    [Output('password-fields-container', 'style',allow_duplicate=True),
-     Output('profile-current-password', 'disabled',allow_duplicate=True),
-     Output('profile-password', 'disabled',allow_duplicate=True),
-     Output('profile-confirm-password', 'disabled',allow_duplicate=True)],
-    [Input('toggle-password-fields', 'n_clicks')],
-    prevent_initial_call=True
-)
-def toggle_password_fields(n_clicks):
-    if n_clicks % 2 == 1:
-        return ({"display": "block"}, False, False, False)
-    return ({"display": "none"}, True, True, True)
-
 
 @app.callback(
     Output("cancel-subscription-modal", "is_open"),
