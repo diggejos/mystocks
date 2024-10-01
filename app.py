@@ -355,98 +355,69 @@ def subscription_success():
     """
 
 
-
 @app.callback(
-    [Output('login-status', 'data', allow_duplicate=True),
-      Output('login-username-store', 'data', allow_duplicate=True),
-      Output('login-link', 'style', allow_duplicate=True),
-      Output('logout-button', 'style', allow_duplicate=True),
-      Output('profile-link', 'style', allow_duplicate=True),
-      Output('register-link', 'style', allow_duplicate=True)],
+    [Output('page-content', 'children', allow_duplicate=True),
+     Output('login-status', 'data', allow_duplicate=True),
+     Output('login-username-store', 'data', allow_duplicate=True),
+     Output('login-link', 'style', allow_duplicate=True),
+     Output('logout-button', 'style', allow_duplicate=True),
+     Output('profile-link', 'style', allow_duplicate=True),
+     Output('register-link', 'style', allow_duplicate=True),
+     Output('sticky-footer-container', 'style', allow_duplicate=True)],
     [Input('url', 'pathname')],
     prevent_initial_call=True
 )
-def update_ui_on_page_load(pathname):
+def display_page_and_update_ui(pathname):
     # Get session info
     logged_in = session.get('logged_in', False)
     username = session.get('username', None)
+    footer_style = {"display": "block"}  # Default to showing the footer
 
+    # Default layout for non-logged-in users
+    layout_values = {
+        "login-link": {"display": "block"},
+        "logout-button": {"display": "none"},
+        "profile-link": {"display": "none"},
+        "register-link": {"display": "block"}
+    }
+
+    # Adjust layout if the user is logged in
     if logged_in and username:
-        return True, username, {"display": "none"}, {"display": "block"}, {"display": "block"}, {"display": "none"}
-    else:
-        return False, None, {"display": "block"}, {"display": "none"}, {"display": "none"}, {"display": "block"}
-    
+        user = User.query.filter_by(username=username).first()  # Fetch user info
+        is_free_user = user.subscription_status == 'free' if user else False
+        is_premium_user = user.subscription_status == 'premium' if user else False
 
-@app.callback(
-    [Output('page-content', 'children'),
-     Output('sticky-footer-container', 'style'),
-     Output('register-link', 'style'),  # Control register link visibility
-     Output('login-link', 'style'),     # Control login link visibility
-     Output('logout-button', 'style'),  # Control logout button visibility
-     Output('profile-link', 'style')],  # Control profile link visibility
-    [Input('url', 'pathname'),          # URL to check which page to show
-     Input('login-status', 'data'),     # Login status to check if the user is logged in
-     Input('login-username-store', 'data')],  # Username to personalize experience
-)
-def display_page(pathname, login_status, username):
-    # Set default layout values if user is not logged in or no conditions are met
-    return_layout = (dashboard_layout, {"display": "block"},  # Display footer by default
-                     {"display": "block"},  # Show register link
-                     {"display": "block"},  # Show login link
-                     {"display": "none"},   # Hide logout button
-                     {"display": "none"})   # Hide profile link
-    
-    # Check if the user is logged in and retrieve user details
-    user = User.query.filter_by(username=username).first() if username else None
-    is_free_user = user and user.subscription_status == 'free'
+        # Show/hide links based on subscription type
+        layout_values = {
+            "login-link": {"display": "none"},
+            "logout-button": {"display": "block"},
+            "profile-link": {"display": "block"},
+            "register-link": {"display": "block"} if is_free_user else {"display": "none"}
+        }
 
     # Pages where the footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password', '/subscription', '/register-free', '/register-paid']
-    footer_style = {"display": "block"} if pathname not in pages_without_footer else {"display": "none"}
+    if pathname in pages_without_footer:
+        footer_style = {"display": "none"}
 
-    # Adjust layout based on login status and subscription
-    if login_status and user:
-        if user.subscription_status == 'premium':
-            # If premium user, hide the sign-up and login links, show logout and profile links
-            return_layout = (dashboard_layout, footer_style,
-                             {"display": "none"},  # Hide sign-up link
-                             {"display": "none"},  # Hide login link
-                             {"display": "block"},  # Show logout button
-                             {"display": "block"})  # Show profile link
-        elif is_free_user:
-            # If free user, show the sign-up link, hide login link, show logout and profile links
-            return_layout = (dashboard_layout, footer_style,
-                             {"display": "block"},  # Show sign-up link for free users
-                             {"display": "none"},  # Hide login link
-                             {"display": "block"},  # Show logout button
-                             {"display": "block"})  # Show profile link
-    else:
-        # Default case for non-logged-in users: show sign-up and login links, hide logout and profile links
-        return_layout = (dashboard_layout, footer_style,
-                         {"display": "block"},  # Show sign-up link
-                         {"display": "block"},  # Show login link
-                         {"display": "none"},   # Hide logout button
-                         {"display": "none"})   # Hide profile link
-
-    # Return different layouts based on the URL path (pathname)
+    # Return the appropriate layout based on the page and user state
     if pathname == '/about':
-        return about_layout, footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
-    elif pathname == '/register' or pathname == '/subscription':
-        return create_subscription_selection_layout(is_free_user=is_free_user), footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
+        return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname in ['/register', '/subscription']:
+        return create_subscription_selection_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
     elif pathname == '/register-free':
-        return create_register_layout('free'), footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
+        return create_register_layout('free'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/register-paid':
-        return create_register_layout('premium'), footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
-    elif pathname == '/login' and not login_status:
-        return login_layout, footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
-    elif pathname == '/profile' and login_status:
-        return profile_layout, footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
+        return create_register_layout('premium'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/login' and not logged_in:
+        return login_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
+    elif pathname == '/profile' and logged_in:
+        return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
-        return forgot_layout, footer_style, return_layout[2], return_layout[3], return_layout[4], return_layout[5]
-
-    # Default to dashboard if no specific path is matched
-    return return_layout
-
+        return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    else:
+        # Default to dashboard if no specific path matches
+        return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
 
 @app.callback(
