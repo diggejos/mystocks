@@ -920,16 +920,14 @@ def create_profile_layout():
     ], fluid=True)
 
    
-
-
-            
+       
 def create_subscription_selection_layout(is_free_user=False):
     return dbc.Container([
         dbc.Row([
             dbc.Col([
                 html.H1("Choose the Perfect Plan for You", className="text-center mt-5 mb-4"),
                 html.P("Unlock the best stock monitoring experience tailored to your needs.", className="text-center lead mb-5"),
-            ], width=12)
+            ], width=12,className="text-dark")
         ]),
 
         # Display both free and premium plan options
@@ -951,11 +949,11 @@ def create_subscription_selection_layout(is_free_user=False):
                         dbc.Button("Sign Up for Free", id='free-signup-button', color='success', className='w-100 mt-auto')
                     ], className="d-grid gap-2 mb-3"),
                 ], className="p-4 d-flex flex-column h-100"),
-            ], className="shadow-sm h-100", style={"max-width": "400px"}),
+            ], className="h-100 border-light", style={"max-width": "400px"}),
 
             # Premium Plan
             dbc.Card([
-                dbc.CardHeader(html.H3("Premium Plan", className="text-center text-primary")),
+                dbc.CardHeader(html.H3("Premium Plan", className="text-center text-light"),className="bg-primary"),
                 dbc.CardBody([
                     html.H4("What You Get", className="text-center mt-3"),
                     html.Div([html.H5("$9.99 USD per month", className="text-center text-primary mb-4")]),
@@ -966,7 +964,7 @@ def create_subscription_selection_layout(is_free_user=False):
                     html.Div(["📊 Advanced stock forecasts"], className="mb-3"),
                     html.Div([dbc.Button("Subscribe Now", id='paid-signup-button', color='primary', className='w-100 mt-auto')], className="d-grid gap-2 mb-3"),
                 ], className="p-4 d-flex flex-column h-100"),
-            ], className="shadow-lg h-100 border border-primary", style={"max-width": "400px"}),
+            ], className="shadow-lg h-100 border-5 border-primary", style={"max-width": "400px"}),
         ], style={
             "display": "flex", 
             "justify-content": "center", 
@@ -976,12 +974,18 @@ def create_subscription_selection_layout(is_free_user=False):
         }),
 
         dbc.Row([
-            dbc.Col([html.P("No credit card required for the Free Plan.", className="text-center text-muted mt-4")], width=12)
+            dbc.Col([html.P("No credit card required for the Free Plan.", className="text-center text-dark mt-4")], width=12)
         ]),
-    ], fluid=True)
+        
+        html.P([
+            "Wanna know more about the Features? ",
+            html.A("Check it out here", href="/about", className="text-center",
+                   style={"color": "blue", "text-decoration": "underline"})
+        ],className="text-center text-dark mt-4")
+        
+    ], fluid=True, className="custom-light-bg")
+            
 
-
-  
 
 def create_register_layout(plan):
     return dbc.Container([
