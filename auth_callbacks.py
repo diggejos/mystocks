@@ -342,40 +342,6 @@ def register_auth_callbacks(app, server, mail):
         return f"Login status: {'Logged In' if login_status else 'Logged Out'}"
     
 
-
-    
-    @app.callback(
-    [Output('login-status', 'data'),
-      Output('login-username-store', 'data'),
-      Output('login-link', 'style'),
-      Output('logout-button', 'style'),
-      Output('profile-link', 'style')],
-    [Input('url', 'pathname')]
-    )
-    def check_session(pathname):
-        logged_in = session.get('logged_in', False)
-        username = session.get('username', None)
-        
-        
-        if logged_in and username:
-            return True, username, {"display": "none"}, {"display": "block"}, {"display": "block"}
-        else:
-            return False, None, {"display": "block"}, {"display": "none"}, {"display": "none"}
-        
-    @app.callback(
-        [Output('login-status', 'data'),
-         Output('login-username-store', 'data')],
-        [Input('url', 'pathname')]  # Trigger this callback on any URL change
-    )
-    def sync_session_with_store(pathname):
-        # Fetch the session data from Flask session
-        logged_in = session.get('logged_in', False)
-        username = session.get('username', None)
-        
-        # Sync the Flask session data to the Dash Store
-        return logged_in, username
-
-
     
     @app.callback(
     Output('theme-dropdown', 'disabled'),
