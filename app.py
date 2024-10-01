@@ -50,6 +50,8 @@ server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 load_dotenv()
 app.server.config['SECRET_KEY'] =  os.getenv('FLASK_SECRET_KEY') # Use a strong, unique secret key
 app.server.config['SESSION_TYPE'] = 'filesystem' 
+app.server.config['SESSION_PERMANENT'] = True  # Make session permanent to last across sessions
+app.server.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # Customize session lifetime (e.g., 7 days)
 
 Session(app.server)
 
