@@ -53,6 +53,13 @@ def robots_txt():
         current_app.logger.error(f"Error serving robots.txt: {str(e)}")
         abort(500)
 
+from flask import send_from_directory
+
+@server.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(os.getcwd(), 'assets'),
+                               'logo_with_transparent_background_favicon.png', mimetype='image/png')
+
 import logging
 from flask import render_template
 
@@ -1163,6 +1170,8 @@ app.index_string = '''
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://mystocksportfolio.io/" />
         <link rel="icon" href="/assets/logo_with_transparent_background_favicon.png" type="image/png">
+        <link rel="icon" href="{{ url_for('assets', filename='logo_with_transparent_favicon.png') }}" type="image/png">
+
 
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
