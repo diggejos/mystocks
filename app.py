@@ -41,11 +41,17 @@ def sitemap_xml():
         abort(404)  # Return 404 if file not found
     return send_file(sitemap_path)
     
-# load robots.txt file for SEO
 @server.route('/robots.txt')
-def serve_robots_txt():
-       return send_from_directory('static', 'robots.txt')
-    
+def robots_txt():
+    try:
+        robots_path = os.path.join(os.getcwd(), 'static', 'robots.txt')
+        if not os.path.exists(robots_path):
+            abort(404)  # Return 404 if the file is not found
+        return send_file(robots_path, mimetype='text/plain')
+    except Exception as e:
+        # Log the error and return a 500 Internal Server Error response
+        current_app.logger.error(f"Error serving robots.txt: {str(e)}")
+        abort(500)
 
 # Define a custom 404 error handler
 @server.errorhandler(404)
