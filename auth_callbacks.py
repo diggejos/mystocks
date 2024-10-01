@@ -16,10 +16,6 @@ def register_auth_callbacks(app, server, mail):
     @app.callback(
     [Output('login-status', 'data'),
      Output('login-username-store', 'data'),
-     Output('login-link', 'style', allow_duplicate=True),
-     Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True),
-     Output('register-link', 'style', allow_duplicate=True),
      Output('theme-store', 'data', allow_duplicate=True),
      Output('plotly-theme-store', 'data', allow_duplicate=True),
      Output('login-output', 'children'),
@@ -30,62 +26,49 @@ def register_auth_callbacks(app, server, mail):
     prevent_initial_call=True
     )
     def handle_login(login_clicks, username, password):
-        # Log the username and password to check their values
-        print(f"Username: {username}, Password: {password}")
-    
+        # Ensure the login button is clicked before executing
         if login_clicks:
-            # Check if the username or password is missing
+            # Check if username or password fields are empty
             if not username or not password:
                 error_message = dbc.Alert("Username and password are required.", color="danger", className="mt-2")
                 return (
                     False,  # login-status
                     None,  # login-username-store
-                    {"display": "block"},  # Show login link
-                    {"display": "none"},  # Hide logout button
-                    {"display": "none"},  # Hide profile link
-                    {"display": "block"},  # Show register link
-                    themes['MATERIA']['dbc'],  # Reset theme
-                    'plotly_white',  # Reset plotly theme
-                    error_message,  # Display error message
-                    dash.no_update  # Don't change the URL
+                    themes['MATERIA']['dbc'],  # Default theme
+                    'plotly_white',  # Default Plotly theme
+                    error_message,  # Show error message
+                    dash.no_update  # Do not redirect
                 )
-    
+            
             # Fetch the user from the database
             user = User.query.filter_by(username=username).first()
-    
-            # Check if user exists and if password matches
+            
+            # Check if the user exists and if the password matches
             if not user or not bcrypt.check_password_hash(user.password, password):
-                # Invalid credentials, return error message
+                # Invalid credentials, show an error message
                 error_message = dbc.Alert("Invalid username or password.", color="danger", className="mt-2")
                 return (
                     False,  # login-status
                     None,  # login-username-store
-                    {"display": "block"},  # Show login link
-                    {"display": "none"},  # Hide logout button
-                    {"display": "none"},  # Hide profile link
-                    {"display": "block"},  # Show register link
-                    themes['MATERIA']['dbc'],  # Reset theme
-                    'plotly_white',  # Reset plotly theme
-                    error_message,  # Display error message
-                    dash.no_update  # Don't change the URL
+                    themes['MATERIA']['dbc'],  # Default theme
+                    'plotly_white',  # Default Plotly theme
+                    error_message,  # Show error message
+                    dash.no_update  # Do not redirect
                 )
     
-            # Email verification check
+            # Check if the email is confirmed
             if not user.confirmed:
+                # If email is not confirmed, show a warning
                 return (
                     False,  # login-status
                     None,  # login-username-store
-                    {"display": "block"},  # login-link
-                    {"display": "none"},  # logout-button
-                    {"display": "none"},  # profile-link
-                    {"display": "block"},  # register-link
-                    themes['MATERIA']['dbc'],  # theme-store
-                    'plotly_white',  # plotly-theme-store
-                    dbc.Alert("Please confirm your email address.", color="warning", className="mt-2"),  # Email confirmation alert
-                    dash.no_update  # Don't change the URL
+                    themes['MATERIA']['dbc'],  # Default theme
+                    'plotly_white',  # Default Plotly theme
+                    dbc.Alert("Please confirm your email address.", color="warning", className="mt-2"),  # Warning message
+                    dash.no_update  # Do not redirect
                 )
-    
-            # Set session values after successful login
+            
+            # Successful login, set session values
             session['logged_in'] = True
             session['username'] = username
             session.modified = True
@@ -95,54 +78,29 @@ def register_auth_callbacks(app, server, mail):
                 return (
                     True,  # login-status
                     username,  # login-username-store
-                    {"display": "none"},  # login-link
-                    {"display": "block"},  # logout-button
-                    {"display": "block"},  # profile-link
-                    {"display": "none"},  # hide register-link
-                    themes['MATERIA']['dbc'],  # theme-store
-                    'plotly_white',  # plotly-theme-store
-                    dash.no_update,  # Stay on current page
-                    '/create-checkout-session'  # Redirect to the payment page
-                )
-    
-            # Handle free users
-            if user.subscription_status == 'free':
-                user_theme = user.theme if user.theme else 'MATERIA'
-                plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
-    
-                return (
-                    True,  # login-status
-                    username,  # login-username-store
-                    {"display": "none"},  # login-link
-                    {"display": "block"},  # logout-button
-                    {"display": "block"},  # profile-link
-                    {"display": "block"},  # register-link remains visible for upgrade
-                    themes[user_theme]['dbc'],  # theme-store
-                    plotly_theme,  # plotly-theme-store
+                    {"display": "none"},  # Hide login link (handled elsewhere)
+                    themes['MATERIA']['dbc'],  # Default theme
+                    'plotly_white',  # Default Plotly theme
                     dash.no_update,  # No error message
-                    '/'  # Redirect to dashboard
+                    '/create-checkout-session'  # Redirect to payment page
                 )
-    
-            # Handle premium users who have paid
+            
+            # Handle free users or premium users who have paid
             user_theme = user.theme if user.theme else 'MATERIA'
             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
     
+            # If user is free or premium (with payment), set session and redirect to dashboard
             return (
                 True,  # login-status
                 username,  # login-username-store
-                {"display": "none"},  # login-link
-                {"display": "block"},  # logout-button
-                {"display": "block"},  # profile-link
-                {"display": "none"},  # register-link hidden for premium users
-                themes[user_theme]['dbc'],  # theme-store
-                plotly_theme,  # plotly-theme-store
+                themes[user_theme]['dbc'],  # User's selected theme
+                plotly_theme,  # User's selected Plotly theme
                 dash.no_update,  # No error message
                 '/'  # Redirect to dashboard
             )
     
-        # If no clicks yet, prevent updates
+        # If the button was not clicked, do not update anything
         raise PreventUpdate()
-
 
     @app.callback(
     Output('url-redirect', 'href',allow_duplicate=True),
@@ -174,9 +132,6 @@ def register_auth_callbacks(app, server, mail):
                 return '/register-paid'
         
         return dash.no_update
-
-    
-
 
     @app.callback(
     Output('register-output', 'children'),
