@@ -964,7 +964,7 @@ def create_subscription_selection_layout(is_free_user=False):
                     html.Div(["📊 Advanced stock forecasts"], className="mb-3"),
                     html.Div([dbc.Button("Subscribe Now", id='paid-signup-button', color='primary', className='w-100 mt-auto')], className="d-grid gap-2 mb-3"),
                 ], className="p-4 d-flex flex-column h-100"),
-            ], className="shadow-lg h-100 border-5 border-primary", style={"max-width": "400px"}),
+            ], className="shadow-lg h-100 border-3 border-primary", style={"max-width": "400px"}),
         ], style={
             "display": "flex", 
             "justify-content": "center", 
