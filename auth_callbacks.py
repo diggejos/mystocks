@@ -14,19 +14,18 @@ from dash import dcc, html
 # Define a function to register the callback
 def register_auth_callbacks(app, server, mail):
     @app.callback(
-    [Output('login-status', 'data'),
-     Output('login-username-store', 'data'),
-     Output('theme-store', 'data', allow_duplicate=True),
-     Output('plotly-theme-store', 'data', allow_duplicate=True),
-     Output('login-output', 'children'),
-     Output('url', 'pathname')],
-    [Input('login-button', 'n_clicks')],
-    [State('login-username', 'value'),
-     State('login-password', 'value')],
-    prevent_initial_call=True
+        [Output('login-status', 'data'),
+         Output('login-username-store', 'data'),
+         Output('theme-store', 'data', allow_duplicate=True),
+         Output('plotly-theme-store', 'data', allow_duplicate=True),
+         Output('login-output', 'children'),
+         Output('url', 'href')],  # Use href for full URL redirection
+        [Input('login-button', 'n_clicks')],
+        [State('login-username', 'value'),
+         State('login-password', 'value')],
+        prevent_initial_call=True
     )
     def handle_login(login_clicks, username, password):
-        # Ensure the login button is clicked before executing
         if login_clicks:
             # Check if username or password fields are empty
             if not username or not password:
@@ -45,7 +44,6 @@ def register_auth_callbacks(app, server, mail):
             
             # Check if the user exists and if the password matches
             if not user or not bcrypt.check_password_hash(user.password, password):
-                # Invalid credentials, show an error message
                 error_message = dbc.Alert("Invalid username or password.", color="danger", className="mt-2")
                 return (
                     False,  # login-status
@@ -58,13 +56,12 @@ def register_auth_callbacks(app, server, mail):
     
             # Check if the email is confirmed
             if not user.confirmed:
-                # If email is not confirmed, show a warning
                 return (
                     False,  # login-status
                     None,  # login-username-store
                     themes['MATERIA']['dbc'],  # Default theme
                     'plotly_white',  # Default Plotly theme
-                    dbc.Alert("Please confirm your email address.", color="warning", className="mt-2"),  # Warning message
+                    dbc.Alert("Please confirm your email address.", color="warning", className="mt-2"),
                     dash.no_update  # Do not redirect
                 )
             
@@ -78,7 +75,6 @@ def register_auth_callbacks(app, server, mail):
                 return (
                     True,  # login-status
                     username,  # login-username-store
-                    {"display": "none"},  # Hide login link (handled elsewhere)
                     themes['MATERIA']['dbc'],  # Default theme
                     'plotly_white',  # Default Plotly theme
                     dash.no_update,  # No error message
@@ -89,14 +85,14 @@ def register_auth_callbacks(app, server, mail):
             user_theme = user.theme if user.theme else 'MATERIA'
             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
     
-            # If user is free or premium (with payment), set session and redirect to dashboard
+            # Redirect to home page (dashboard)
             return (
                 True,  # login-status
                 username,  # login-username-store
                 themes[user_theme]['dbc'],  # User's selected theme
                 plotly_theme,  # User's selected Plotly theme
                 dash.no_update,  # No error message
-                '/'  # Redirect to dashboard
+                '/'  # This will redirect to the home page and update the URL
             )
     
         # If the button was not clicked, do not update anything
