@@ -14,7 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             typingIndicator.classList.remove('typing-indicator');
                             typingIndicator.classList.add('final-response');
                             typingIndicator.textContent = ''; // Clear typing indicator
-                            typingIndicator.innerHTML = typingIndicator.dataset.finalText;
+                            
+                            if (typingIndicator.dataset.finalText) {
+                                typingIndicator.innerHTML = typingIndicator.dataset.finalText;
+                            }
                         }, 2000); // Duration for typing effect
                     }
                 }
@@ -37,6 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Ensure dash_clientside object exists
+    if (!window.dash_clientside) {
+        window.dash_clientside = {};
+    }
+
     // Listen for Dash events to trigger full-screen
     window.dash_clientside = Object.assign({}, window.dash_clientside, {
         clientside: {
@@ -48,4 +56,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
+});
