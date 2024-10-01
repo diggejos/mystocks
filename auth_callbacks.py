@@ -254,8 +254,6 @@ def register_auth_callbacks(app, server, mail):
     [Output('login-status', 'data', allow_duplicate=True),
      Output('login-link', 'style', allow_duplicate=True),
      Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True),
-     Output('register-link', 'style', allow_duplicate=True),  # Register link visibility after logout
      Output('individual-stocks-store', 'data', allow_duplicate=True),
      Output('theme-store', 'data', allow_duplicate=True),
      Output('plotly-theme-store', 'data', allow_duplicate=True),
@@ -268,26 +266,23 @@ def register_auth_callbacks(app, server, mail):
             # Clear session and user-specific data
             session.pop('logged_in', None)
             session.pop('username', None)
-            
+    
             # Ensure the session is saved/updated
             session.modified = True
-            
-            # Clear any data stores that may have user-related data
+    
+            # Reset to default values after logout
             return (
                 False,  # login-status reset
                 {"display": "block"},  # Show login link
                 {"display": "none"},  # Hide logout button
-                {"display": "none"},  # Hide profile link
-                {"display": "block"},  # Show register link
-                ['AAPL', 'MSFT'],  # Reset individual stocks
+                ['AAPL', 'MSFT'],  # Reset individual stocks store to default
                 dbc.themes.MATERIA,  # Reset theme to default
                 'plotly_white',  # Reset plotly theme to default
                 '/'  # Redirect to login page
             )
-        # raise PreventUpdate()
-        
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
+    
+        # No updates if logout button was not clicked
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     @app.callback(
         Output('login-status-display', 'children'),
