@@ -32,6 +32,7 @@ server = app.server
 #def sitemap_xml():
 #    return send_from_directory(os.path.join(os.getcwd(), 'static'), 'sitemap.xml')
 
+from flask import send_file
 @server.route('/sitemap.xml')
 def sitemap_xml():
     sitemap_path = os.path.join(os.getcwd(), 'static', 'sitemap.xml')
