@@ -53,9 +53,12 @@ def robots_txt():
         current_app.logger.error(f"Error serving robots.txt: {str(e)}")
         abort(500)
 
-# Define a custom 404 error handler
+import logging
+from flask import render_template
+
 @server.errorhandler(404)
 def page_not_found(e):
+    logging.error(f"404 error: {str(e)}")
     return render_template('404.html'), 404
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
