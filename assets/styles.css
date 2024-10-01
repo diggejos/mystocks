@@ -716,3 +716,7 @@ a:hover {
     top: 75px;
     z-index: 1000;  /* Ensures it stays on top */
 }
+
+.custom-light-bg {
+    background-color: rgba(173, 216, 230, 0.4);  /* Light blue with 40% opacity */
+}
