@@ -34,8 +34,12 @@ server = app.server
 
 @server.route('/sitemap.xml')
 def sitemap_xml():
-    return send_file(os.path.join(os.getcwd(), 'static', 'sitemap.xml'))
-
+    sitemap_path = os.path.join(os.getcwd(), 'static', 'sitemap.xml')
+    if not os.path.exists(sitemap_path):
+        print(f"sitemap.xml not found at: {sitemap_path}")
+        abort(404)  # Return 404 if file not found
+    return send_file(sitemap_path)
+    
 # load robots.txt file for SEO
 @server.route('/robots.txt')
 def serve_robots_txt():
