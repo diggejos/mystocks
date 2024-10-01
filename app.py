@@ -356,14 +356,14 @@ def subscription_success():
 
 
 @app.callback(
-    [Output('page-content', 'children', allow_duplicate=True),
+    [Output('page-content', 'children'),
      Output('login-status', 'data', allow_duplicate=True),
      Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style', allow_duplicate=True),
-     Output('logout-button', 'style', allow_duplicate=True),
-     Output('profile-link', 'style', allow_duplicate=True),
-     Output('register-link', 'style', allow_duplicate=True),
-     Output('sticky-footer-container', 'style', allow_duplicate=True)],
+     Output('login-link', 'style'),
+     Output('logout-button', 'style'),
+     Output('profile-link', 'style'),
+     Output('register-link', 'style'),
+     Output('sticky-footer-container', 'style')],
     [Input('url', 'pathname')],
     prevent_initial_call=True
 )
