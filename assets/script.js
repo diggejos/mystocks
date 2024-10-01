@@ -49,20 +49,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // New logic: Detect if the device is mobile or desktop based on window width
-    function detectDeviceType() {
-        if (window.innerWidth < 768) {
-            // Set the device type to mobile in Dash Store
-            window.dash_clientside.store.set('device-type', 'mobile');
-        } else {
-            // Set the device type to desktop in Dash Store
-            window.dash_clientside.store.set('device-type', 'desktop');
-        }
-    }
-
-    // Run the detection on page load
-    detectDeviceType();
-
-    // Optional: You can also add a resize listener to recheck device type on window resize
-    window.addEventListener('resize', detectDeviceType);
-});
