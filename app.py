@@ -115,15 +115,14 @@ app.layout = html.Div([
     dcc.Store(id='forecast-data-store'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
-    DeferScript(src='assets/script.js',defer=True),
     ly.create_floating_chatbot_button(),  # Floating Chatbot Button
     ly.create_chatbot_modal(),  # Chatbot Modal
     ly.create_financials_modal(),  # Financials Modal
     html.Div(ly.create_sticky_footer_mobile(), id="sticky-footer-container"),
     ly.create_footer(),  # Footer
     ly.create_modal_register(),
-    dcc.Store(id='device-type', data='desktop')  # Default to desktop
-
+    dcc.Store(id='device-type', data='desktop') , # Default to desktop
+    DeferScript(src='assets/script.js',defer=True),
 ])
 
 
