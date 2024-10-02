@@ -1,28 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Existing chatbot logic
-    const chatbotConversation = document.getElementById('chatbot-conversation');
-
-    if (chatbotConversation) {
-        const observer = new MutationObserver(function(mutations) {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList') {
-                    chatbotConversation.scrollTop = chatbotConversation.scrollHeight;
-
-                    const typingIndicator = document.querySelector('.typing-indicator');
-                    if (typingIndicator && !typingIndicator.classList.contains('final-response')) {
-                        setTimeout(function() {
-                            typingIndicator.classList.remove('typing-indicator');
-                            typingIndicator.classList.add('final-response');
-                            typingIndicator.textContent = ''; // Clear typing indicator
-                            typingIndicator.innerHTML = typingIndicator.dataset.finalText;
-                        }, 2000); // Duration for typing effect
-                    }
-                }
-            }
-        });
-
-        observer.observe(chatbotConversation, { childList: true });
-    }
 
     // Fullscreen toggle function
     function toggleFullScreen() {
