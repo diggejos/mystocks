@@ -122,7 +122,7 @@ app.layout = html.Div([
     ly.create_footer(),  # Footer
     ly.create_modal_register(),
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
-    DeferScript(src='assets/script.js',defer=True),
+    DeferScript(src='assets/script.js',defer=True)
 ])
 
 
