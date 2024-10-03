@@ -33,7 +33,7 @@ def register_auth_callbacks(app, server, mail):
                 return (
                     False,  # login-status
                     None,  # login-username-store
-                    themes['MATERIA']['dbc'],  # Default theme
+                    themes['SPACELAB']['dbc'],  # Default theme
                     'plotly_white',  # Default Plotly theme
                     error_message,  # Show error message
                     dash.no_update  # Do not redirect
@@ -48,7 +48,7 @@ def register_auth_callbacks(app, server, mail):
                 return (
                     False,  # login-status
                     None,  # login-username-store
-                    themes['MATERIA']['dbc'],  # Default theme
+                    themes['SPACELAB']['dbc'],  # Default theme
                     'plotly_white',  # Default Plotly theme
                     error_message,  # Show error message
                     dash.no_update  # Do not redirect
@@ -59,7 +59,7 @@ def register_auth_callbacks(app, server, mail):
                 return (
                     False,  # login-status
                     None,  # login-username-store
-                    themes['MATERIA']['dbc'],  # Default theme
+                    themes['SPACELAB']['dbc'],  # Default theme
                     'plotly_white',  # Default Plotly theme
                     dbc.Alert("Please confirm your email address.", color="warning", className="mt-2"),
                     dash.no_update  # Do not redirect
@@ -75,14 +75,14 @@ def register_auth_callbacks(app, server, mail):
                 return (
                     True,  # login-status
                     username,  # login-username-store
-                    themes['MATERIA']['dbc'],  # Default theme
+                    themes['SPACELAB']['dbc'],  # Default theme
                     'plotly_white',  # Default Plotly theme
                     dash.no_update,  # No error message
                     '/create-checkout-session'  # Redirect to payment page
                 )
             
             # Handle free users or premium users who have paid
-            user_theme = user.theme if user.theme else 'MATERIA'
+            user_theme = user.theme if user.theme else 'SPACELAB'
             plotly_theme = themes.get(user_theme, {}).get('plotly', 'plotly_white')
     
             # Redirect to home page (dashboard)
@@ -272,7 +272,7 @@ def register_auth_callbacks(app, server, mail):
                 {"display": "block"},  # Show login link
                 {"display": "none"},  # Hide logout button
                 ['AAPL', 'MSFT'],  # Reset individual stocks store to default
-                dbc.themes.MATERIA,  # Reset theme to default
+                dbc.themes.SPACELAB,  # Reset theme to default
                 'plotly_white',  # Reset plotly theme to default
                 '/'  # Redirect to login page
             )
