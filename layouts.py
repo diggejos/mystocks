@@ -19,7 +19,7 @@ def create_navbar(themes):
                     [
                         dbc.Col(
                             dbc.NavbarBrand([
-                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px'),
+                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px', loading = "lazy"),
                                 "WatchMyStocks", 
                             ], href="/", className="ms-3", style={"font-size": "16px"})  # Add margin on the left side of the logo
                         ),
@@ -271,13 +271,13 @@ def create_footer():
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
             html.A(
-                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "auto"}),
+                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "auto"},loading="lazy"),
                 href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out WatchMyStocks!",
                 target="_blank",
                 style={"margin-right": "10px"}
             ),
             html.A(
-                html.Img(src="/assets/linkedin.png", alt="Share on LinkedIn", style={"width": "30px", "height": "30px"}),
+                html.Img(src="/assets/linkedin.png", alt="Share on LinkedIn", style={"width": "30px", "height": "30px"},loading="lazy"),
                 href="https://www.linkedin.com/sharing/share-offsite/?url=https://mystocksportfolio.io",
                 target="_blank",
                 style={"margin-right": "10px"}
