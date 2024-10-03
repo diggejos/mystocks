@@ -25,7 +25,7 @@ import logging
 
 
 # Initialize the Dash app with a default Bootstrap theme
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
 server = app.server
 
 #@server.route('/sitemap.xml')
@@ -102,7 +102,7 @@ with app.server.app_context():
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
-    dcc.Store(id='theme-store', data=dbc.themes.MATERIA),
+    dcc.Store(id='theme-store', data=dbc.themes.SPACELAB),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
     dcc.Store(id='login-status', data=False),  # Store to track login status
     dcc.Store(id='login-username-store', data=None),  # Store to persist the username
@@ -1087,7 +1087,7 @@ def update_theme(*args, login_status=None, username=None):
             return themes[user.theme]['dbc'], themes[user.theme]['plotly']
 
     print("Using default theme")
-    return dbc.themes.MATERIA, 'plotly_white'
+    return dbc.themes.SPACELAB, 'plotly_white'
 
 
 
