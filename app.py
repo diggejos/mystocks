@@ -1168,7 +1168,7 @@ app.index_string = '''
         <!-- End Google Tag Manager -->
         {%metas%}
         <title>Stocks monitoring and recommendation made easy - WatchMyStocks</title>
-        <link rel="stylesheet" href="/assets/styles.css">
+        <link rel="stylesheet" href="/assets/styles.css?v=1.0">
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
