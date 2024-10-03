@@ -347,7 +347,7 @@ def paywall_logged_out():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
@@ -369,7 +369,7 @@ def paywall_free_user():
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#ffc107'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#ffc107'}
     )
 
 def paywall_logged_out_forecast():
@@ -397,7 +397,7 @@ def paywall_logged_out_forecast():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
@@ -419,7 +419,7 @@ def paywall_free_user_forecast():
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#ffc107'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#ffc107'}
     )
 
 
@@ -448,7 +448,7 @@ def paywall_recommendation():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'white', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
