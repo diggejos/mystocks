@@ -4,17 +4,9 @@ import pandas as pd
 # from auth_callbacks import show_overlay_if_logged_out
 
 
-
-
 themes = {
-    'CYBORG': {'dbc': dbc.themes.CYBORG, 'plotly': 'plotly_dark'},
-    'JOURNAL': {'dbc': dbc.themes.JOURNAL, 'plotly': 'simple_white'},
-    'MATERIA': {'dbc': dbc.themes.MATERIA, 'plotly': 'simple_white'},
-    'MINTY': {'dbc': dbc.themes.MINTY, 'plotly': 'simple_white'},
-    'SPACELAB': {'dbc': dbc.themes.SPACELAB, 'plotly': 'simple_white'},
-    'DARKLY': {'dbc': dbc.themes.DARKLY, 'plotly': 'plotly_dark'},
-    'LITERA': {'dbc': dbc.themes.LITERA, 'plotly': 'plotly_white'},
-    'SOLAR': {'dbc': dbc.themes.SOLAR, 'plotly': 'plotly_dark'},
+    'Lightmode': {'dbc': dbc.themes.SPACELAB, 'plotly': 'simple_white'},
+    'Darkmode': {'dbc': dbc.themes.DARKLY, 'plotly': 'plotly_dark'},
 }
 
 
@@ -47,7 +39,7 @@ def create_navbar(themes):
                 ),
                 
                 # NavbarToggler and Collapse aligned to the right
-                dbc.NavbarToggler(id="navbar-toggler", className="order-2 me-3"),  # Adjust toggler order and add right margin
+                dbc.NavbarToggler(id="navbar-toggler", className="order-2 me-3 custom-toggler"),  # Adjust toggler order and add right margin
                 
                 dbc.Collapse(
                     dbc.Nav(
@@ -332,7 +324,7 @@ def create_watchlist_management_layout():
 
 def paywall_logged_out():
     return html.Div(
-        className="bg-primary bg-primary-with-shadow",
+        className="bg-light bg-primary-with-shadow",
         children=[
             html.Div([
                 html.P("Please ", style={'display': 'inline', 'font-size': '18px'}),
@@ -361,7 +353,7 @@ def paywall_logged_out():
 
 def paywall_free_user():
     return html.Div(
-        className="bg-primary bg-primary-with-shadow",
+        className="bg-light bg-primary-with-shadow",
         children=[
             html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '50px'}),
 
@@ -382,7 +374,7 @@ def paywall_free_user():
 
 def paywall_logged_out_forecast():
     return html.Div(
-        className="bg-primary bg-primary-with-shadow",
+        className="bg-light bg-primary-with-shadow",
         children=[
             html.Div([
                 html.P("Please ", style={'display': 'inline', 'font-size': '18px'}),
@@ -411,7 +403,7 @@ def paywall_logged_out_forecast():
 
 def paywall_free_user_forecast():
     return html.Div(
-        className="bg-primary bg-primary-with-shadow",
+        className="bg-light bg-primary-with-shadow",
         children=[
             html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '50px'}),
 
@@ -433,7 +425,7 @@ def paywall_free_user_forecast():
 
 def paywall_recommendation():
     return html.Div(
-        className="bg-primary bg-primary-with-shadow",
+        className="bg-light bg-primary-with-shadow",
         children=[
             html.Div([
                 html.P("Please ", style={'display': 'inline', 'font-size': '18px'}),
@@ -486,7 +478,7 @@ def create_dashboard_layout(watchlist_management_layout):
                     className="mobile-only",
                     style={
                         "position": "fixed",
-                        "top": "85px",
+                        "top": "72px",
                         "left": "10px",
                         "z-index": "1001",
                         "margin-bottom": "10px",
@@ -1163,7 +1155,7 @@ def create_about_layout(create_carousel):
                     html.P("Comprehensive Data: Access to a wide range of financial data and tools for better decision-making. "
                            "User-Friendly Interface: Simple and intuitive design, making it easy for users at all levels to navigate. "
                            "Advanced Analytics: Leverage sophisticated forecasting and simulation tools to gain a competitive edge. "
-                           "Real-Time Updates: Stay informed with up-to-date news and market data.", className="lead text-center"),
+                           "Real-Time Updates: Stay informed with up-to-date news and market data.", className="text-dark lead text-center"),
                 ], style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px"}),
 
                 # Carousel
@@ -1186,7 +1178,7 @@ def create_about_layout(create_carousel):
                         html.Li("Stock Performance Comparison: Compare stock performance vs. NASDAQ100, S&P 500, or SMI."),
                         html.Li("Intelligent Financial Chatbot: Get instant answers to your stock-related queries."),
                         html.Li("Select and save your custom Theme"),
-                    ], className="checked-list"),
+                    ], className="text-dark checked-list"),
                 ], style={"padding": "20px", "background-color": "#ffffff", "border-radius": "10px", "box-shadow": "0px 2px 5px rgba(0,0,0,0.1)"}),
 
                 # Call to action
