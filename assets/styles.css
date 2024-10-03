@@ -731,14 +731,14 @@ a:hover {
 .toggler-icon::before {
     content: "\2630"; /* Unicode for hamburger icon */
     font-size: 1.5rem;
-    color: white; /* Adjust to match your theme */
+    color: white !important; /* Adjust to match your theme */
 }
 
 /* Custom "X" icon when open */
 .toggler-icon.open::before {
     content: "\2715"; /* Unicode for 'X' icon */
     font-size: 1.5rem;
-    color: white; /* Adjust to match your theme */
+    color: white !important; /* Adjust to match your theme */
 }
 
 /* Remove the background and border that Bootstrap adds */
