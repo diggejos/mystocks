@@ -445,14 +445,23 @@ def display_page_and_update_ui(pathname):
 
 
 @app.callback(
-    Output("navbar-collapse", "is_open"),
+    [Output("navbar-collapse", "is_open"),
+     Output("navbar-toggler", "className")],
     [Input("navbar-toggler", "n_clicks")],
-    [State("navbar-collapse", "is_open")]
+    [State("navbar-collapse", "is_open"),
+     State("navbar-toggler", "className")]
 )
-def toggle_navbar(n_clicks, is_open):
+def toggle_navbar(n_clicks, is_open, current_class):
     if n_clicks:
-        return not is_open
-    return is_open
+        is_open = not is_open
+        if is_open:
+            # Show the "X" close icon when the navbar is open
+            toggler_class = "order-2 me-3 toggler-icon open"
+        else:
+            # Show the hamburger icon when the navbar is closed
+            toggler_class = "order-2 me-3 toggler-icon"
+        return is_open, toggler_class
+    return is_open, current_class
 
 
 
