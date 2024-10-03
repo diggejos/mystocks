@@ -1128,6 +1128,8 @@ app.index_string = '''
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-960985880"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-960985880'); </script>
         <!-- Hotjar Tracking Code for Site 5148807 (name missing) -->
         <script>
             (function(h,o,t,j,a,r){
