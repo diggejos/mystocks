@@ -73,8 +73,6 @@ def send_cancellation_email(user_email, username,mail):
     msg.html = render_template('cancellation_email.html', username=username)
     mail.send(msg)   
 
-
-
 def fetch_news(symbols, max_articles=4):
     news_content = []
 
@@ -88,12 +86,21 @@ def fetch_news(symbols, max_articles=4):
             for idx, article in enumerate(news[:max_articles]):  # Display only the first `max_articles` news articles
                 related_tickers = ", ".join(article.get('relatedTickers', []))
                 publisher = article.get('publisher', 'Unknown Publisher')  # Get the publisher information
+                
+                # Optimize image selection (get the smallest resolution)
+                if 'thumbnail' in article:
+                    # Get the lowest resolution available
+                    thumbnail_url = article['thumbnail']['resolutions'][-1]['url']
+                else:
+                    thumbnail_url = None
+
+                # Build news card with optimized image resolution
                 news_card = dbc.Col(
                     dbc.Card(
                         dbc.CardBody([
                             html.H5(html.A(article['title'], href=article['link'], target="_blank")),
-                            html.Img(src=article['thumbnail']['resolutions'][0]['url'], style={"width": "250px", "height": "auto"})
-                            if 'thumbnail' in article else html.Div(),
+                            html.Img(src=thumbnail_url, style={"width": "200px", "height": "auto"})
+                            if thumbnail_url else html.Div(),
                             html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
                                 f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
@@ -114,7 +121,6 @@ def fetch_news(symbols, max_articles=4):
             news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
 
     return dbc.Row(news_content, className="news-row")
-
 
 def fetch_analyst_recommendations(symbol):
     ticker = yf.Ticker(symbol)
