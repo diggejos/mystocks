@@ -99,7 +99,7 @@ def fetch_news(symbols, max_articles=4):
                     dbc.Card(
                         dbc.CardBody([
                             html.H5(html.A(article['title'], href=article['link'], target="_blank")),
-                            html.Img(src=thumbnail_url, style={"width": "200px", "height": "auto"},loading="lazy")
+                            html.Img(src=thumbnail_url, style={"width": "200px", "height": "auto"})
                             if thumbnail_url else html.Div(),
                             html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
