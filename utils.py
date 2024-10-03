@@ -21,9 +21,6 @@ from models import User
 from flask import session
 
 
-
-
-
 def get_user_role():
     # Check if user is logged in
     logged_in = session.get('logged_in', False)
@@ -73,6 +70,7 @@ def send_cancellation_email(user_email, username,mail):
     msg.html = render_template('cancellation_email.html', username=username)
     mail.send(msg)   
 
+
 def fetch_news(symbols, max_articles=4):
     news_content = []
 
@@ -121,6 +119,9 @@ def fetch_news(symbols, max_articles=4):
             news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
 
     return dbc.Row(news_content, className="news-row")
+
+
+
 
 def fetch_analyst_recommendations(symbol):
     ticker = yf.Ticker(symbol)
