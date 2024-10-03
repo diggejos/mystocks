@@ -109,10 +109,11 @@
 }
 
 #chatbot-conversation p.user {
-    background-color: var(--bs-secondary);
+    background-color: var(--bs-success);
     /*color: black;*/
     align-self: flex-end;
     text-align: left;
+    color: white;
     margin-left: 30%;
 }
 
@@ -320,7 +321,7 @@
 
 .checked-list li::before {
     content: "✔"; /* Unicode for checkmark */
-    color: green; /* Set the color of the checkmark */
+    color: white !important; /* Set the color of the checkmark */
     position: absolute; /* Position the checkmark absolutely */
     left: 0; /* Align it to the left */
     top: 0; /* Align it to the top */
@@ -365,7 +366,7 @@
     flex-wrap: nowrap; /* Prevent wrapping to new lines */
     overflow-x: auto; /* Enable horizontal scrolling */
     -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
-    background-color: var(--bs-secondary); /* Light background */
+    background-color: var(--bs-light); /* Light background */
     border-top: 5px solid var(--bs-primary); /* Border at the top of the footer */
     padding: 10px 0; /* Padding for the entire footer nav */
     position: fixed;
@@ -400,7 +401,7 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    background-color: var(--bs-secondary);
+    background-color: var(--bs-light);
     border-top: 2px solid var(--bs-primary);
     padding: 10px 0;
     position: fixed;
@@ -501,7 +502,7 @@
 
 #filters-collapse .card {
     border-color: #ccc; /* Optional: border color */
-    background-color: var(--bs-secondary);
+    background-color: var(--bs-light);
     color: var(--bs-dark);
 
 }
@@ -555,7 +556,7 @@
     #filters-collapse {
         display: none; /* Initially hidden */
         position: fixed;
-        top: 75px; /* Ensure collapse starts below the button */
+        top: 64px; /* Ensure collapse starts below the button */
         width: 70%; /* Set the width to 80% for mobile */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);*/
         height: 60%; /* Shadow around the entire box */
@@ -720,3 +721,30 @@ a:hover {
 .custom-light-bg {
     background-color: rgba(173, 216, 230, 0.4);  /* Light blue with 40% opacity */
 }
+
+/* Completely remove Bootstrap's default icon */
+.navbar-toggler-icon {
+    display: none !important;
+}
+
+/* Custom hamburger icon when closed */
+.toggler-icon::before {
+    content: "\2630"; /* Unicode for hamburger icon */
+    font-size: 1.5rem;
+    color: white; /* Adjust to match your theme */
+}
+
+/* Custom "X" icon when open */
+.toggler-icon.open::before {
+    content: "\2715"; /* Unicode for 'X' icon */
+    font-size: 1.5rem;
+    color: white; /* Adjust to match your theme */
+}
+
+/* Remove the background and border that Bootstrap adds */
+.toggler-icon {
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
