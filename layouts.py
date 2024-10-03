@@ -39,7 +39,7 @@ def create_navbar(themes):
                 ),
                 
                 # NavbarToggler and Collapse aligned to the right
-                dbc.NavbarToggler(id="navbar-toggler", className="order-2 me-3 custom-toggler"),  # Adjust toggler order and add right margin
+                dbc.NavbarToggler(id="navbar-toggler", className="order-2 me-3 toggler-icon"),  # Adjust toggler order and add right margin
                 
                 dbc.Collapse(
                     dbc.Nav(
