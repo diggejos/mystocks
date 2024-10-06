@@ -21,4 +21,3 @@ flask_mail
 stripe
 logging
 authlib
-secrets
