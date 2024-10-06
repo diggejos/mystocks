@@ -10,15 +10,29 @@ import requests
 from prophet import Prophet
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
-from flask import url_for, redirect, flash
-from itsdangerous import URLSafeTimedSerializer
-import numpy as np
-from flask_mail import Mail, Message
-from flask import redirect, url_for
+from flask import url_for
 from flask import render_template
-from flask_session import Session
 from models import User
 from flask import session
+from dash import dcc
+
+
+def generate_unique_username(base_username):
+    # Remove any non-alphanumeric characters and make it lowercase
+    clean_username = re.sub(r'\W+', '', base_username).lower()
+    # Check if the username already exists
+    user = User.query.filter_by(username=clean_username).first()
+    if not user:
+        return clean_username
+    # Append a number to the username to make it unique
+    counter = 1
+    while True:
+        new_username = f"{clean_username}{counter}"
+        user = User.query.filter_by(username=new_username).first()
+        if not user:
+            return new_username
+        counter += 1
+
 
 
 def get_user_role():
@@ -81,36 +95,38 @@ def fetch_news(symbols, max_articles=4):
         if news:
             news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
 
+            articles = []
             for idx, article in enumerate(news[:max_articles]):  # Display only the first `max_articles` news articles
                 related_tickers = ", ".join(article.get('relatedTickers', []))
-                publisher = article.get('publisher', 'Unknown Publisher')  # Get the publisher information
-                
-                # Optimize image selection (get the smallest resolution)
-                if 'thumbnail' in article:
-                    # Get the lowest resolution available
-                    thumbnail_url = article['thumbnail']['resolutions'][-1]['url']
-                else:
-                    thumbnail_url = None
+                publisher = article.get('publisher', 'Unknown Publisher')
 
-                # Build news card with optimized image resolution
+                # Consistent card height
                 news_card = dbc.Col(
                     dbc.Card(
                         dbc.CardBody([
-                            html.H5(html.A(article['title'], href=article['link'], target="_blank")),
-                            html.Img(src=thumbnail_url, style={"width": "150px", "height": "auto"})
-                            if thumbnail_url else html.Div(),
+                            html.H5(
+                                html.A(article['title'], href=article['link'], target="_blank"),
+                                style={"white-space": "nowrap", "overflow": "hidden", "text-overflow": "ellipsis"}
+                            ),
+                            html.Img(
+                                src=article['thumbnail']['resolutions'][0]['url'],
+                                style={"max-width": "150px", "height": "auto", "margin-bottom": "10px"}
+                            ) if 'thumbnail' in article else html.Div(),
                             html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
                                 f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
-                                style={"margin-bottom": "0px", "padding-bottom": "0px"}
+                                style={"font-size": "12px", "margin-top": "auto"}
                             )
-                        ])
-                    ), width=12, md=6, className="mb-2"
+                        ], style={"min-height": "250px", "max-height": "250px", "display": "flex", "flex-direction": "column"})
+                    ),
+                    xs=12, md=6,  # Full width on mobile, half width on desktop
+                    className="mb-2"
                 )
-                news_content.append(news_card)
+                articles.append(news_card)
+
+            news_content.append(dbc.Row(articles, className="news-row"))
 
             if len(news) > max_articles:
-                # Add a "Load More" button if there are more articles available
                 news_content.append(
                     dbc.Button("Load More", id={'type': 'load-more-button', 'index': symbol}, color='primary', size='sm', className='mb-2')
                 )
@@ -118,8 +134,7 @@ def fetch_news(symbols, max_articles=4):
         else:
             news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
 
-    return dbc.Row(news_content, className="news-row")
-
+    return html.Div(news_content)
 
 
 
@@ -298,7 +313,6 @@ def create_company_info(info):
     ])
 
 
-
 def validate_password(password):
     # Check for minimum length
     if len(password) < 8:
@@ -322,9 +336,6 @@ def validate_password(password):
     
     # If all conditions are met
     return None
-
-
-
 
 
 def fetch_stock_data_watchlist(symbol):
@@ -447,5 +458,41 @@ def confirm_token(token, server, expiration=3600):
         print(f"Token confirmation error: {e}")  # Add this line to log the error
         return False
     return email
+
+
+
+def create_blog_post(title, date, author, image_src, content_file, cta_text, cta_href, article_id):
+    return html.Div(
+        [
+            # Blog Article Title
+            html.H2(title, id=article_id, className="text-center my-4"),
+            html.P(f"By {author} | {date}", className="text-center text-muted mb-4"),
+
+            # Blog Image
+            html.Div(
+                html.Img(
+                    src=image_src, 
+                    alt=title, 
+                    className="img-fluid rounded", 
+                    style={"width": "auto", "max-width": "500px", "height": "auto"}  # Maintain original width but max 600px
+                ),
+                className="text-center mb-4"
+            ),
+
+            # Blog Content
+            html.Div(
+                dcc.Markdown(open(f"assets/{content_file}").read()),  # Load content from a Markdown file
+                className="p-4",
+                style={"line-height": "1.8", "font-size": "18px", "color": "#343a40", "background-color": "#f9f9f9", "border-radius": "10px"}
+            ),
+
+            # Call to Action Button
+            html.Div(
+                dbc.Button(cta_text, href=cta_href, color="primary", className="d-block mx-auto my-4", style={"width": "100%", "max-width": "400px", "font-size": "20px"}),
+                className="text-center"
+            ),
+        ],
+        className="blog-post",
+    )
 
 
