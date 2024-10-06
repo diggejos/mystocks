@@ -263,7 +263,7 @@
     text-align: center;
     margin-top:200px;
     margin-bottom:30px; /* Center text in the footer */
-    height: 180px
+    height:180px
 }
 
 /* Links in the Footer */
@@ -730,16 +730,16 @@ a:hover {
 
 /* Custom hamburger icon when closed */
 .toggler-icon::before {
-    content: "\2630" !important; /* Unicode for hamburger icon */
+    content: "\2630"; /* Unicode for hamburger icon */
     font-size: 1.5rem;
-    color: white !important; /* Adjust to match your theme */
+    color: white; /* Adjust to match your theme */
 }
 
 /* Custom "X" icon when open */
 .toggler-icon.open::before {
-    content: "\2715" !important; /* Unicode for 'X' icon */
+    content: "\2715"; /* Unicode for 'X' icon */
     font-size: 1.5rem;
-    color: white !important; /* Adjust to match your theme */
+    color: white; /* Adjust to match your theme */
 }
 
 /* Remove the background and border that Bootstrap adds */
@@ -747,5 +747,20 @@ a:hover {
     background: none;
     border: none;
     box-shadow: none;
+}
+
+.toc ul {
+    list-style-type: none;
+    padding: 0;
+}
+.toc li {
+    padding: 8px 0;
+}
+.toc a {
+    color: #007bff;
+    text-decoration: none;
+}
+.toc a:hover {
+    text-decoration: underline;
 }
 
