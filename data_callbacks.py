@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import json
 import utils as ut
-from models import User, bcrypt, db, Watchlist, StockKPI # Make sure to import the app instance
+from models import User, db, Watchlist, StockKPI # Make sure to import the app instance
 from dash.exceptions import PreventUpdate
 from layouts import themes
 
@@ -491,6 +491,8 @@ def get_data_callbacks(app, server):
             className="table-sm table-responsive"
         )
     
+
+
     @app.callback(
         [Output('forecast-graph', 'figure'),
          Output('forecast-stock-warning', 'children'),
@@ -502,7 +504,12 @@ def get_data_callbacks(app, server):
          State('predefined-ranges', 'value')]  # Added predefined-ranges state
     )
     def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefined_range):
-        if n_clicks and selected_stocks:
+        # If the button is not rendered in the current view, skip the callback
+        if n_clicks is None:
+            raise PreventUpdate
+    
+        # Proceed with the normal forecast generation logic
+        if selected_stocks:
             if len(selected_stocks) > 3:
                 return dash.no_update, "Please select up to 3 stocks only.", dash.no_update
     
@@ -625,6 +632,7 @@ def get_data_callbacks(app, server):
         empty_fig.update_layout(template=plotly_theme)
     
         return empty_fig, "", dash.no_update
+
     
 
     @app.callback(Output('simulation-result', 'children'),
@@ -683,41 +691,41 @@ def get_data_callbacks(app, server):
     
     
     @app.callback(
-    [Output('saved-watchlists-dropdown', 'options'),
-     Output('saved-watchlists-dropdown', 'value'),
-     Output('new-watchlist-name', 'value')],
-    [Input('login-status', 'data'),
-     Input('create-watchlist-button', 'n_clicks'),
-     Input('delete-watchlist-button', 'n_clicks')],
-    [State('new-watchlist-name', 'value'),
-     State('individual-stocks-store', 'data'),
-     State('saved-watchlists-dropdown', 'value'),
-     State('theme-store', 'data'),  # Get the selected theme (name, not URL)
-     State('login-username-store', 'data')]
+        [Output('saved-watchlists-dropdown', 'options'),
+         Output('saved-watchlists-dropdown', 'value'),
+         Output('new-watchlist-name', 'value')],
+        [Input('login-status', 'data'),
+         Input('create-watchlist-button', 'n_clicks'),
+         Input('delete-watchlist-button', 'n_clicks')],
+        [State('new-watchlist-name', 'value'),
+         State('individual-stocks-store', 'data'),
+         State('saved-watchlists-dropdown', 'value'),
+         State('theme-store', 'data'),  # Get the selected theme (name, not URL)
+         State('login-username-store', 'data')],
+        prevent_initial_call=True  # Ensures the callback is not fired before any inputs are triggered
     )
     def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_name, stocks, selected_watchlist_id, selected_theme, username):
-        # Check if the user is logged in, if not clear the dropdown and inputs
+        # Ensure the callback does not run if username or login status is not provided
         if not username or not login_status:
             return [], None, ''  # Clear the dropdown and inputs if not logged in
         
         # Get the user from the database
         user = User.query.filter_by(username=username).first()
         
-        # If no user is found, handle this case
         if user is None:
             # Handle the case where no user is found
             print(f"User with username {username} not found")
             return [], None, ''  # Clear the dropdown and inputs
         
-        # Handle watchlist deletion
+        # Handle watchlist deletion if `delete_clicks` is triggered
         if delete_clicks and selected_watchlist_id:
             watchlist = Watchlist.query.get(selected_watchlist_id)
             if watchlist and watchlist.user_id == user.id:
                 db.session.delete(watchlist)
                 db.session.commit()
                 selected_watchlist_id = None  # Clear the selected watchlist after deletion
-        
-        # Handle watchlist creation or update
+    
+        # Handle watchlist creation or update if `create_clicks` is triggered
         elif create_clicks:
             if selected_watchlist_id:
                 # Update existing watchlist if selected
@@ -744,7 +752,7 @@ def get_data_callbacks(app, server):
     
         return watchlist_options, selected_watchlist_id, ''  # Clear the new watchlist name input after creation or update
     
-    
+        
     @app.callback(
         [Output('conversation-store', 'data'),
          Output('chatbot-conversation', 'children'),
@@ -893,59 +901,60 @@ def get_data_callbacks(app, server):
         # If not logged in or no watchlist is selected, return AAPL and MSFT as the default stocks
         return ['AAPL', 'MSFT']
     
+    
     @app.callback(
-        [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
-         Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
-         Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
-        [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
-        [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
-         State({'type': 'additional-news', 'index': MATCH}, 'children')]
+    [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
+     Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
+     Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
+    [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
+    [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
+     State({'type': 'additional-news', 'index': MATCH}, 'children')]
     )
     def load_more_articles(n_clicks, button_id, current_articles):
         if n_clicks is None or n_clicks == 0:
             raise PreventUpdate
-
+    
         symbol = button_id['index']
         ticker = yf.Ticker(symbol)
         news = ticker.news
-
+    
         if not news or len(news) <= 4:
             return dash.no_update, dash.no_update, dash.no_update
-
-        # If current_articles is None, initialize it to an empty list
+    
         if current_articles is None:
             current_articles = []
-
+    
         max_articles = (n_clicks + 1) * 4  # Increase the max articles by 4 each time the button is clicked
         additional_articles = []
-
+    
         for article in news[4:max_articles]:
             related_tickers = ", ".join(article.get('relatedTickers', []))
-            publisher = article.get('publisher', 'Unknown Publisher')  # Get the publisher information
+            publisher = article.get('publisher', 'Unknown Publisher')
+    
             news_card = dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
                         html.H5(html.A(article['title'], href=article['link'], target="_blank")),
-                        html.Img(src=article['thumbnail']['resolutions'][0]['url'], style={"width": "250px", "height": "auto"})
-                        if 'thumbnail' in article else html.Div(),
+                        html.Img(
+                            src=article['thumbnail']['resolutions'][0]['url'],
+                            style={"max-width": "150px", "height": "auto", "margin-bottom": "10px"}
+                        ) if 'thumbnail' in article else html.Div(),
                         html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                         html.Footer(
                             f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
-                            style={"margin-bottom": "0px", "padding-bottom": "0px"}
+                            style={"font-size": "12px", "margin-top": "auto"}
                         )
-                    ])
+                    ], style={"min-height": "300px", "max-height": "300px", "display": "flex", "flex-direction": "column"})
                 ),
                 xs=12, md=6,  # Full width on mobile, half width on desktop
                 className="mb-2"
             )
             additional_articles.append(news_card)
-
-        if max_articles >= len(news):
-            # Hide the "Load More" button if all articles have been loaded
-            return current_articles + additional_articles, "No more articles", {'display': 'none'}
-        
-        return current_articles + additional_articles, "Load More", dash.no_update
     
+        if max_articles >= len(news):
+            return dbc.Row(additional_articles), "No more articles", {'display': 'none'}
+    
+        return dbc.Row(additional_articles), "Load More", dash.no_update
     
 
     @app.callback(
@@ -1086,4 +1095,51 @@ def get_data_callbacks(app, server):
             return stored_forecast
         return dash.no_update
     
+    # Callbacks to toggle the collapse for each question
+    @app.callback(
+        [Output("collapse-q1", "is_open"),
+         Output("collapse-q2", "is_open"),
+         Output("collapse-q3", "is_open"),
+         Output("collapse-q4", "is_open"),
+         Output("collapse-q5", "is_open")],
+        [Input("faq-q1", "n_clicks"),
+         Input("faq-q2", "n_clicks"),
+         Input("faq-q3", "n_clicks"),
+         Input("faq-q4", "n_clicks"),
+         Input("faq-q5", "n_clicks")],
+        [State("collapse-q1", "is_open"),
+         State("collapse-q2", "is_open"),
+         State("collapse-q3", "is_open"),
+         State("collapse-q4", "is_open"),
+         State("collapse-q5", "is_open")]
+    )
+    def toggle_collapse_FAQ(n1, n2, n3, n4, n5, is_open1, is_open2, is_open3, is_open4, is_open5):
+        ctx = dash.callback_context
+
+        if not ctx.triggered:
+            return is_open1, is_open2, is_open3, is_open4, is_open5
+
+        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+        return (
+            not is_open1 if triggered_id == 'faq-q1' else is_open1,
+            not is_open2 if triggered_id == 'faq-q2' else is_open2,
+            not is_open3 if triggered_id == 'faq-q3' else is_open3,
+            not is_open4 if triggered_id == 'faq-q4' else is_open4,
+            not is_open5 if triggered_id == 'faq-q5' else is_open5,
+        )
+    
+    # Callback to toggle TOC on mobile
+    @app.callback(
+        Output("toc-collapse", "is_open"),
+        [Input("toc-toggle", "n_clicks")],
+        [State("toc-collapse", "is_open")],
+        prevent_initial_call=True
+    )
+    def toggle_toc(n_clicks, is_open):
+        if n_clicks:
+            return not is_open
+        return is_open
+    
+
 
