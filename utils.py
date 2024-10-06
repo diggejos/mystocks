@@ -474,7 +474,7 @@ def create_blog_post(title, date, author, image_src, content_file, cta_text, cta
                     src=image_src, 
                     alt=title, 
                     className="img-fluid rounded", 
-                    style={"width": "auto", "max-width": "500px", "height": "auto"}  # Maintain original width but max 600px
+                    style={"width": "auto", "height": "auto"}  # Maintain original width but max 600px
                 ),
                 className="text-center mb-4"
             ),
