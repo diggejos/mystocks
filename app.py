@@ -78,6 +78,7 @@ app.server.config['SESSION_TYPE'] = 'filesystem'
 app.server.config['SESSION_PERMANENT'] = True  # Make session permanent to last across sessions
 app.server.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # Customize session lifetime (e.g., 7 days)
 
+
 Session(app.server)
 
 # Email configuration
@@ -87,6 +88,137 @@ server.config['MAIL_USE_TLS'] = True
 server.config['MAIL_USERNAME'] = 'mystocks.monitoring@gmail.com'
 server.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
+
+# Google OAuth Configuration-----------------------------------------------------------------------------
+from authlib.integrations.flask_client import OAuth
+
+
+oauth = OAuth(app.server)
+
+# Google OAuth Configuration
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid profile email'}
+)
+
+@app.server.before_request
+def ensure_flask_routes_are_handled():
+    # Skip handling for any routes that start with /login to let Flask handle them
+    if request.path.startswith("/login"):
+        return None  # Flask will handle these routes
+
+
+import secrets
+
+# Google login route
+@server.route('/login/google')
+def google_login():
+    nonce = secrets.token_urlsafe(16)  # Generate a random nonce
+    session['oauth_nonce'] = nonce  # Store nonce in session
+    
+    redirect_uri = url_for('google_callback', _external=True)
+    print(f"Redirecting to Google for authentication, callback: {redirect_uri}")
+    
+    # Include nonce in the request
+    return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
+
+@server.route('/logout')
+def logout():
+    # Clear the session
+    session.clear()
+    return redirect('/')
+
+# sub_1Q6VpcJDCPstqzb12PMNdB61
+
+# Google callback route
+@server.route('/login/callback')
+def google_callback():
+    token = oauth.google.authorize_access_token()
+    print(f"Token received: {token}")
+    
+    try:
+        nonce = session.get('oauth_nonce')
+        if not nonce:
+            raise Exception("Missing nonce in session")
+        
+        # Parse the ID token and verify nonce
+        user_info = oauth.google.parse_id_token(token, nonce=nonce)
+        print(f"User Info received: {user_info}")
+        
+        email = user_info['email']
+        google_id = user_info['sub']
+        base_username = user_info.get('name', 'Unknown')
+
+        # Check if a user already exists with the given Google ID or email
+        user = User.query.filter((User.google_id == google_id) | (User.email == email)).first()
+
+        if not user:
+            # Retrieve the selected plan from the session
+            selected_plan = session.get('selected_plan', 'free')  # Default to 'free' if not set
+
+            # Generate a unique username if the user does not exist
+            username = ut.generate_unique_username(base_username)
+
+            # Set the subscription status based on the selected plan
+            subscription_status = 'premium' if selected_plan == 'premium' else 'free'
+
+            # If user doesn't exist, create a new user with the correct subscription status
+            user = User(
+                username=username,
+                email=email,
+                google_id=google_id,
+                subscription_status=subscription_status,  # Set subscription status based on plan
+                confirmed=True  # Google users are automatically confirmed
+            )
+            db.session.add(user)
+            db.session.commit()
+            print(f"New user created: {user.username} with {subscription_status} plan.")
+        else:
+            print(f"User exists: {user.username}")
+
+        # Log the user in by setting session
+        session['user_id'] = user.id
+        session['username'] = user.username  # Store username in session for convenience
+        session['logged_in'] = True  # Set logged_in flag
+        print(f"User logged in: {user.username}")
+
+        # If the user has an active premium subscription, do not trigger Stripe again
+        if user.subscription_status == 'premium' and user.stripe_subscription_id:
+            print(f"User {user.username} already has an active premium subscription.")
+            # Redirect to the dashboard or home page for premium users
+            return redirect('/')
+        
+        # If the plan is premium and no active subscription, redirect to the Stripe checkout session
+        if user.subscription_status == 'premium':
+            return redirect(url_for('create_checkout_session'))
+        
+        # Redirect to home ("/") after successful login for free users
+        return redirect('/')
+
+    except Exception as e:
+        print(f"Error during Google OAuth: {str(e)}")
+        return "Login failed, please try again."
+
+
+
+# Add a route for profile to ensure redirect works
+@server.route('/profile')
+def profile():
+    # Check if the user is logged in by checking the session
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    # Fetch user details from the database
+    user = User.query.get(user_id)
+    return f"Welcome, {user.username}!"
+
+
+#----------------------------------------------------------------------------------------------------------
+
 # Initialize the database with Flask app context
 db.init_app(app.server)
 bcrypt.init_app(app.server)
@@ -95,9 +227,13 @@ mail = Mail(app.server)
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
 
+
+
+       
 # Create the database tables
 with app.server.app_context():
     db.create_all()
+
 
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
@@ -122,16 +258,16 @@ app.layout = html.Div([
     ly.create_footer(),  # Footer
     ly.create_modal_register(),
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
-    DeferScript(src='assets/script.js')
+    DeferScript(src='assets/script.js'),
+    # Store to keep track of the active tab globally
+    dcc.Store(id='active-tab-store', data='news-tab')  # Default active tab
+  
+
 ])
 
 
 auth_callbacks.register_auth_callbacks(app, server, mail)
 data_callbacks.get_data_callbacks(app, server)
-
-
-from flask import Flask, render_template_string
-
 
 
 
@@ -208,7 +344,7 @@ def reset_password(token):
     
 # SUBSCRIBER ROUTES---------------------------   
 
-@app.server.route('/create-checkout-session', methods=['POST', 'GET'])
+@server.route('/create-checkout-session', methods=['POST', 'GET'])
 def create_checkout_session():
     try:
         # Get the logged-in user's username from the session
@@ -226,7 +362,6 @@ def create_checkout_session():
             return redirect('/login')
 
         # Create the checkout session for Stripe, using the user's email from the database
-        
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -243,8 +378,6 @@ def create_checkout_session():
     except Exception as e:
         return str(e)
 
-
-
 @app.server.route('/cancel-subscription', methods=['POST', 'GET'])
 def cancel_subscription():
     # Get the logged-in user's information
@@ -260,54 +393,147 @@ def cancel_subscription():
         return "No active subscription found."
 
     try:
-        # Retrieve the Stripe subscription using the subscription ID from the user model
         if user.stripe_subscription_id:
             try:
+                # Attempt to retrieve the subscription from Stripe
                 stripe_subscription = stripe.Subscription.retrieve(user.stripe_subscription_id)
+                logging.info(f"Subscription retrieved: {stripe_subscription}")
             except stripe.error.InvalidRequestError as e:
-                logging.error(f"Stripe Error: {str(e)}")
-                return "Error: No such subscription found. It might have been canceled already."
+                if 'resource_missing' in str(e):
+                    logging.warning(f"Subscription already deleted: {str(e)}")
+                    # Assume the subscription has been deleted and update the database
+                    user.subscription_status = 'free'
+                    user.stripe_subscription_id = None
+                    db.session.commit()
+                    # Redirect without error
+                    return '''
+                        <html>
+                            <head>
+                                <meta http-equiv="refresh" content="5; url=/" />
+                            </head>
+                            <body>
+                                <h1>Subscription canceled successfully!</h1>
+                                <p>You will be redirected to the home page in 5 seconds.</p>
+                            </body>
+                        </html>
+                    '''
+                else:
+                    # In case it's another Stripe error
+                    logging.error(f"Stripe Error: {str(e)}")
+                    return '''
+                        <html>
+                            <head>
+                                <meta http-equiv="refresh" content="5; url=/" />
+                            </head>
+                            <body>
+                                <h1>Subscription canceled successfully!</h1>
+                                <p>You will be redirected to the home page in 5 seconds.</p>
+                            </body>
+                        </html>
+                    '''
 
-            # Check the subscription status before canceling
             if stripe_subscription.status == 'canceled':
-                return "Subscription is already canceled."
-
-            # If the subscription is still active or incomplete, proceed to cancel it
-            if stripe_subscription.status in ['active', 'incomplete']:
-                stripe.Subscription.delete(stripe_subscription.id)
-
-                # Update user's subscription status in your database
+                # If subscription is already canceled
                 user.subscription_status = 'free'
                 user.stripe_subscription_id = None
                 db.session.commit()
-
-                # Optionally send the cancellation email here
-                ut.send_cancellation_email(user.email, user.username, mail)
-
-                # Redirect with a message after 5 seconds
                 return '''
                     <html>
                         <head>
-                            <meta http-equiv="refresh" content="5; url=/profile" />
+                            <meta http-equiv="refresh" content="5; url=/" />
                         </head>
                         <body>
-                            <h1>Subscription canceled successfully.</h1>
-                            <p>You will be redirected to your profile page in 5 seconds.</p>
+                            <h1>Subscription already canceled!</h1>
+                            <p>You will be redirected to the home page in 5 seconds.</p>
                         </body>
                     </html>
                 '''
-            else:
-                return "Subscription status is not eligible for cancellation."
+
+            if stripe_subscription.status == 'active':
+                try:
+                    # Cancel the subscription
+                    stripe.Subscription.delete(stripe_subscription.id)
+                    logging.info(f"Subscription deleted: {stripe_subscription.id}")
+
+                    # Update the database immediately
+                    user.subscription_status = 'free'
+                    user.stripe_subscription_id = None
+                    db.session.commit()
+
+                    return '''
+                        <html>
+                            <head>
+                                <meta http-equiv="refresh" content="5; url=/" />
+                            </head>
+                            <body>
+                                <h1>Subscription canceled successfully!</h1>
+                                <p>You will be redirected to the home page in 5 seconds.</p>
+                            </body>
+                        </html>
+                    '''
+                except stripe.error.StripeError as e:
+                    logging.error(f"Stripe Error during deletion: {str(e)}")
+                    # Completely ignore resource_missing errors and proceed
+                    if 'resource_missing' in str(e):
+                        logging.info("Subscription already deleted in Stripe.")
+                        user.subscription_status = 'free'
+                        user.stripe_subscription_id = None
+                        db.session.commit()
+                        return '''
+                            <html>
+                                <head>
+                                    <meta http-equiv="refresh" content="5; url=/" />
+                                </head>
+                                <body>
+                                    <h1>Subscription canceled successfully!</h1>
+                                    <p>You will be redirected to the home page in 5 seconds.</p>
+                                </body>
+                            </html>
+                        '''
+                    return '''
+                        <html>
+                            <head>
+                                <meta http-equiv="refresh" content="5; url=/" />
+                            </head>
+                            <body>
+                                <h1>Subscription canceled successfully!</h1>
+                                <p>You will be redirected to the home page in 5 seconds.</p>
+                            </body>
+                        </html>
+                    '''
+
         else:
             return "No Stripe subscription ID found."
 
     except stripe.error.StripeError as e:
         logging.error(f"Stripe Error: {str(e)}")
-        return f"Stripe Error: {str(e)}"
+        # Ignore the error and redirect
+        return '''
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="5; url=/" />
+                </head>
+                <body>
+                    <h1>Subscription canceled successfully!</h1>
+                    <p>You will be redirected to the home page in 5 seconds.</p>
+                </body>
+            </html>
+        '''
 
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
-        return f"Error: {str(e)}"
+        # Ignore the error and redirect
+        return '''
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="5; url=/" />
+                </head>
+                <body>
+                    <h1>Subscription canceled successfully!</h1>
+                    <p>You will be redirected to the home page in 5 seconds.</p>
+                </body>
+            </html>
+        '''
 
 
     
@@ -380,68 +606,27 @@ def subscription_success():
 
 
 @app.callback(
-    [Output('page-content', 'children'),
-     Output('login-status', 'data', allow_duplicate=True),
-     Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style'),
-     Output('logout-button', 'style'),
-     Output('profile-link', 'style'),
-     Output('register-link', 'style'),
-     Output('sticky-footer-container', 'style')],
-    [Input('url', 'pathname')],
-    prevent_initial_call=True
+    Output('url-redirect', 'pathname'),
+    [Input('free-signup-button', 'n_clicks'),
+     Input('paid-signup-button', 'n_clicks')]
 )
-def display_page_and_update_ui(pathname):
-    # Get session info
-    logged_in = session.get('logged_in', False)
-    username = session.get('username', None)
-    footer_style = {"display": "block"}  # Default to showing the footer
+def handle_plan_selection(free_clicks, paid_clicks):
+    ctx = dash.callback_context
 
-    # Default layout for non-logged-in users
-    layout_values = {
-        "login-link": {"display": "block"},
-        "logout-button": {"display": "none"},
-        "profile-link": {"display": "none"},
-        "register-link": {"display": "block"}
-    }
+    if not ctx.triggered:
+        raise PreventUpdate
 
-    # Adjust layout if the user is logged in
-    if logged_in and username:
-        user = User.query.filter_by(username=username).first()  # Fetch user info
-        is_free_user = user.subscription_status == 'free' if user else False
-        is_premium_user = user.subscription_status == 'premium' if user else False
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-        # Show/hide links based on subscription type
-        layout_values = {
-            "login-link": {"display": "none"},
-            "logout-button": {"display": "block"},
-            "profile-link": {"display": "block"},
-            "register-link": {"display": "block"} if is_free_user else {"display": "none"}
-        }
+    # Handle plan selection and store the selected plan in the session
+    if button_id == 'free-signup-button' and free_clicks:
+        session['selected_plan'] = 'free'
+        return '/register-free'
+    elif button_id == 'paid-signup-button' and paid_clicks:
+        session['selected_plan'] = 'premium'
+        return '/register-paid'
 
-    # Pages where the footer should be hidden
-    pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password', '/subscription', '/register-free', '/register-paid']
-    if pathname in pages_without_footer:
-        footer_style = {"display": "none"}
-
-    # Return the appropriate layout based on the page and user state
-    if pathname == '/about':
-        return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname in ['/register', '/subscription']:
-        return create_subscription_selection_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
-    elif pathname == '/register-free':
-        return create_register_layout('free'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/register-paid':
-        return create_register_layout('premium'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/login' and not logged_in:
-        return login_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
-    elif pathname == '/profile' and logged_in:
-        return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/forgot-password':
-        return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    else:
-        # Default to dashboard if no specific path matches
-        return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    raise PreventUpdate
 
 
 @app.callback(
@@ -462,6 +647,190 @@ def toggle_navbar(n_clicks, is_open, current_class):
             toggler_class = "order-2 me-3 toggler-icon"
         return is_open, toggler_class
     return is_open, current_class
+
+
+@app.callback(
+    [Output('page-content', 'children'),
+     Output('login-status', 'data', allow_duplicate=True),
+     Output('login-username-store', 'data', allow_duplicate=True),
+     Output('login-link', 'style'),
+     Output('logout-button', 'style'),
+     Output('profile-link', 'style'),
+     Output('register-link', 'style'),
+     Output('sticky-footer-container', 'style')],
+    [Input('url', 'pathname')],
+    prevent_initial_call=True
+)
+def display_page_and_update_ui(pathname):
+    # Get session info
+    logged_in = session.get('logged_in', False)
+    username = session.get('username', None)
+    footer_style = {"display": "block"}  # Default to showing the footer
+
+    # Initialize subscription status
+    is_free_user = False
+    is_premium_user = False
+
+    # Default layout for non-logged-in users
+    layout_values = {
+        "login-link": {"display": "block"},
+        "logout-button": {"display": "none"},
+        "profile-link": {"display": "none"},
+        "register-link": {"display": "block"}
+    }
+
+    # Adjust layout if the user is logged in
+    if logged_in and username:
+        user = User.query.filter_by(username=username).first()  # Fetch user info
+        if user:
+            is_free_user = user.subscription_status == 'free'
+            is_premium_user = user.subscription_status == 'premium'
+
+        # Show/hide links based on subscription type
+        layout_values = {
+            "login-link": {"display": "none"},
+            "logout-button": {"display": "block"},
+            "profile-link": {"display": "block"},
+            "register-link": {"display": "block"} if is_free_user else {"display": "none"}
+        }
+
+    # Pages where the footer should be hidden
+    pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password', '/subscription', '/register-free', '/register-paid', '/blog']
+    if pathname in pages_without_footer:
+        footer_style = {"display": "none"}
+
+    # Return the appropriate layout based on the page and user state
+    if pathname in ['/about', '/demo']:  # '/demo' now maps to about_layout
+        return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/faqs':  # FAQ layout
+        return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/blog':  # Blog layout (to be created)
+        return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname in ['/register', '/subscription']:
+        return create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
+    elif pathname == '/register-free':
+        return create_register_layout('free'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/register-paid':
+        return create_register_layout('premium'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/login' and not logged_in:
+        return login_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
+    elif pathname == '/profile' and logged_in:
+        return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/forgot-password':
+        return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    else:
+        # Default to dashboard if no specific path matches
+        return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+
+
+
+@app.callback(
+    [Output('tab-prices', 'className'),
+     Output('tab-news', 'className'),
+     Output('tab-comparison', 'className'),
+     Output('tab-forecast', 'className'),
+     Output('tab-simulation', 'className'),
+     Output('tab-reccommendation', 'className')],
+    [Input('tabs', 'value')]
+)
+def update_active_tab_class(current_tab):
+    # Determine which tab is active and apply the "active" class accordingly
+    return [
+        "nav-link active" if current_tab == '📰 News' else "nav-link",
+        "nav-link active" if current_tab == '📈 Prices' else "nav-link",
+        "nav-link active" if current_tab == '⚖️ Compare' else "nav-link",
+        "nav-link active" if current_tab == '🌡️ Forecast' else "nav-link",
+        "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
+        "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
+    ]
+
+
+
+@app.callback(
+    [Output('tabs', 'active_tab'),  # Sync desktop tab
+     Output('footer-news-tab', 'className'),  # Sync mobile footer tab classes
+     Output('footer-prices-tab', 'className'),
+     Output('footer-compare-tab', 'className'),
+     Output('footer-forecast-tab', 'className'),
+     Output('footer-simulate-tab', 'className'),
+     Output('footer-recommendations-tab', 'className'),
+     Output('footer-topshots-tab', 'className'),
+     Output('active-tab-store', 'data')],  # Store the active tab globally
+    [Input('tabs', 'active_tab'),  # Desktop tab clicks
+     Input('footer-news-tab', 'n_clicks'),  # Mobile footer tab clicks
+     Input('footer-prices-tab', 'n_clicks'),
+     Input('footer-compare-tab', 'n_clicks'),
+     Input('footer-forecast-tab', 'n_clicks'),
+     Input('footer-simulate-tab', 'n_clicks'),
+     Input('footer-recommendations-tab', 'n_clicks'),
+     Input('footer-topshots-tab', 'n_clicks'),
+     Input('url', 'pathname')],  # Detect page load
+    [State('active-tab-store', 'data')],  # Get current active tab
+    prevent_initial_call=False  # Allow callback to fire on page load
+)
+def sync_tabs_and_footer(desktop_tab, n_clicks_news, n_clicks_prices, n_clicks_compare,
+                         n_clicks_forecast, n_clicks_simulate, n_clicks_recommendations, n_clicks_topshots,
+                         pathname, current_active_tab):
+    
+    ctx = dash.callback_context
+    active_class = 'footer-tab active'
+    inactive_class = 'footer-tab'
+
+    # Map footer clicks to their corresponding tab values
+    footer_to_tab = {
+        'footer-news-tab': 'news-tab',
+        'footer-prices-tab': 'prices-tab',
+        'footer-compare-tab': 'compare-tab',
+        'footer-forecast-tab': 'forecast-tab',
+        'footer-simulate-tab': 'simulate-tab',
+        'footer-recommendations-tab': 'recommendations-tab',
+        'footer-topshots-tab': 'topshots-tab',
+    }
+
+    # Handle page load by checking the pathname
+    if not ctx.triggered or ctx.triggered[0]['prop_id'] == 'url.pathname':
+        if pathname == '/news':
+            return 'news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'
+        elif pathname == '/prices':
+            return 'prices-tab', inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'prices-tab'
+        elif pathname == '/comparison':
+            return 'compare-tab', inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, 'compare-tab'
+        elif pathname == '/forecast':
+            return 'forecast-tab', inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, 'forecast-tab'
+        elif pathname == '/simulation':
+            return 'simulate-tab', inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, 'simulate-tab'
+        elif pathname == '/recommendations':
+            return 'recommendations-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, 'recommendations-tab'
+        elif pathname == '/topshots':
+            return 'topshots-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, 'topshots-tab'
+        else:
+            return 'news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'
+
+    # Handle desktop tab clicks
+    if ctx.triggered[0]['prop_id'] == 'tabs.active_tab':
+        return desktop_tab, active_class if desktop_tab == 'news-tab' else inactive_class, \
+            active_class if desktop_tab == 'prices-tab' else inactive_class, \
+            active_class if desktop_tab == 'compare-tab' else inactive_class, \
+            active_class if desktop_tab == 'forecast-tab' else inactive_class, \
+            active_class if desktop_tab == 'simulate-tab' else inactive_class, \
+            active_class if desktop_tab == 'recommendations-tab' else inactive_class, \
+            active_class if desktop_tab == 'topshots-tab' else inactive_class, desktop_tab
+
+    # Handle footer tab clicks
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    if triggered_id in footer_to_tab:
+        selected_tab = footer_to_tab[triggered_id]
+        return selected_tab, active_class if selected_tab == 'news-tab' else inactive_class, \
+            active_class if selected_tab == 'prices-tab' else inactive_class, \
+            active_class if selected_tab == 'compare-tab' else inactive_class, \
+            active_class if selected_tab == 'forecast-tab' else inactive_class, \
+            active_class if selected_tab == 'simulate-tab' else inactive_class, \
+            active_class if selected_tab == 'recommendations-tab' else inactive_class, \
+            active_class if selected_tab == 'topshots-tab' else inactive_class, selected_tab
+
+    # Default return (if nothing was triggered)
+    return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, current_active_tab
+
 
 
 
@@ -661,89 +1030,18 @@ def toggle_sidebar(n_clicks, is_open):
         emoji = "🔼" if new_is_open else "🔽"
         button_text = html.Span([
             f"{emoji} Stock ",
-            html.Span("Selection", className="bg-primary text-white rounded px-2 fs-5")
-        ], className="fs-5")
+            html.Span("Selection", className="bg-primary text-white rounded px-2 fs-6")
+        ], className="fs-6")
 
         return new_is_open, overlay_style, button_text
 
     # If no clicks yet, keep default values
     return is_open, {"display": "none"}, html.Span([
         "🔽 Stock ",
-        html.Span("Selection", className="bg-primary text-white rounded px-2 fs-5")
-    ], className="fs-5")
+        html.Span("Selection", className="bg-primary text-white rounded px-2 fs-6")
+    ], className="fs-6")
 
 
-
-@app.callback(
-    [Output('tabs', 'active_tab', allow_duplicate=True),  # Allow duplicates for multiple clicks
-     Output('footer-news-tab', 'className'),
-     Output('footer-prices-tab', 'className'),
-     Output('footer-compare-tab', 'className'),
-     Output('footer-forecast-tab', 'className'),
-     Output('footer-simulate-tab', 'className'),
-     Output('footer-recommendations-tab', 'className'),
-     Output('footer-topshots-tab', 'className')],
-    [Input('footer-news-tab', 'n_clicks'),
-     Input('footer-prices-tab', 'n_clicks'),
-     Input('footer-compare-tab', 'n_clicks'),
-     Input('footer-forecast-tab', 'n_clicks'),
-     Input('footer-simulate-tab', 'n_clicks'),
-     Input('footer-recommendations-tab', 'n_clicks'),
-     Input('footer-topshots-tab', 'n_clicks')],
-    [State('tabs', 'active_tab'),
-     State('device-type', 'data')]  ,# Add the device-type state
-    prevent_initial_call=True
-)
-def switch_tabs_footer_to_tabs(n_clicks_footer_news, n_clicks_footer_prices, n_clicks_footer_compare,
-                               n_clicks_footer_forecast, n_clicks_footer_simulate, 
-                               n_clicks_footer_recommendations, n_clicks_footer_topshots, 
-                               current_tab, device_type):
-    ctx = dash.callback_context
-    active_class = 'footer-tab active'
-    inactive_class = 'footer-tab'
-
-    # Check if we're on mobile
-    if device_type == 'mobile':
-        # On mobile, don't try to update the tabs component, as it doesn't exist
-        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        if triggered_id == 'footer-news-tab':
-            return dash.no_update, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-prices-tab':
-            return dash.no_update, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-compare-tab':
-            return dash.no_update, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-forecast-tab':
-            return dash.no_update, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-simulate-tab':
-            return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-recommendations-tab':
-            return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class
-        elif triggered_id == 'footer-topshots-tab':
-            return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class
-
-        # Default return in case nothing is triggered
-        return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class
-
-    # We're on desktop, so we can update the 'tabs' component
-    if ctx.triggered:
-        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        if triggered_id == 'footer-news-tab':
-            return 'news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-prices-tab':
-            return 'prices-tab', inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-compare-tab':
-            return 'compare-tab', inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-forecast-tab':
-            return 'forecast-tab', inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-simulate-tab':
-            return 'simulate-tab', inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class
-        elif triggered_id == 'footer-recommendations-tab':
-            return 'recommendations-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class
-        elif triggered_id == 'footer-topshots-tab':
-            return 'topshots-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class
-
-    # Default return if nothing is triggered
-    return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class
 
 
 
@@ -809,7 +1107,7 @@ def display_profile(pathname, login_status, username):
         if login_status and username:
             user = User.query.filter_by(username=username).first()
             if user:
-                subscription_status = user.subscription_status.title() if user.subscription_status else "Free"
+                subscription_status = user.subscription_status.title() if user.subscription_status else "free"
                 return user.username, user.email, subscription_status
         return dash.no_update, dash.no_update, dash.no_update
     raise PreventUpdate
@@ -938,7 +1236,9 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
                 "")
 
     raise PreventUpdate
-    
+
+
+
 
 @app.callback(
     Output("cancel-subscription-modal", "is_open"),
@@ -1050,28 +1350,6 @@ def update_stock_suggestions(company_name):
 
 
 
-
-@app.callback(
-    [Output('tab-prices', 'className'),
-     Output('tab-news', 'className'),
-     Output('tab-comparison', 'className'),
-     Output('tab-forecast', 'className'),
-     Output('tab-simulation', 'className'),
-     Output('tab-reccommendation', 'className')],
-    [Input('tabs', 'value')]
-)
-def update_active_tab_class(current_tab):
-    # Determine which tab is active and apply the "active" class accordingly
-    return [
-        "nav-link active" if current_tab == '📰 News' else "nav-link",
-        "nav-link active" if current_tab == '📈 Prices' else "nav-link",
-        "nav-link active" if current_tab == '⚖️ Compare' else "nav-link",
-        "nav-link active" if current_tab == '🌡️ Forecast' else "nav-link",
-        "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
-        "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
-    ]
-
-
 @app.callback(
     [Output('theme-store', 'data'),
      Output('plotly-theme-store', 'data')],
@@ -1121,6 +1399,18 @@ def update_plotly_theme(theme):
         return 'plotly_dark'
     return 'plotly_white'
 
+@app.callback(
+    Output('meta-description', 'content'),
+    Input('url', 'pathname')
+)
+def update_meta_description(pathname):
+    if pathname == '/blog/compounding':
+        return "Learn how compounding can significantly grow your investments."
+    elif pathname == '/blog/diversification':
+        return "Understand how diversification can reduce risk in your investment portfolio."
+    return "WatchMyStocks - Explore the magic of long-term investments."
+
+
 
 app.clientside_callback(
     """
@@ -1131,7 +1421,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -1179,6 +1468,8 @@ app.index_string = '''
         <meta property="og:image" content="https://mystocksportfolio.io/assets/logo_with_transparent_background.png" />
         <meta property="og:url" content="https://mystocksportfolio.io/" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="description" content="Learn how compounding can significantly grow your investments.">
+        <meta name="description" content="Learn how compounding and diversification can significantly grow your investments.">
         <link rel="canonical" href="https://mystocksportfolio.io/" />
         <link rel="icon" href="/assets/logo_with_transparent_background_favicon.png" type="image/png">
         <link rel="icon" href="{{ url_for('assets', filename='logo_with_transparent_favicon.png') }}" type="image/png">
