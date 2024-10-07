@@ -1116,7 +1116,7 @@ def create_subscription_selection_layout(is_free_user=False):
 
                     html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
                     html.Div(["🔍 Monitor your favorite stocks"], className="mb-3"),
-                    html.Div([html.Span("📈 Analyst recommendations", className="text-muted", style={'text-decoration': 'line-through'})], className="mb-3"),
+                    html.Div(["📈 Analyst recommendations"], className="mb-3"),
                     html.Div([html.Span("🚀 Stock suggestions based on KPIs", className="text-muted", style={'text-decoration': 'line-through'})], className="mb-3"),
                     html.Div([html.Span("📊 Advanced stock forecasts", className="text-muted", style={'text-decoration': 'line-through'})], className="mb-3"),
                     html.Div([
