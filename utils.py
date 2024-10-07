@@ -106,7 +106,6 @@ def fetch_news(symbols, max_articles=4):
                         dbc.CardBody([
                             html.H5(
                                 html.A(article['title'], href=article['link'], target="_blank"),
-                                style={"white-space": "nowrap", "overflow": "hidden", "text-overflow": "ellipsis"}
                             ),
                             html.Img(
                                 src=article['thumbnail']['resolutions'][0]['url'],
