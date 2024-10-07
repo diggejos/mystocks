@@ -944,7 +944,7 @@ def get_data_callbacks(app, server):
                             f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
                             style={"font-size": "12px", "margin-top": "auto"}
                         )
-                    ], style={"min-height": "300px", "max-height": "300px", "display": "flex", "flex-direction": "column"})
+                    ], style={"min-height": "250px", "max-height": "350px", "display": "flex", "flex-direction": "column"})
                 ),
                 xs=12, md=6,  # Full width on mobile, half width on desktop
                 className="mb-2"
