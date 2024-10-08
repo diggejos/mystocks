@@ -293,9 +293,9 @@ def create_sticky_footer_mobile():
                     dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
                     dbc.NavItem(dbc.NavLink("🔥 Hot Stocks", href="#topshots", id="footer-topshots-tab")),
                     dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="footer-compare-tab")),
+                    dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
                     dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="footer-forecast-tab")),
                     dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="footer-simulate-tab")),
-                    dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
                 ],
                 pills=True,
                 justified=True,
@@ -514,9 +514,9 @@ def paywall_logged_out():
         children=[
             html.Div([
                 html.P("Sign up to Premium to unlock this content...", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
-            ], style={'text-align': 'center', 'margin-top': '50px'}),
+            ], style={'text-align': 'center', 'margin-top': '30px'}),
             
-            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold'}),
 
             html.Ul([
                 html.Li("🔥 Access to top-performing stocks based on KPIs", style={'font-size': '16px'}),
@@ -529,7 +529,7 @@ def paywall_logged_out():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
@@ -537,9 +537,9 @@ def paywall_free_user():
     return html.Div(
         className="bg-light bg-primary-with-shadow",
         children=[
-            html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '50px'}),
+            html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '30px'}),
 
-            html.P("Upgrade to premium and you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+            html.P("Upgrade to premium and you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold'}),
 
             html.Ul([
                 html.Li("🔥 Top-performing stocks based on financial KPIs", style={'font-size': '16px'}),
@@ -551,7 +551,7 @@ def paywall_free_user():
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#ffc107'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#ffc107'}
     )
 
 def paywall_logged_out_forecast():
@@ -561,9 +561,9 @@ def paywall_logged_out_forecast():
             html.Div([
                 html.P("Sign up to Premium to unlock this content...", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
 
-            ], style={'text-align': 'center', 'margin-top': '50px'}),
+            ], style={'text-align': 'center', 'margin-top': '30px'}),
             
-            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold'}),
 
             html.Ul([
                 html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
@@ -576,7 +576,7 @@ def paywall_logged_out_forecast():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
@@ -584,9 +584,9 @@ def paywall_free_user_forecast():
     return html.Div(
         className="bg-light bg-primary-with-shadow",
         children=[
-            html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '50px'}),
+            html.P("Unlock premium features to access this content!", style={'font-size': '24px', 'font-weight': 'bold', 'text-align': 'center', 'margin-top': '30px'}),
 
-            html.P("Upgrade to premium and you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+            html.P("Upgrade to premium and you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold'}),
 
             html.Ul([
                 html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
@@ -598,7 +598,7 @@ def paywall_free_user_forecast():
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#ffc107'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#ffc107'}
     )
 
 
@@ -608,9 +608,9 @@ def paywall_recommendation():
         children=[
             html.Div([
                 html.P("Sign up for free, no credit card", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
-            ], style={'text-align': 'center', 'margin-top': '50px'}),
+            ], style={'text-align': 'center', 'margin-top': '30px'}),
             
-            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'margin-top': '20px'}),
+            html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold'}),
 
             html.Ul([
                 html.Li("💸 sell, hold and buy analyst recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
@@ -623,7 +623,7 @@ def paywall_recommendation():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '20px', 'color': 'black', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
@@ -632,81 +632,46 @@ def create_dashboard_layout(watchlist_management_layout):
         dbc.Row([
             # Sidebar Filters (for both mobile and desktop)
             dbc.Col([
-                html.H1("Stocks monitoring dashboard - WatchMyStocks", style={"display": "none"}),
-                html.H2("Stocks monitoring made easy. Create multiple personal watchlists", style={"display": "none"}), 
-                html.Div([
-                    html.P("Welcome to WatchMyStocks - the ultimate platform for stock monitoring. Track stock prices, analyze market trends, and create personalized watchlists with ease. Our dashboard is designed to provide real-time data, forecasts, and insights tailored to your investment portfolio."),
-                    html.P("With WatchMyStocks, you can compare stock performance, simulate investments, and access the latest news and analyst recommendations. Whether you're a seasoned trader or a beginner, MyStocks offers tools and features that help you make informed investment decisions."),
-                    html.P("Create multiple custom watchlists and monitor your stocks with real-time updates. WatchMyStocks allows you to easily manage and organize your investments across different watchlists."),
-                    html.P("Get access to historical stock data and perform in-depth analysis with our comprehensive charting tools. WatchMyStocks also offers forecasting features, allowing you to predict future stock prices using advanced algorithms."),
-                    html.P("Our platform also integrates with popular news sources to provide you with up-to-date news and information on your favorite stocks."),
-                    html.P("WatchMyStocks is your one-stop solution for stock monitoring, forecasting, news aggregation, and personalized investment tools. Try WatchMyStocks today and take control of your investments like never before."),
-                    html.P("Key Features: Historical Stock Price Tracking, Stock Market News, Profit/Loss Simulation, Analyst Recommendations, Time Series Forecasting, Personalized Watchlist, Stock Performance Comparison, Intelligent Financial Chatbot."),
-                ], style={"display": "none"}),  # This text is hidden but available for SEO
+                # First Card (for stock input, buttons, and date range)
+                dbc.Card([
+                    dbc.CardBody([
 
-                # Toggle button (only visible on mobile)
-                dbc.Button(
-                    id="toggle-filters-button",
-                    color="info",
-                    outline=False,
-                    size="sm",
-                    className="mobile-only",
-                    style={
-                        "position": "fixed",
-                        "top": "72px",
-                        "left": "10px",
-                        "z-index": "1001",
-                        "margin-bottom": "10px",
-                        "font-weight": "bold",
-                        "font-size": "14px"
-                    },
-                    children=html.Span([
-                        "🔽 Stock ",
-                        html.Span("Selection", className="bg-primary text-white rounded px-2 fs-6")
-                    ], className="fs-6")
-                ),
-                html.Div(id="mobile-overlay", className="mobile-overlay", style={"display": "none"}),
-                dcc.Store(id='button-state', data=False) , # False means closed, True means open
+                        html.H1("Stocks monitoring dashboard - WatchMyStocks", style={"display": "none"}),
 
+                        # The stock suggestions input, buttons, and date range will always be visible
+                        html.Div([
+                            html.H5([
+                                "Add Stock to ",
+                                html.Span("Watchlist", className="bg-primary text-white rounded px-2")
+                            ],className="text-white"),
+                            # Stock suggestions input (always visible)
+                            dcc.Dropdown(
+                                id='stock-suggestions-input',
+                                options=[],
+                                placeholder="Enter Company or Symbol",
+                                className='custom-dropdown text-dark',
+                                multi=False,
+                                searchable=True,
+                                style={
+                                    'border': '2px solid var(--bs-danger)',
+                                    'border-radius': '5px',
+                                    'padding': '0px',
+                                }
+                            ),
 
-                # Offcanvas Filters (for mobile and hidden on desktop)
-                dbc.Collapse(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H2("Filter stocks, create custom watchlist", style={"display": "none"}),  # for SEO
-                            html.Div([
-                                html.H4([
-                                    "Stock ",
-                                    html.Span("Selection", className="bg-primary text-white rounded px-2")
-                                ]),
-                                dcc.Dropdown(
-                                    id='stock-suggestions-input',
-                                    options=[],
-                                    placeholder="Enter Company or Symbol",
-                                    className='custom-dropdown',
-                                    multi=False,
-                                    searchable=True,
-                                    style={
-                                        'border': '2px solid var(--bs-danger)',
-                                        'border-radius': '5px',
-                                        'padding': '0px',
-                                    }
-                                ),
-                                dbc.Button("Add Stock", id='add-stock-button', color='primary', className='small-button'),
-                                dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
-                                html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),
-                            ], className='mb-3'),
+                            # Buttons (always visible)
+                            # html.Div([
+                            #     # dbc.Button("Add Stock", id='add-stock-button', color='primary', className='small-button'),
+                            # ], className='mb-3'),
                             
-                            dcc.Loading(id="loading-watchlist", type="default", children=[
-                                html.Div(id='watchlist-summary', className='mb-3')
-                            ]),
+                            # Date range selector (always visible)
                             
-                            html.Div([
+                            html.Div(id="date-range-container",style={'display': 'none'}, children=[
+                                html.Hr(),
                                 html.Label([
                                     "Select ",
                                     html.Span("Date Range", className="bg-success text-white rounded px-2")
-                                ]),
-                                # html.Label("Select Date Range:", className="font-weight-bold"),
+                                ], className="text-white"),
                                 dcc.Dropdown(
                                     id='predefined-ranges', searchable=False,
                                     options=[
@@ -720,16 +685,68 @@ def create_dashboard_layout(watchlist_management_layout):
                                         {'label': 'Last 5Y', 'value': '5Y'},
                                         {'label': 'Last 10Y', 'value': '10Y'}
                                     ],
-                                    value='12M',  # Default selection
+                                    value='12M', className="text-dark"
                                 )
-                            ], className='mb-3'),
+                            ]),
+                        ]),
+                           
+
+                        # Mobile-specific overlay for watchlist and other filters
+                        dbc.Button(
+                            id="toggle-filters-button",
+                            color="danger",
+                            outline=False,
+                            size="sm",
+                            className="mobile-only",
+                            style={
+                                "position": "fixed",
+                                "top": "70px",
+                                "left": "10px",
+                                "z-index": "1001",
+                                "margin-bottom": "10px",
+                                "font-weight": "bold",
+                                "font-size": "14px"
+                            },
+                            children=html.Span([
+                                "🔽 More Filters",
+                            ], className="fs-6")
+                        )
+
+                    ], className="sidebar-card-body"),       
+                    
+                ], className="sidebar-card"),  # Apply the same styling as the second card
+
+                # Mobile overlay for other filters
+                html.Div(id="mobile-overlay", className="mobile-overlay", style={"display": "none"}),
+
+                dcc.Store(id='button-state', data=False),  # False means closed, True means open
+
+                # Second Card (for the filters collapse)
+                dbc.Collapse(
+                    dbc.Card([
+                        dbc.CardBody([
+                                html.H5([
+                                    "Manage ",
+                                    html.Span("Watchlist", className="bg-warning text-white rounded px-2")
+                                ]),
+                                dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
+                                html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),
+
+                            # Watchlist filters and management layout
+                            dcc.Loading(id="loading-watchlist", type="default", children=[
+                                html.Div(id='watchlist-summary', className='mb-3')
+                            ]),
+
                         ]),
                         watchlist_management_layout
-                    ], className="sidebar-card"),
+                    ], className="filters-collapse"),  # Use the same class for consistency
                     id="filters-collapse",
-                    is_open=False  # Initially closed (for mobile use case)
+                    is_open=False  # Initially closed on mobile
                 ),
-            ], width=12, md=3, style={"margin-top": "10px", "buttom":"50px"}),
+
+            ], width=12, md=3, style={"margin-top": "10px", "buttom": "50px"}),
+                          
+                            
 
             # Main content area (Tabs for Prices, News, Comparison, etc.)
             dbc.Col([
@@ -743,7 +760,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                     # html.P("Filter your Stocks from selection here"),
                                     html.P([
                                         "Filter Stocks from ",
-                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
                                     ], className="fs-5"),
                                     dcc.Dropdown(
                                         id='news-stock-dropdown',
@@ -764,7 +781,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                 dbc.CardBody([
                                     html.P([
                                         "Filter Stocks from ",
-                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
                                     ], className="fs-5"),
                                     dcc.Dropdown(
                                         id='prices-stock-dropdown',
@@ -842,7 +859,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                 dbc.CardBody([
                                     html.P([
                                         "Filter Stocks from ",
-                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
                                     ], className="fs-5"),
                                     html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
                                     dcc.Dropdown(
@@ -871,12 +888,35 @@ def create_dashboard_layout(watchlist_management_layout):
                                 ])
                             )
                         ]),
+                        dbc.Tab(label='❤️ Recommendations', tab_id='recommendations-tab', children=[
+                            dbc.Card(
+                                dbc.CardBody([
+                                    html.P([
+                                        "Find your Stocks from ",
+                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
+                                    ], className="fs-5"),
+                                    html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO
+                                    dcc.Loading(
+                                        id="loading-analyst-recommendations",
+                                        type="default",
+                                        children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
+                                    ),
+                                    html.Div(id='recommendation-blur-overlay', style={
+                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
+                                        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
+                                        'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                                        'backdrop-filter': 'blur(5px)'
+                                    })
+                                  
+                                ])
+                            )
+                        ]),
                         dbc.Tab(label='🌡️ Forecast', tab_id='forecast-tab', children=[
                             dbc.Card(
                                 dbc.CardBody([
                                     html.P([
                                         "Filter Stocks from ",
-                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
                                     ], className="fs-5"),
                                     html.H3("Forecast stocks prices", style={"display": "none"}),  # for SEO
                                     html.Div([
@@ -921,35 +961,13 @@ def create_dashboard_layout(watchlist_management_layout):
                                    
                             )
                         ]),
-                        dbc.Tab(label='❤️ Recommendations', tab_id='recommendations-tab', children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.P([
-                                        "Find your Stocks from ",
-                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO
-                                    dcc.Loading(
-                                        id="loading-analyst-recommendations",
-                                        type="default",
-                                        children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
-                                    ),
-                                    html.Div(id='recommendation-blur-overlay', style={
-                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                        'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                        'backdrop-filter': 'blur(5px)'
-                                    })
-                                  
-                                ])
-                            )
-                        ]),
+                    
                         dbc.Tab(label='📊 Simulate', tab_id="simulate-tab", children=[
                             dbc.Card(
                                 dbc.CardBody([
                                     html.P([
                                         "Filter Stocks from ",
-                                        html.Span("Selection", className="bg-primary text-white rounded px-2")
+                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
                                     ], className="fs-5"),
                                     html.H3("Simulate stock profits and losses over historical time period", style={"display": "none"}),  # for SEO
                                     html.Label("Stock Symbol:", className="font-weight-bold"),
@@ -1000,9 +1018,6 @@ def create_dashboard_layout(watchlist_management_layout):
             ], width=12)
         ], className="mb-4")
     ], fluid=True)
-
-
-
 
 def create_profile_layout():
     return dbc.Container([
