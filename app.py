@@ -831,6 +831,18 @@ def sync_tabs_and_footer(desktop_tab, n_clicks_news, n_clicks_prices, n_clicks_c
     # Default return (if nothing was triggered)
     return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, current_active_tab
 
+@app.callback(
+    Output('date-range-container', 'style'),
+    Input('tabs', 'active_tab')
+)
+def toggle_date_range_visibility(active_tab):
+    # List of tabs where the date range should be hidden
+    hidden_tabs = ['news-tab', 'simulate-tab', 'recommendations-tab', 'topshots-tab']
+    
+    if active_tab in hidden_tabs:
+        return {'display': 'none'}
+    else:
+        return {'display': 'block'}
 
 
 
@@ -916,9 +928,9 @@ def update_recommendation_visibility(login_status, username):
         paywall = ly.paywall_recommendation()
         blur_style = {
             'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'background-color': 'rgba(255, 255, 255, 0.5)', 'display': 'flex',
             'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(5px)'
+            'backdrop-filter': 'blur(2px)'
         }
         return paywall, blur_style
 
@@ -939,9 +951,9 @@ def update_recommendation_visibility(login_status, username):
     paywall = ly.paywall_recommendation()
     blur_style = {
         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+        'background-color': 'rgba(255, 255, 255, 0.5)', 'display': 'flex',
         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-        'backdrop-filter': 'blur(5px)'
+        'backdrop-filter': 'blur(2px)'
     }
     return paywall, blur_style
 
@@ -960,9 +972,9 @@ def update_topshots_visibility(login_status, username):
         paywall = ly.paywall_logged_out()
         blur_style = {
             'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'background-color': 'rgba(255, 255, 255, 0.5)', 'display': 'flex',
             'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(5px)'
+            'backdrop-filter': 'blur(2px)'
         }
         return paywall, blur_style
 
@@ -989,9 +1001,9 @@ def update_topshots_visibility(login_status, username):
     paywall = ly.paywall_logged_out()
     blur_style = {
         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+        'background-color': 'rgba(255, 255, 255, 0.5)', 'display': 'flex',
         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-        'backdrop-filter': 'blur(5px)'
+        'backdrop-filter': 'blur(2px)'
     }
     return paywall, blur_style
 
@@ -1029,17 +1041,17 @@ def toggle_sidebar(n_clicks, is_open):
         # Update the emoji depending on the open/closed state
         emoji = "🔼" if new_is_open else "🔽"
         button_text = html.Span([
-            f"{emoji} Stock ",
-            html.Span("Selection", className="bg-primary text-white rounded px-2 fs-6")
-        ], className="fs-6")
+            f"{emoji} Manage ",
+            html.Span("Watchlist", className="bg-primary text-white rounded px-2 fs-5")
+        ], className="fs-5")
 
         return new_is_open, overlay_style, button_text
 
     # If no clicks yet, keep default values
     return is_open, {"display": "none"}, html.Span([
-        "🔽 Stock ",
-        html.Span("Selection", className="bg-primary text-white rounded px-2 fs-6")
-    ], className="fs-6")
+        "🔽 Manage ",
+        html.Span("Watchlist", className="bg-primary text-white rounded px-2 fs-5")
+    ], className="fs-5")
 
 
 
@@ -1057,9 +1069,9 @@ def update_forecast_visibility(login_status, username):
         paywall = ly.paywall_logged_out_forecast()
         blur_style = {
             'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-            'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+            'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
             'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(5px)'
+            'backdrop-filter': 'blur(2px)'
         }
         return paywall, blur_style
 
@@ -1071,7 +1083,7 @@ def update_forecast_visibility(login_status, username):
         paywall = ly.paywall_free_user_forecast()
         blur_style = {
             'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-            'background-color': 'rgba(255, 255, 255, 0.5)', 'display': 'flex',
+            'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
             'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
             'backdrop-filter': 'blur(2px)'
         }
@@ -1086,9 +1098,9 @@ def update_forecast_visibility(login_status, username):
     paywall = ly.paywall_logged_out_forecast()
     blur_style = {
         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'flex',
+        'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-        'backdrop-filter': 'blur(5px)'
+        'backdrop-filter': 'blur(2px)'
     }
     return paywall, blur_style
 
@@ -1421,6 +1433,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 app.index_string = '''
 <!DOCTYPE html>
