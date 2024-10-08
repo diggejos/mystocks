@@ -345,7 +345,7 @@ def create_modal_register():
                 dbc.ModalFooter(
                     dbc.Button(
                         "Sign Up for Free",
-                        href="/register",
+                        href="/register-free",
                         color="success",
                         className="ms-auto register-button text-center",
                         id="close-register-modal-button",
@@ -368,7 +368,7 @@ def create_overlay():
             dbc.ModalHeader(dbc.ModalTitle("Access Restricted")),
             dbc.ModalBody("Please register or log in to save watchlist or change themes"),
             dbc.ModalFooter(
-                dbc.Button("Please register or login", href="/login", color="primary", id="overlay-registerP-button")
+                dbc.Button("Please register or login", href="/register-free", color="primary", id="overlay-registerP-button")
             ),
         ],
         id="login-overlay",
@@ -619,7 +619,7 @@ def paywall_recommendation():
             ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
             
             html.Div([
-                dbc.Button("Sign Up for free", href="/register", color="success", size="lg", className="mt-3 me-3"),
+                dbc.Button("Sign Up for free", href="/register-free", color="success", size="lg", className="mt-3 me-3"),
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
