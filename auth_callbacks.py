@@ -303,8 +303,3 @@ def register_auth_callbacks(app, server, mail):
     )
     def enable_disable_theme_dropdown(login_status):
         return not login_status
-
-   
-    
-
-
