@@ -764,3 +764,27 @@ a:hover {
     text-decoration: underline;
 }
 
+
+
+
+.sidebar-card {
+    background-color: var(--bs-info); /* Ensure background color consistency */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a shadow for visual consistency */
+    border-radius: 8px; /* Rounded corners */
+    width: 81%; /* Ensure it uses the full available width */
+    max-width:450px;
+    margin-left:10px;
+   color:var(--bs-dark) !important; /* Ensure background color consistency */
+
+
+
+}
+
+.sidebar-card-body {
+    background-color: var(--bs-info); /* Ensure background color consistency */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a shadow for visual consistency */
+    border-radius: 8px; /* Rounded corners */
+    width: 100%; /* Ensure it uses the full available width */
+    max-width:550px;
+
+}
