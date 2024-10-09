@@ -999,7 +999,7 @@ def create_dashboard_layout(watchlist_management_layout):
                             )
                         ])
 
-                    ], className="desktop-tabs bg-light sticky-tabs fs-6",                           
+                    ], className="desktop-tabs bg-light sticky-tabs fs-7",                           
                     )           
             ], width=12, md=9, xs=12)
         ], className='mb-4'),
