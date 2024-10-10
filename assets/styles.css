@@ -526,7 +526,7 @@
     /*position: fixed;*/
     top: 65px; /* Adjust this value to leave space for the button */
     left: 0;
-    width: 85%; /* Set to 80% width for mobile */
+    /*width: 85%; /* Set to 80% width for mobile */
     z-index: 1000; /* Ensure it stays above other elements */
     overflow-y: auto; /* Allow scrolling if the content exceeds screen height */
     /*max-height: calc(100vh - 160px); /* Adjust height dynamically based on the top space */
@@ -538,7 +538,7 @@
         display: block !important;
         /*position: fixed !important; /* Make the sidebar sticky */
         top: 90px; /* Stick to the top of the viewport */
-        max-width:450px;
+        /*max-width:450px;
         /*height: 900px; /* Full height for the sidebar */
         border-radius: 8px; /* Optional: Add slight border radius */
         padding: 10px; /* Adds internal spacing instead of margin */
@@ -558,7 +558,7 @@
         display: none; /* Initially hidden */
         position: fixed;
         top: 64px; /* Ensure collapse starts below the button */
-        width: 70%; /* Set the width to 80% for mobile */
+        /*width: 70%; /* Set the width to 80% for mobile */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);*/
         height: 60%; /* Shadow around the entire box */
         max-height:500px;
@@ -768,12 +768,12 @@ a:hover {
 
 
 .sidebar-card {
-    background-color: var(--bs-info); /* Ensure background color consistency */
+    background-color: var(--bs-light); /* Ensure background color consistency */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a shadow for visual consistency */
     border-radius: 8px; /* Rounded corners */
-    width: 81%; /* Ensure it uses the full available width */
-    max-width:450px;
-    margin-left:10px;
+    /*width: 81%; /* Ensure it uses the full available width */
+    /*max-width:450px;
+    margin-left:10px;*/
    color:var(--bs-dark) !important; /* Ensure background color consistency */
 
 
@@ -781,7 +781,7 @@ a:hover {
 }
 
 .sidebar-card-body {
-    background-color: var(--bs-info); /* Ensure background color consistency */
+    background-color: var(--bs-light); /* Ensure background color consistency */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a shadow for visual consistency */
     border-radius: 8px; /* Rounded corners */
     width: 100%; /* Ensure it uses the full available width */
