@@ -643,7 +643,7 @@ def create_dashboard_layout(watchlist_management_layout):
                             html.H5([
                                 "Add Stock to ",
                                 html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                            ],className="text-white"),
+                            ],className="text-dark"),
                             # Stock suggestions input (always visible)
                             dcc.Dropdown(
                                 id='stock-suggestions-input',
@@ -671,7 +671,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                 html.Label([
                                     "Select ",
                                     html.Span("Date Range", className="bg-success text-white rounded px-2")
-                                ], className="text-white"),
+                                ], className="text-dark"),
                                 dcc.Dropdown(
                                     id='predefined-ranges', searchable=False,
                                     options=[
@@ -688,28 +688,27 @@ def create_dashboard_layout(watchlist_management_layout):
                                     value='12M', className="text-dark"
                                 )
                             ]),
-                        ]),
+                        ],style={'margin-top': '15px'}) ,
                            
 
                         # Mobile-specific overlay for watchlist and other filters
                         dbc.Button(
                             id="toggle-filters-button",
-                            color="danger",
+                            color="info",
                             outline=False,
-                            size="sm",
-                            className="mobile-only",
+                            size="m",
+                            className="mobile-only toggler-icon",
                             style={
                                 "position": "fixed",
                                 "top": "70px",
                                 "left": "10px",
                                 "z-index": "1001",
-                                "margin-bottom": "10px",
+                                # "margin-bottom": "10px",
                                 "font-weight": "bold",
-                                "font-size": "14px"
+                                "font-size": "18px"
                             },
-                            children=html.Span([
-                                "🔽 More Filters",
-                            ], className="fs-6")
+                            children= html.Span([" Manage ", html.Span("Watchlist", className="bg-primary text-white rounded px-2")
+                                               ]),
                         )
 
                     ], className="sidebar-card-body"),       
@@ -752,7 +751,7 @@ def create_dashboard_layout(watchlist_management_layout):
             dbc.Col([
                 dbc.Tabs(
                     id="tabs",
-                    active_tab="news-tab",
+                    active_tab="prices-tab",
                     children=[
                         dbc.Tab(label='📰 News', tab_id="news-tab", children=[
                             dbc.Card(
@@ -768,7 +767,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         value=[],  
                                         multi=True,
                                         placeholder="Select stocks to display",
-                                        searchable=False
+                                        searchable=False,
+                                        className="text-dark"
                                     ),
                                     dcc.Loading(id="loading-news", type="default", children=[
                                         html.Div(id='stock-news', className='news-container')
@@ -789,7 +789,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         value=[],  
                                         multi=True,
                                         placeholder="Select stocks to display",
-                                        searchable=False
+                                        searchable=False,
+                                        className="text-dark"
                                     ),
                                     dcc.RadioItems(
                                         id='chart-type',
@@ -814,6 +815,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         inputStyle={"margin-right": "10px"},
                                         labelStyle={"margin-right": "20px"}
                                     ),
+                                    
+                                    # dcc.Graph(id='stock-graph', style={'height': '500px', 'backgroundColor': 'transparent'})
                                     dcc.Loading(id="loading-prices", type="default", children=[
                                         dcc.Graph(id='stock-graph', style={'height': '500px', 'backgroundColor': 'transparent'})
                                     ])
@@ -835,7 +838,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         value='medium',  # Default to medium risk
                                         placeholder="Select Risk Tolerance",
                                         clearable=False,
-                                        searchable=False
+                                        searchable=False,
+                                        className="text-dark"
                                     ),
                                     dcc.Loading(
                                         id="loading-top-stocks",
@@ -867,7 +871,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         options=[],  # Populated dynamically
                                         value=[],  
                                         multi=True,
-                                        searchable=False
+                                        searchable=False,
+                                        className="text-dark"
                                     ),
                                     dcc.RadioItems(
                                         id='benchmark-selection',
@@ -926,8 +931,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                             options=[],  
                                             value=[],  
                                             multi=True,
-                                            className='form-control',
-                                            searchable=False
+                                            className='form-control text-dark',
+                                            searchable=False,
                                         ),
                                         html.Div(id='forecast-stock-warning', style={'color': 'red'}),
                                         html.Label("Forecast Horizon (days):", className="font-weight-bold"),
@@ -975,8 +980,8 @@ def create_dashboard_layout(watchlist_management_layout):
                                         id='simulation-stock-input',
                                         options=[],  
                                         value=[],  
-                                        className='form-control',
-                                        searchable=False
+                                        className='form-control text-dark',
+                                        searchable=False,
                                     ),
                                     html.Label("Investment Amount ($):", className="font-weight-bold"),
                                     dcc.Input(
