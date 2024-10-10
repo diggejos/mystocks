@@ -14,9 +14,66 @@ import utils as ut
 from models import User, db, Watchlist, StockKPI
 from dash.exceptions import PreventUpdate
 from layouts import themes
+import asyncio
+
+def get_data_callbacks(app, server, cache):
+    
+    # Asynchronous preloading functions
+    async def preload_data_async(cache):
+        await asyncio.gather(
+            preload_prices_async(cache),
+            preload_news_async(cache)
+        )
+    
+    async def preload_prices_async(cache):
+        print("Preloading prices data asynchronously...")
+        prices_data = yf.download(['AAPL', 'MSFT'], pd.to_datetime('today') - timedelta(days=365), pd.to_datetime('today'), "day")
+        cache.set('prices_data', prices_data)
+    
+    async def preload_news_async(cache):
+        print("Preloading news data asynchronously...")
+        news_data = ut.fetch_news(['AAPL', 'MSFT'])
+        cache.set('news_data', news_data)
+    
+    # Preload data at startup
+    def run_preload(cache):
+        print("Starting async preload...")
+    
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # No event loop is running
+        loop = None
+    
+    if loop and loop.is_running():
+        # If already in an event loop, create the task
+        asyncio.create_task(preload_data_async(cache))
+    else:
+        # If no event loop is running, run the task
+        asyncio.run(preload_data_async(cache))
+    
+    print("Async preload completed.")
 
 
-def get_data_callbacks(app, server):
+    @cache.memoize(timeout=600)  # Cache the result for 10 minutes
+    def fetch_news_with_cache(stock_symbols):
+        # Your existing function to fetch the news
+        return ut.fetch_news(stock_symbols)
+
+    @cache.memoize(timeout=600)  # Cache the result for 10 minutes
+    def fetch_analyst_reco_with_cache(symbol):
+        # Your existing function to fetch the news
+        return ut.fetch_analyst_recommendations(symbol)
+
+    @cache.memoize(timeout=600)  # Cache for 15 minutes
+    def get_stock_data_cached(symbol, start_date, end_date, interval):
+        return yf.download(symbol, start=start_date, end=end_date, interval=interval)
+    
+    
+    preloaded_prices = cache.get('prices_data')
+    preloaded_news = cache.get('news_data')
+    
+
+
     @app.callback(
         [
             Output('individual-stocks-store', 'data', allow_duplicate=True),
@@ -68,50 +125,52 @@ def get_data_callbacks(app, server):
             )
 
         trigger = ctx.triggered[0]['prop_id']
-        
+
         watchlist = None
 
-        
-            # Check if the watchlist dropdown triggered the update
+        # Check if the watchlist dropdown triggered the update
         if 'saved-watchlists-dropdown' in trigger and selected_watchlist:
-                watchlist = db.session.get(Watchlist, selected_watchlist)
+            watchlist = db.session.get(Watchlist, selected_watchlist)
         if watchlist:
-                individual_stocks = json.loads(watchlist.stocks)
-                selected_prices_stocks = individual_stocks[:5]
-                selected_comparison_stocks = individual_stocks[:5]
-                selected_news_stocks = individual_stocks[:5]
-
+            individual_stocks = json.loads(watchlist.stocks)
+            selected_prices_stocks = individual_stocks[:5]
+            selected_comparison_stocks = individual_stocks[:5]
+            selected_news_stocks = individual_stocks[:5]
 
         # Ensure the predefined stocks are not forced into the dropdowns if another list is loaded
         if not selected_comparison_stocks:
-            selected_comparison_stocks = individual_stocks[-5:]  # Limit to last 5 stocks
+            # Limit to last 5 stocks
+            selected_comparison_stocks = individual_stocks[-5:]
         if not selected_prices_stocks:
-            selected_prices_stocks = individual_stocks[-5:]  # Limit to last 5 stocks
+            # Limit to last 5 stocks
+            selected_prices_stocks = individual_stocks[-5:]
         if not selected_news_stocks:
-            selected_news_stocks = individual_stocks[-5:]  # Limit to last 5 stocks
-    
+            # Limit to last 5 stocks
+            selected_news_stocks = individual_stocks[-5:]
+
         # Handle stock addition using the selected ticker from input
         if 'stock-suggestions-input' in trigger and new_stock:
             new_stock = new_stock.upper().strip()
             if new_stock and new_stock not in individual_stocks:
                 individual_stocks.append(new_stock)
-    
+
                 # Update selected_* variables to include the new stock
                 selected_comparison_stocks.append(new_stock)
-                selected_comparison_stocks = selected_comparison_stocks[-5:]  # Limit to last 5
-    
+                # Limit to last 5
+                selected_comparison_stocks = selected_comparison_stocks[-5:]
+
                 selected_prices_stocks.append(new_stock)
                 selected_prices_stocks = selected_prices_stocks[-5:]
-    
+
                 selected_news_stocks.append(new_stock)
                 selected_news_stocks = selected_news_stocks[-5:]
-    
+
         elif 'reset-stocks-button' in trigger:
             individual_stocks = []
             selected_comparison_stocks = []
             selected_prices_stocks = []
             selected_news_stocks = []
-            
+
         elif 'remove-stock' in trigger:
             index_to_remove = json.loads(trigger.split('.')[0])['index']
             if 0 <= index_to_remove < len(individual_stocks):
@@ -123,7 +182,7 @@ def get_data_callbacks(app, server):
                     selected_prices_stocks.remove(stock_removed)
                 if stock_removed in selected_news_stocks:
                     selected_news_stocks.remove(stock_removed)
-    
+
         # Ensure selected_* variables only contain stocks in individual_stocks
         selected_comparison_stocks = [
             stock for stock in (selected_comparison_stocks or []) if stock in individual_stocks
@@ -134,19 +193,22 @@ def get_data_callbacks(app, server):
         selected_news_stocks = [
             stock for stock in (selected_news_stocks or []) if stock in individual_stocks
         ]
-    
+
         # Update options for the dropdowns
-        options = [{'label': stock, 'value': stock} for stock in individual_stocks]
-    
+        options = [{'label': stock, 'value': stock}
+                   for stock in individual_stocks]
+
         # If no individual stocks and no benchmark selected, return default message
         if not individual_stocks and benchmark_selection == 'None':
             return (
                 individual_stocks,
                 ut.generate_watchlist_table(individual_stocks),
-                px.line(title="Please add at least one stock symbol.", template=plotly_theme),
+                px.line(title="Please add at least one stock symbol.",
+                        template=plotly_theme),
                 {'height': '400px'},
                 html.Div("Please add at least one stock symbol."),
-                px.line(title="Please add at least one stock symbol.", template=plotly_theme),
+                px.line(title="Please add at least one stock symbol.",
+                        template=plotly_theme),
                 options,
                 selected_comparison_stocks,
                 options,
@@ -155,7 +217,6 @@ def get_data_callbacks(app, server):
                 selected_news_stocks,
                 ""
             )
-
 
         today = pd.to_datetime('today')
 
@@ -195,10 +256,20 @@ def get_data_callbacks(app, server):
 
         # Fetch stock data from Yahoo Finance
         data = []
+        df = preloaded_prices
+        
         for symbol in individual_stocks:
             try:
-                df = yf.download(symbol, start=start_date,
-                                 end=end_date, interval=interval)
+
+                if selected_prices_stocks in ['AAPL', 'MSFT']:
+                            df = preloaded_prices
+                else:
+                           df = get_stock_data_cached(
+                                symbol, start_date, end_date, interval)
+                       
+                
+                # df = get_stock_data_cached(
+                #     symbol, start_date, end_date, interval)
 
                 # Conditional check for intraday data
                 if predefined_range in ['1D_15m']:
@@ -261,8 +332,8 @@ def get_data_callbacks(app, server):
                     columns={"Index": symbol})
 
         if benchmark_selection != 'None':
-            benchmark_data = yf.download(
-                benchmark_selection, start=start_date, end=end_date, interval=interval)
+            benchmark_data = get_stock_data_cached(
+                benchmark_selection, start_date, end_date, interval)
             if not benchmark_data.empty:
                 benchmark_data.reset_index(inplace=True)
                 benchmark_data['Index'] = benchmark_data['Close'] / \
@@ -303,13 +374,15 @@ def get_data_callbacks(app, server):
                 df_indexed_filtered, x='Date', y=available_stocks, template=plotly_theme)
             fig_indexed.update_yaxes(matches=None, title_text=None)
             fig_indexed.update_xaxes(title_text=None)
-            fig_indexed.update_layout(legend=dict(
-                yanchor="top",
-                y=0.99,
-                xanchor="left",
-                x=0.01,
-                font=dict(size=10)
-            ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
+            fig_indexed.update_layout(
+                dragmode=False,
+                legend=dict(
+                    yanchor="top",
+                    y=0.99,
+                    xanchor="left",
+                    x=0.01,
+                    font=dict(size=10)
+                ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
 
             fig_indexed.add_shape(
                 type='line',
@@ -330,7 +403,8 @@ def get_data_callbacks(app, server):
         else:
             fig_indexed = px.line(
                 title="No data available.", template=plotly_theme)
-
+            
+  
         # Prepare the stock price graph
         df_prices_filtered = df_all[df_all['Stock'].isin(
             selected_prices_stocks)]
@@ -351,9 +425,18 @@ def get_data_callbacks(app, server):
 
             # Ensure there's enough data
             if not df_stock.empty and len(df_stock) > 1:
+                # Add the Volume trace first to make it appear behind
+                if 'Volume' in movag_input:
+                    fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
+                                               marker=dict(color='darkgray'), opacity=0.6),
+                                        row=i + 1, col=1, secondary_y=True)
+                    fig_stock.update_yaxes(
+                        showgrid=False, secondary_y=True, row=i + 1, col=1)
+
+                # Add the price traces (line or candlestick) after the volume
                 if chart_type == 'line':
                     fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
-                                                   line=dict(color='blue')), row=i + 1, col=1)
+                                                   line=dict(color='steelblue', width=3)), row=i + 1, col=1)
 
                     last_close = df_stock['Close'].iloc[-2]
                     latest_close = df_stock['Close'].iloc[-1]
@@ -408,12 +491,7 @@ def get_data_callbacks(app, server):
                     fig_stock.update_xaxes(
                         rangeslider={'visible': False}, row=i + 1, col=1)
 
-                if 'Volume' in movag_input:
-                    fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
-                                               marker=dict(color='gray'), opacity=0.3), row=i + 1, col=1, secondary_y=True)
-                    fig_stock.update_yaxes(
-                        showgrid=False, secondary_y=True, row=i + 1, col=1)
-
+                # Add moving averages after the price line or candlestick
                 if '30D_MA' in movag_input:
                     fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
                                                    line=dict(color='green')), row=i + 1, col=1)
@@ -422,14 +500,23 @@ def get_data_callbacks(app, server):
                     fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
                                                    line=dict(color='red')), row=i + 1, col=1)
 
-        fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False,
+        fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, bargap=0.0, bargroupgap=0.0, dragmode=False,  # Disable zoom and pan
                                 margin=dict(l=40, r=40, t=40, b=40))
+
         fig_stock.update_yaxes(title_text=None, secondary_y=False)
         fig_stock.update_yaxes(
             title_text=None, secondary_y=True, showgrid=False)
 
+        if selected_news_stocks in ['AAPL', 'MSFT']:
+                news_content = preloaded_news
+        else:
+               news_content = fetch_news_with_cache(selected_news_stocks)  # Fetc
+               
+               
+        # news_content = fetch_news_with_cache(selected_news_stocks)
+
         # Fetch related news for the stocks in the watchlist
-        news_content = ut.fetch_news(selected_news_stocks)
+        # news_content = ut.fetch_news(selected_news_stocks)
 
         return (
             individual_stocks,
@@ -446,8 +533,6 @@ def get_data_callbacks(app, server):
             selected_news_stocks,
             ""
         )
-    
-
 
     @app.callback(
         Output('top-stocks-table', 'children'),
@@ -456,95 +541,118 @@ def get_data_callbacks(app, server):
     def get_top_stocks(risk_tolerance):
         if risk_tolerance is None:
             raise PreventUpdate
-    
+
         # Get the latest batch_id from the database
-        latest_batch = db.session.query(StockKPI.batch_id).order_by(StockKPI.batch_id.desc()).first()
-    
+        latest_batch = db.session.query(StockKPI.batch_id).order_by(
+            StockKPI.batch_id.desc()).first()
+
         if latest_batch is None:
             return html.Div("No stock data available.", style={"color": "red"})
-    
+
         latest_batch_id = latest_batch[0]  # Extract batch_id from the tuple
-    
+
         # Fetch top 20 stocks for the selected risk tolerance and latest batch_id
-        stock_data = StockKPI.query.filter_by(risk_tolerance=risk_tolerance, batch_id=latest_batch_id).all()
-    
+        stock_data = StockKPI.query.filter_by(
+            risk_tolerance=risk_tolerance, batch_id=latest_batch_id).all()
+
         # If no data found
         if not stock_data:
             return html.Div(f"No top stocks available for {risk_tolerance} risk tolerance.", style={"color": "red"})
-    
+
         # Normalize the momentum for the progress bar
-        max_momentum = max([stock.price_momentum for stock in stock_data if stock.price_momentum], default=1)
-    
-    
+        max_momentum = max(
+            [stock.price_momentum for stock in stock_data if stock.price_momentum], default=1)
+
         # Table headers with info icons and tooltips
         table_header = [
             html.Thead(html.Tr([
                 html.Th([
-                    "Stock", html.I(className="bi bi-info-circle-fill", id="stock-info", style={"margin-left": "5px"}), 
-                    dbc.Tooltip("The stock symbol or ticker for the company.", target="stock-info", placement="top")
+                    "Stock", html.I(className="bi bi-info-circle-fill",
+                                    id="stock-info", style={"margin-left": "5px"}),
+                    dbc.Tooltip("The stock symbol or ticker for the company.",
+                                target="stock-info", placement="top")
                 ], style={"width": "100px"}),  # Reduced width for Stock column
                 html.Th([
-                    "P/E Ratio", html.I(className="bi bi-info-circle-fill", id="pe-info", style={"margin-left": "0px","width":"50px"}), 
-                    dbc.Tooltip("Price-to-Earnings ratio: measures a company's current share price relative to its per-share earnings.", target="pe-info", placement="top")
+                    "P/E Ratio", html.I(className="bi bi-info-circle-fill",
+                                        id="pe-info", style={"margin-left": "0px", "width": "50px"}),
+                    dbc.Tooltip("Price-to-Earnings ratio: measures a company's current share price relative to its per-share earnings.",
+                                target="pe-info", placement="top")
                 ], className="d-none d-md-table-cell"),  # Hide on mobile
                 html.Th([
-                    "Beta", html.I(className="bi bi-info-circle-fill", id="beta-info", style={"margin-left": "5px"}), 
-                    dbc.Tooltip("Beta measures the stock's volatility relative to the overall market.", target="beta-info", placement="top")
+                    "Beta", html.I(className="bi bi-info-circle-fill",
+                                   id="beta-info", style={"margin-left": "5px"}),
+                    dbc.Tooltip("Beta measures the stock's volatility relative to the overall market.",
+                                target="beta-info", placement="top")
                 ]),
                 html.Th([
-                    "ROE", html.I(className="bi bi-info-circle-fill", id="roe-info", style={"margin-left": "5px"}), 
-                    dbc.Tooltip("Return on Equity (ROE): shows how effectively a company uses shareholders' equity to generate profit.", target="roe-info", placement="top")
+                    "ROE", html.I(className="bi bi-info-circle-fill",
+                                  id="roe-info", style={"margin-left": "5px"}),
+                    dbc.Tooltip("Return on Equity (ROE): shows how effectively a company uses shareholders' equity to generate profit.",
+                                target="roe-info", placement="top")
                 ]),
                 html.Th([
-                    "Momentum", html.I(className="bi bi-info-circle-fill", id="momentum-info", style={"margin-left": "5px"}), 
-                    dbc.Tooltip("Momentum measures the stock's recent price performance.", target="momentum-info", placement="top")
+                    "Momentum", html.I(className="bi bi-info-circle-fill",
+                                       id="momentum-info", style={"margin-left": "5px"}),
+                    dbc.Tooltip("Momentum measures the stock's recent price performance.",
+                                target="momentum-info", placement="top")
                 ])
             ]))
         ]
-    
+
         # Build the table rows with progress bars and labels side by side in one row using flexbox
         rows = []
         for idx, stock in enumerate(stock_data):
             # Conditional styling for P/E Ratio (green for low values)
-            pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {"backgroundColor": "lightcoral"}
-    
+            pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {
+                "backgroundColor": "lightcoral"}
+
             # Normalize the progress bar values
-            momentum_normalized = (stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
+            momentum_normalized = (
+                stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
             roe_percentage = stock.roe * 100 if stock.roe else 0
             beta_normalized = (stock.beta / 3) * 100 if stock.beta else 0
-    
+
             # Add row with flexbox layout to place text and progress bar side by side
             rows.append(html.Tr([
-                html.Td(stock.symbol, style={"width": "20px", "white-space": "nowrap", "text-overflow": "ellipsis", "overflow": "hidden"}),  # Fixed and reduced width for Stock column
-                html.Td(f"{stock.pe_ratio:.1f}" if stock.pe_ratio else "N/A", style=pe_style, className="d-none d-md-table-cell"),  # Hide on mobile, round to 1 digit after comma
-    
+                # Fixed and reduced width for Stock column
+                html.Td(stock.symbol, style={
+                        "width": "20px", "white-space": "nowrap", "text-overflow": "ellipsis", "overflow": "hidden"}),
+                html.Td(f"{stock.pe_ratio:.1f}" if stock.pe_ratio else "N/A", style=pe_style,
+                        className="d-none d-md-table-cell"),  # Hide on mobile, round to 1 digit after comma
+
                 # Beta column with small number and progress bar
                 html.Td([
                     html.Div([
-                        html.Span(f"{stock.beta:.1f}", style={"margin-right": "5px", "font-size": "10px", "min-width": "25px", "text-align": "right"}),  # Fixed width for Beta number
-                        dbc.Progress(value=beta_normalized, striped=True, color="info", style={"height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
+                        html.Span(f"{stock.beta:.1f}", style={"margin-right": "5px", "font-size": "10px",
+                                  "min-width": "25px", "text-align": "right"}),  # Fixed width for Beta number
+                        dbc.Progress(value=beta_normalized, striped=True, color="info", style={
+                                     "height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
                     ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
                 ]),
-    
+
                 # ROE column with small number and progress bar
                 html.Td([
                     html.Div([
-                        html.Span(f"{roe_percentage:.1f}%", style={"margin-right": "5px", "font-size": "10px", "min-width": "25px", "text-align": "right"}),  # Fixed width for ROE number
-                        dbc.Progress(value=roe_percentage, striped=True, color="success", style={"height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
+                        html.Span(f"{roe_percentage:.1f}%", style={"margin-right": "5px", "font-size": "10px",
+                                  "min-width": "25px", "text-align": "right"}),  # Fixed width for ROE number
+                        dbc.Progress(value=roe_percentage, striped=True, color="success", style={
+                                     "height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
                     ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
                 ]),
-    
+
                 # Momentum column with small number and progress bar
                 html.Td([
                     html.Div([
-                        html.Span(f"{stock.price_momentum:.1f}", style={"margin-right": "5px", "font-size": "10px", "min-width": "25px", "text-align": "right"}),  # Fixed width for Momentum number
-                        dbc.Progress(value=momentum_normalized, striped=True, color="info", style={"height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
+                        html.Span(f"{stock.price_momentum:.1f}", style={"margin-right": "5px", "font-size": "10px",
+                                  "min-width": "25px", "text-align": "right"}),  # Fixed width for Momentum number
+                        dbc.Progress(value=momentum_normalized, striped=True, color="info", style={
+                                     "height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
                     ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
                 ])
             ]))
-    
+
         table_body = [html.Tbody(rows)]
-    
+
         # Return the complete table with headers and body, responsive for mobile
         return dbc.Table(
             table_header + table_body,
@@ -554,8 +662,6 @@ def get_data_callbacks(app, server):
             responsive=True,  # Enable responsive behavior
             className="table-sm table-responsive"
         )
-    
-
 
     @app.callback(
         [Output('forecast-graph', 'figure'),
@@ -571,30 +677,31 @@ def get_data_callbacks(app, server):
         # If the button is not rendered in the current view, skip the callback
         if n_clicks is None:
             raise PreventUpdate
-    
+
         # Proceed with the normal forecast generation logic
         if selected_stocks:
             if len(selected_stocks) > 3:
                 return dash.no_update, "Please select up to 3 stocks only.", dash.no_update
-    
+
             # Use the modularized forecast generation function
             forecast_data = ut.generate_forecast_data(selected_stocks, horizon)
-    
+
             forecast_figures = []
             today = pd.to_datetime('today')
-    
+
             for symbol in selected_stocks:
                 if 'error' in forecast_data[symbol]:
                     # Create an empty figure with an error message
                     fig = go.Figure()
                     fig.update_layout(template=plotly_theme)
-                    fig.add_annotation(text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}", showarrow=False)
+                    fig.add_annotation(
+                        text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}", showarrow=False)
                     forecast_figures.append(fig)
                     continue
-    
+
                 df = forecast_data[symbol]['historical']
                 forecast = forecast_data[symbol]['forecast']
-    
+
                 # Set start date based on predefined range
                 if predefined_range == 'YTD':
                     start_date = datetime(today.year, 1, 1)
@@ -609,23 +716,24 @@ def get_data_callbacks(app, server):
                 elif predefined_range == '5Y':
                     start_date = today - timedelta(days=1825)
                 else:
-                    start_date = pd.to_datetime('2024-01-01')  # Default range if no match
-    
+                    # Default range if no match
+                    start_date = pd.to_datetime('2024-01-01')
+
                 df_filtered = df[df['Date'] >= start_date]
                 forecast_filtered = forecast[forecast['ds'] >= start_date]
-    
+
                 fig = go.Figure()
                 fig.update_layout(template=plotly_theme)
-    
+
                 # Add forecast mean line
                 fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'], 
-                    y=forecast_filtered['yhat'], 
-                    mode='lines', 
+                    x=forecast_filtered['ds'],
+                    y=forecast_filtered['yhat'],
+                    mode='lines',
                     name=f'{symbol} Forecast',
                     line=dict(color='blue')
                 ))
-    
+
                 # Add the confidence interval (bandwidth)
                 fig.add_trace(go.Scatter(
                     x=forecast_filtered['ds'],
@@ -635,7 +743,7 @@ def get_data_callbacks(app, server):
                     line=dict(width=0),
                     showlegend=False
                 ))
-    
+
                 fig.add_trace(go.Scatter(
                     x=forecast_filtered['ds'],
                     y=forecast_filtered['yhat_lower'],
@@ -646,16 +754,16 @@ def get_data_callbacks(app, server):
                     fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
                     showlegend=False
                 ))
-    
+
                 # Add historical data
                 fig.add_trace(go.Scatter(
-                    x=df_filtered['Date'], 
-                    y=df_filtered['Close'], 
-                    mode='lines', 
+                    x=df_filtered['Date'],
+                    y=df_filtered['Close'],
+                    mode='lines',
                     name=f'{symbol} Historical',
                     line=dict(color='green')
                 ))
-    
+
                 fig.update_layout(
                     title=f"Stock Price Forecast for {symbol}",
                     xaxis_title="Date",
@@ -664,23 +772,23 @@ def get_data_callbacks(app, server):
                     showlegend=False,
                     template=plotly_theme  # Ensure theme is applied
                 )
-    
+
                 forecast_figures.append(fig)
-    
+
             if not forecast_figures:
                 return dash.no_update, dash.no_update, dash.no_update
-    
+
             # Combine all forecasts into subplots
             combined_fig = make_subplots(
                 rows=len(forecast_figures), cols=1,
-                shared_xaxes=True, 
+                shared_xaxes=True,
                 subplot_titles=selected_stocks
             )
-    
+
             for i, fig in enumerate(forecast_figures):
                 for trace in fig['data']:
                     combined_fig.add_trace(trace, row=i+1, col=1)
-    
+
             combined_fig.update_layout(
                 template=plotly_theme,  # Apply theme to combined figure
                 title=None,
@@ -688,16 +796,14 @@ def get_data_callbacks(app, server):
                 showlegend=False,
                 margin=dict(l=40, r=40, t=40, b=40)
             )
-    
+
             return combined_fig, "", combined_fig
-    
+
         # Ensure the default empty figure also uses the plotly theme
         empty_fig = go.Figure()
         empty_fig.update_layout(template=plotly_theme)
-    
-        return empty_fig, "", dash.no_update
 
-    
+        return empty_fig, "", dash.no_update
 
     @app.callback(Output('simulation-result', 'children'),
                   Input('simulate-button', 'n_clicks'),
@@ -705,19 +811,20 @@ def get_data_callbacks(app, server):
                   State('investment-amount', 'value'),
                   State('investment-date', 'date'),
                   State('plotly-theme-store', 'data'))
-    
     def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_date, plotly_theme):
         if n_clicks and stock_symbol and investment_amount and investment_date:
             investment_date = pd.to_datetime(investment_date)
             end_date = pd.to_datetime('today')
-            data = yf.download(stock_symbol, start=investment_date, end=end_date)
+            data = yf.download(
+                stock_symbol, start=investment_date, end=end_date)
+
             if not data.empty:
                 initial_price = data['Close'].iloc[0]
                 current_price = data['Close'].iloc[-1]
                 shares_bought = investment_amount / initial_price
                 current_value = shares_bought * current_price
                 profit = current_value - investment_amount
-    
+
                 # Create waterfall chart
                 fig_waterfall = go.Figure(go.Waterfall(
                     name="Investment Analysis",
@@ -725,7 +832,8 @@ def get_data_callbacks(app, server):
                     measure=["absolute", "relative", "total"],
                     x=["Initial Investment", "Profit/Loss", "Current Value"],
                     y=[investment_amount, profit, current_value],
-                    text=[f"${investment_amount:.2f}", f"${profit:.2f}", f"${current_value:.2f}"],
+                    text=[f"${investment_amount:.2f}",
+                          f"${profit:.2f}", f"${current_value:.2f}"],
                     textposition="inside",
                     insidetextfont={"color": "white"},
                     connector={"line": {"color": "rgb(63, 63, 63)"}},
@@ -737,23 +845,26 @@ def get_data_callbacks(app, server):
                     showlegend=False,
                     template=plotly_theme,
                     yaxis=dict(visible=False),
-                    margin=dict(t=100,l=10,r=10,b=10)  
+                    margin=dict(t=100, l=10, r=10, b=10)
                 )
-    
+
                 return html.Div([
-                    html.P(f"Initial Investment Amount: ${investment_amount:.2f}", className='mb-2'),
-                    html.P(f"Shares Bought: {shares_bought:.2f}", className='mb-2'),
-                    html.P(f"Current Value: ${current_value:.2f}", className='mb-2'),
+                    html.P(
+                        f"Initial Investment Amount: ${investment_amount:.2f}", className='mb-2'),
+                    html.P(
+                        f"Shares Bought: {shares_bought:.2f}", className='mb-2'),
+                    html.P(
+                        f"Current Value: ${current_value:.2f}", className='mb-2'),
                     html.P(f"Profit: ${profit:.2f}", className='mb-2'),
                     dcc.Graph(figure=fig_waterfall)
                 ])
             else:
                 return html.Div([
-                    html.P(f"No data available for {stock_symbol} from {investment_date.strftime('%Y-%m-%d')}", className='mb-2')
+                    html.P(
+                        f"No data available for {stock_symbol} from {investment_date.strftime('%Y-%m-%d')}", className='mb-2')
                 ])
         return dash.no_update
-    
-    
+
     @app.callback(
         [Output('saved-watchlists-dropdown', 'options'),
          Output('saved-watchlists-dropdown', 'value'),
@@ -764,23 +875,25 @@ def get_data_callbacks(app, server):
         [State('new-watchlist-name', 'value'),
          State('individual-stocks-store', 'data'),
          State('saved-watchlists-dropdown', 'value'),
-         State('theme-store', 'data'),  # Get the selected theme (name, not URL)
+         # Get the selected theme (name, not URL)
+         State('theme-store', 'data'),
          State('login-username-store', 'data')],
-        prevent_initial_call=True  # Ensures the callback is not fired before any inputs are triggered
+        # Ensures the callback is not fired before any inputs are triggered
+        prevent_initial_call=True
     )
     def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_name, stocks, selected_watchlist_id, selected_theme, username):
         # Ensure the callback does not run if username or login status is not provided
         if not username or not login_status:
             return [], None, ''  # Clear the dropdown and inputs if not logged in
-        
+
         # Get the user from the database
         user = User.query.filter_by(username=username).first()
-        
+
         if user is None:
             # Handle the case where no user is found
             print(f"User with username {username} not found")
             return [], None, ''  # Clear the dropdown and inputs
-        
+
         # Handle watchlist deletion if `delete_clicks` is triggered
         if delete_clicks and selected_watchlist_id:
             watchlist = Watchlist.query.get(selected_watchlist_id)
@@ -788,35 +901,39 @@ def get_data_callbacks(app, server):
                 db.session.delete(watchlist)
                 db.session.commit()
                 selected_watchlist_id = None  # Clear the selected watchlist after deletion
-    
+
         # Handle watchlist creation or update if `create_clicks` is triggered
         elif create_clicks:
             if selected_watchlist_id:
                 # Update existing watchlist if selected
                 watchlist = Watchlist.query.get(selected_watchlist_id)
                 if watchlist and watchlist.user_id == user.id:
-                    watchlist.stocks = json.dumps(stocks)  # Update the stock list in the watchlist
+                    # Update the stock list in the watchlist
+                    watchlist.stocks = json.dumps(stocks)
                     db.session.commit()
             elif new_watchlist_name:
                 # Create a new watchlist
-                new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
+                new_watchlist = Watchlist(
+                    user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
                 db.session.add(new_watchlist)
                 db.session.commit()
-    
+
             # Update the theme in the user's profile (save the theme name, not the URL)
             for theme_name, theme_info in themes.items():
                 if theme_info['dbc'] == selected_theme:
-                    user.theme = theme_name  # Save the theme name (e.g., 'JOURNAL')
+                    # Save the theme name (e.g., 'JOURNAL')
+                    user.theme = theme_name
                     break
             db.session.commit()
-    
+
         # Load and return updated watchlist options for the user
         watchlists = Watchlist.query.filter_by(user_id=user.id).all()
-        watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
-    
-        return watchlist_options, selected_watchlist_id, ''  # Clear the new watchlist name input after creation or update
-    
-        
+        watchlist_options = [{'label': w.name, 'value': w.id}
+                             for w in watchlists]
+
+        # Clear the new watchlist name input after creation or update
+        return watchlist_options, selected_watchlist_id, ''
+
     @app.callback(
         [Output('conversation-store', 'data'),
          Output('chatbot-conversation', 'children'),
@@ -825,7 +942,8 @@ def get_data_callbacks(app, server):
         [State('chatbot-input', 'value'),
          State('conversation-store', 'data'),
          State('login-username-store', 'data'),
-         State('saved-watchlists-dropdown', 'value'),  # Get the selected watchlist
+         # Get the selected watchlist
+         State('saved-watchlists-dropdown', 'value'),
          State('individual-stocks-store', 'data')],     # Get stocks from the selected watchlist
         prevent_initial_call=True
     )
@@ -839,7 +957,8 @@ def get_data_callbacks(app, server):
         client = OpenAI(api_key=open_api_key)
 
         # Define the system message for context
-        system_message = {"role": "system", "content": "You are a helpful stock financial advisor."}
+        system_message = {"role": "system",
+                          "content": "You are a helpful stock financial advisor."}
 
         # Initialize conversation history if it's not already set
         if conversation_history is None:
@@ -847,15 +966,18 @@ def get_data_callbacks(app, server):
 
         if send_clicks and send_clicks > 0 and user_input:
             # Append the user's input to the conversation history
-            conversation_history.append({"role": "user", "content": user_input})
+            conversation_history.append(
+                {"role": "user", "content": user_input})
 
             # If the input contains the keyword 'performance' and the user is logged in
             if "performance" in user_input.lower() and username:
                 if selected_watchlist and watchlist_stocks:
                     # Fetch stock performance for the selected watchlist
-                    performance_data = ut.get_stock_performance(watchlist_stocks)
+                    performance_data = ut.get_stock_performance(
+                        watchlist_stocks)
                     performance_summaries = [
-                        f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data['latest_close'] is not None else f"{symbol}: Latest Close - N/A"
+                        f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data[
+                            'latest_close'] is not None else f"{symbol}: Latest Close - N/A"
                         for symbol, data in performance_data.items()
                     ]
                     response = f"Here is the performance data for the stocks in your selected watchlist: {'; '.join(performance_summaries)}."
@@ -870,31 +992,34 @@ def get_data_callbacks(app, server):
                 response = completion.choices[0].message.content
 
             # Append the assistant's response to the conversation history
-            conversation_history.append({"role": "assistant", "content": response})
+            conversation_history.append(
+                {"role": "assistant", "content": response})
 
             # Update the conversation display with the user's input and assistant's response
             conversation_display = []
             for message in conversation_history:
                 if message["role"] == "user":
-                    conversation_display.append(html.P(f"YOU: {message['content']}", className='user'))
+                    conversation_display.append(
+                        html.P(f"YOU: {message['content']}", className='user'))
                 elif message["role"] == "assistant":
                     conversation_display.append(
                         html.Div(
                             [
-                                html.Span("🤖", className="robot-avatar", style={"margin-right": "10px"}),
-                                html.Span(f"{message['content']}", className='chatbot-text'),
+                                html.Span("🤖", className="robot-avatar",
+                                          style={"margin-right": "10px"}),
+                                html.Span(
+                                    f"{message['content']}", className='chatbot-text'),
                             ],
                             className="chatbot-response fade-in"
                         )
                     )
 
             # Clear the chatbot input after responding
-            return conversation_history, conversation_display, ""  
+            return conversation_history, conversation_display, ""
 
         # If no new input, return the current state without updates
         return conversation_history, dash.no_update, dash.no_update
 
-    
     @app.callback(
         Output('analyst-recommendations-content', 'children'),
         [Input('individual-stocks-store', 'data'),
@@ -903,107 +1028,116 @@ def get_data_callbacks(app, server):
     def update_analyst_recommendations(stock_symbols, plotly_theme):
         if not stock_symbols:
             return html.P("Please select stocks to view their analyst recommendations.")
-        
+
         recommendations_content = []
-        
+
         # Add the text to be displayed at the top
         recommendations_content.append(
             html.P([
                 "For more information on how to interpret these ratings, please visit ",
-                html.A("this article", href="https://finance.yahoo.com/news/buy-sell-hold-stock-analyst-180414724.html", target="_blank"),
+                html.A(
+                    "this article", href="https://finance.yahoo.com/news/buy-sell-hold-stock-analyst-180414724.html", target="_blank"),
                 "."
             ], className='mt-2')
         )
-        
+
         for symbol in stock_symbols:
-            df = ut.fetch_analyst_recommendations(symbol)
+            # df = ut.fetch_analyst_recommendations(symbol)
+            df = fetch_analyst_reco_with_cache(symbol)
+
             if not df.empty:
                 fig = ut.generate_recommendations_heatmap(df, plotly_theme)
-                recommendations_content.append(html.H4(f"{symbol}", className='mt-3'))
+                recommendations_content.append(
+                    html.H4(f"{symbol}", className='mt-3'))
                 recommendations_content.append(dcc.Graph(figure=fig))
             else:
-                recommendations_content.append(html.P(f"No analyst recommendations found for {symbol}."))
-        
+                recommendations_content.append(
+                    html.P(f"No analyst recommendations found for {symbol}."))
+
         return recommendations_content
 
-    
     @app.callback(
-    Output('individual-stocks-store', 'data'),
-    [Input('url', 'pathname'),  # Triggers when the page is loaded/refreshed
-     Input('saved-watchlists-dropdown', 'value'),
-     Input('login-status', 'data')],
-    [State('login-username-store', 'data')],
-    prevent_initial_call=False  # Ensure this runs on page load
+        Output('individual-stocks-store', 'data'),
+        [Input('url', 'pathname'),  # Triggers when the page is loaded/refreshed
+         Input('saved-watchlists-dropdown', 'value'),
+         Input('login-status', 'data')],
+        [State('login-username-store', 'data')],
+        prevent_initial_call=False  # Ensure this runs on page load
     )
     def load_watchlist(pathname, watchlist_id, login_status, username):
         # Check if the user is logged in and a username is provided
         if login_status and username:
             # Fetch the user from the database
             user = User.query.filter_by(username=username).first()
-            
+
             # Ensure user exists before proceeding
             if user is None:
                 print(f"User with username {username} not found")
                 return ['AAPL', 'MSFT']  # Default stocks if no user is found
-    
+
             # Load the selected watchlist from the dropdown
             if watchlist_id:
                 watchlist = db.session.get(Watchlist, watchlist_id)
                 if watchlist and watchlist.user_id == user.id:
                     return json.loads(watchlist.stocks)
-    
+
             # If no specific watchlist is selected, load the default or most recent watchlist
-            default_watchlist = Watchlist.query.filter_by(user_id=user.id, is_default=True).first()
+            default_watchlist = Watchlist.query.filter_by(
+                user_id=user.id, is_default=True).first()
             if default_watchlist:
                 return json.loads(default_watchlist.stocks)
-    
+
             # If no default watchlist, load the most recent watchlist
-            recent_watchlist = Watchlist.query.filter_by(user_id=user.id).order_by(Watchlist.id.desc()).first()
+            recent_watchlist = Watchlist.query.filter_by(
+                user_id=user.id).order_by(Watchlist.id.desc()).first()
             if recent_watchlist:
                 return json.loads(recent_watchlist.stocks)
-    
+
         # If not logged in or no watchlist is selected, return AAPL and MSFT as the default stocks
         return ['AAPL', 'MSFT']
-    
-    
+
     @app.callback(
-    [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
-     Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
-     Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
-    [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
-    [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
-     State({'type': 'additional-news', 'index': MATCH}, 'children')]
+        [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
+         Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
+         Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
+        [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
+        [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
+         State({'type': 'additional-news', 'index': MATCH}, 'children')]
     )
     def load_more_articles(n_clicks, button_id, current_articles):
         if n_clicks is None or n_clicks == 0:
             raise PreventUpdate
-    
+
         symbol = button_id['index']
         ticker = yf.Ticker(symbol)
         news = ticker.news
-    
+
         if not news or len(news) <= 4:
             return dash.no_update, dash.no_update, dash.no_update
-    
+
         if current_articles is None:
             current_articles = []
-    
-        max_articles = (n_clicks + 1) * 4  # Increase the max articles by 4 each time the button is clicked
+
+        # Increase the max articles by 4 each time the button is clicked
+        max_articles = (n_clicks + 1) * 4
         additional_articles = []
-    
+
         for article in news[4:max_articles]:
             related_tickers = ", ".join(article.get('relatedTickers', []))
             publisher = article.get('publisher', 'Unknown Publisher')
-    
+
             news_card = dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H5(html.A(article['title'], href=article['link'], target="_blank")),
+                        html.H5(
+                            html.A(article['title'], href=article['link'], target="_blank")),
                         html.Img(
                             src=article['thumbnail']['resolutions'][0]['url'],
-                            style={"max-width": "150px", "height": "auto", "margin-bottom": "10px"}
+                            style={"max-width": "150px",
+                                   "height": "auto", "margin-bottom": "10px"}
                         ) if 'thumbnail' in article else html.Div(),
-                        html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
+                        html.P(
+                            f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                         html.Footer(
                             f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
                             style={"font-size": "12px", "margin-top": "auto"}
@@ -1014,12 +1148,11 @@ def get_data_callbacks(app, server):
                 className="mb-2"
             )
             additional_articles.append(news_card)
-    
+
         if max_articles >= len(news):
             return dbc.Row(additional_articles), "No more articles", {'display': 'none'}
-    
+
         return dbc.Row(additional_articles), "Load More", dash.no_update
-    
 
     @app.callback(
         [Output('financials-modal', 'is_open'),
@@ -1031,33 +1164,33 @@ def get_data_callbacks(app, server):
     )
     def display_financials_modal(n_clicks, watchlist, is_open):
         ctx = dash.callback_context
-    
+
         # Prevent the modal from opening if no click or all n_clicks are None
         if not ctx.triggered or not watchlist or not any(n_clicks):
             raise PreventUpdate
-    
+
         # Get the ID of the triggered button
         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
         if 'stock-symbol' not in triggered_id:
             raise PreventUpdate  # Ensure the modal only opens when a stock symbol is clicked
-    
+
         # Extract the index from the triggered ID
         index = json.loads(triggered_id)['index']
         stock_symbol = watchlist[index]
-    
+
         # Fetch financials data
         ticker = yf.Ticker(stock_symbol)
         financials = ticker.financials
         balance_sheet = ticker.balance_sheet
         cashflow = ticker.cashflow
         info = ticker.info
-    
+
         if financials is not None and not financials.empty:
             income_statement_content = ut.create_financials_table(financials)
             balance_sheet_content = ut.create_financials_table(balance_sheet)
             cashflow_content = ut.create_financials_table(cashflow)
             company_info_content = ut.create_company_info(info)
-            
+
             # Create tabs for the modal
             modal_content = dbc.Tabs([
                 dbc.Tab(company_info_content, label="Company Info"),
@@ -1066,10 +1199,10 @@ def get_data_callbacks(app, server):
                 dbc.Tab(cashflow_content, label="Cash Flow"),
             ], active_tab="tab-0")  # Set the first tab as active by default
         else:
-            modal_content = html.P("No financial data available for this stock.")
-    
-        return True, f"Financials for {stock_symbol}", modal_content
+            modal_content = html.P(
+                "No financial data available for this stock.")
 
+        return True, f"Financials for {stock_symbol}", modal_content
 
     @app.callback(
         Output('financials-modal', 'is_open', allow_duplicate=True),
@@ -1081,8 +1214,7 @@ def get_data_callbacks(app, server):
         if n_clicks:
             return not is_open
         return is_open
-    
-    
+
     @app.callback(
         [Output("chatbot-modal", "is_open"),
          Output("conversation-store", "data", allow_duplicate=True),
@@ -1092,7 +1224,8 @@ def get_data_callbacks(app, server):
         [State("chatbot-modal", "is_open"),
          State('conversation-store', 'data'),
          State('login-username-store', 'data'),
-         State('saved-watchlists-dropdown', 'value'),  # Get the selected watchlist
+         # Get the selected watchlist
+         State('saved-watchlists-dropdown', 'value'),
          State('individual-stocks-store', 'data')],     # Get stocks from the selected watchlist
         prevent_initial_call=True
     )
@@ -1100,54 +1233,59 @@ def get_data_callbacks(app, server):
         ctx = dash.callback_context
         if not ctx.triggered:
             return is_open, conversation_history, dash.no_update
-    
+
         # If the chatbot button is clicked or the clear button is clicked
         if ctx.triggered[0]["prop_id"] in ["open-chatbot-button.n_clicks", "clear-button.n_clicks"]:
             # Handle opening and closing the modal
             if ctx.triggered[0]["prop_id"] == "open-chatbot-button.n_clicks" and is_open:
                 return not is_open, conversation_history, dash.no_update
-    
+
             watchlist_message = ""
             personalized_greeting = "Hello! My name is Financio, your financial advisor 🤖."
-    
+
             # If the user is logged in
             if username:
                 # Check if the watchlist is selected and stocks are available
                 if selected_watchlist and watchlist_stocks:
                     # Generate the stock performance summaries for the selected watchlist
-                    performance_data = ut.get_stock_performance(watchlist_stocks)
+                    performance_data = ut.get_stock_performance(
+                        watchlist_stocks)
                     performance_summaries = [
-                        f"{symbol}: Latest - ${data['latest_close']:.2f}" 
+                        f"{symbol}: Latest - ${data['latest_close']:.2f}"
                         for symbol, data in performance_data.items()
                     ]
                     watchlist_message = f"Here are the stocks on your selected watchlist and their performance: {'; '.join(performance_summaries)}."
                 else:
                     watchlist_message = "You currently don't have a watchlist selected."
-    
+
                 # Personalize greeting for logged-in users
                 personalized_greeting = f"Hello, {username}! My name is Financio, your financial advisor 🤖."
             else:
                 # Handle the case when the user is not logged in
                 watchlist_message = "You're not logged in, so I don't have access to your watchlist."
-    
+
             # Initialize the conversation with a personalized message
-            conversation_history = [{"role": "system", "content": "You are a helpful stock financial advisor."}]
+            conversation_history = [
+                {"role": "system", "content": "You are a helpful stock financial advisor."}]
             introduction_message = f"{personalized_greeting} How can I assist you today? {watchlist_message}"
-            conversation_history.append({"role": "assistant", "content": introduction_message})
-    
+            conversation_history.append(
+                {"role": "assistant", "content": introduction_message})
+
             conversation_display = [
                 html.Div(
                     [
-                        html.Span("🤖", className="robot-avatar", style={"margin-right": "10px"}),
-                        html.Span(f"{introduction_message}", className='chatbot-text'),
+                        html.Span("🤖", className="robot-avatar",
+                                  style={"margin-right": "10px"}),
+                        html.Span(f"{introduction_message}",
+                                  className='chatbot-text'),
                     ],
                     className="chatbot-response fade-in"
                 )
             ]
             return True, conversation_history, conversation_display
-    
+
         return is_open, conversation_history, dash.no_update
-    
+
     @app.callback(
         Output('forecast-graph', 'figure', allow_duplicate=True),
         [Input('active-tab', 'data')],
@@ -1158,7 +1296,7 @@ def get_data_callbacks(app, server):
         if active_tab == '🌡️ Forecast' and stored_forecast:
             return stored_forecast
         return dash.no_update
-    
+
     # Callbacks to toggle the collapse for each question
     @app.callback(
         [Output("collapse-q1", "is_open"),
@@ -1192,7 +1330,7 @@ def get_data_callbacks(app, server):
             not is_open4 if triggered_id == 'faq-q4' else is_open4,
             not is_open5 if triggered_id == 'faq-q5' else is_open5,
         )
-    
+
     # Callback to toggle TOC on mobile
     @app.callback(
         Output("toc-collapse", "is_open"),
@@ -1204,4 +1342,3 @@ def get_data_callbacks(app, server):
         if n_clicks:
             return not is_open
         return is_open
-    
