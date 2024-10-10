@@ -273,7 +273,7 @@ app.layout = html.Div([
 
 
 auth_callbacks.register_auth_callbacks(app, server, mail)
-data_callbacks.get_data_callbacks(app, server)
+data_callbacks.get_data_callbacks(app, server, cache)
 
 
 
