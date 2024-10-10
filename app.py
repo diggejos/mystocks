@@ -1034,31 +1034,27 @@ def update_forecast_simulation_dropdown(individual_stocks):
 @app.callback(
     [Output('filters-collapse', 'is_open'),
      Output('mobile-overlay', 'style'),
-     Output('toggle-filters-button', 'children')],
+     Output('toggle-filters-button', 'className')],
     [Input('toggle-filters-button', 'n_clicks')],
-    [State('filters-collapse', 'is_open')]
+    [State('filters-collapse', 'is_open'),
+     State('toggle-filters-button', 'className')]
 )
-def toggle_sidebar(n_clicks, is_open):
+def toggle_sidebar(n_clicks, is_open, button_class):
     if n_clicks:
-        # Toggle the sidebar and the overlay
+        # Toggle the sidebar open/close state
         new_is_open = not is_open
         overlay_style = {"display": "block"} if new_is_open else {"display": "none"}
         
-        # Update the emoji depending on the open/closed state
-        emoji = "🔼" if new_is_open else "🔽"
-        button_text = html.Span([
-            f"{emoji} Manage ",
-            html.Span("Watchlist", className="bg-primary text-white rounded px-2 fs-5")
-        ], className="fs-5")
+        # Toggle the button class to switch between hamburger and "X" icons
+        if new_is_open:
+            button_class = "mobile-only toggler-icon open"  # Add the "open" class
+        else:
+            button_class = "mobile-only toggler-icon"  # No "open" class
 
-        return new_is_open, overlay_style, button_text
+        return new_is_open, overlay_style, button_class
 
-    # If no clicks yet, keep default values
-    return is_open, {"display": "none"}, html.Span([
-        "🔽 Manage ",
-        html.Span("Watchlist", className="bg-primary text-white rounded px-2 fs-5")
-    ], className="fs-5")
-
+    # If no clicks yet, return the default state
+    return is_open, {"display": "none"}, button_class
 
 
 
