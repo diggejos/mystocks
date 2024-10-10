@@ -78,6 +78,11 @@ app.server.config['SESSION_TYPE'] = 'filesystem'
 app.server.config['SESSION_PERMANENT'] = True  # Make session permanent to last across sessions
 app.server.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # Customize session lifetime (e.g., 7 days)
 
+app.server.config['CACHE_TYPE'] = 'SimpleCache'  # You can also use 'RedisCache', 'FileSystemCache', etc.
+app.server.config['CACHE_DEFAULT_TIMEOUT'] = 600  # Cache timeout in seconds (10 minutes)
+
+# Initialize Cache object
+cache = Cache(app.server)
 
 Session(app.server)
 
