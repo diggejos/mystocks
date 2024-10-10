@@ -85,6 +85,7 @@ def send_cancellation_email(user_email, username,mail):
     mail.send(msg)   
 
 
+
 def fetch_news(symbols, max_articles=4):
     news_content = []
 
@@ -111,7 +112,7 @@ def fetch_news(symbols, max_articles=4):
                             ),
                             html.Img(
                                 src=article['thumbnail']['resolutions'][0]['url'],
-                                style={"max-width": "150px", "height": "auto", "margin-bottom": "10px"}
+                                style={"max-width": "150px", "height": "auto", "margin-bottom": "10px", "loading": "lazy"}
                             ) if 'thumbnail' in article else html.Div(),
                             html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
@@ -209,6 +210,7 @@ def generate_recommendations_heatmap(dataframe, plotly_theme):
         xaxis_title="Period",
         yaxis_title=None,
         height=300,
+        dragmode=False,
     
         xaxis=dict(
             autorange=False,
@@ -245,7 +247,6 @@ def format_number(value):
         return f"{value:.0f}"
 
 
-
 def create_financials_table(data):
     # Transpose the financials data
     data = data.T
@@ -270,20 +271,24 @@ def create_financials_table(data):
         data=data.to_dict('records'),
         columns=[{"name": str(i), "id": str(i)} for i in data.columns],
         style_table={'overflowX': 'auto'},
-        style_cell={'textAlign': 'left', 'whiteSpace': 'normal', 'height': 'auto'},
-        style_header={'fontWeight': 'bold'},
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},  # Apply this style to odd rows
-                'backgroundColor': 'rgb(248, 248, 248)'
-            }
-        ],
+        style_cell={
+            'textAlign': 'left', 
+            'whiteSpace': 'normal', 
+            'height': 'auto',
+            'backgroundColor': 'rgba(0, 0, 0, 0)'  # Transparent background for table cells
+        },
+        style_header={
+            'fontWeight': 'bold', 
+            'backgroundColor': 'rgba(0, 0, 0, 0)'  # Transparent background for headers
+        }
+
     )
 
     return dbc.Container([
         html.Hr(),
         financials_table
     ])
+
 
 
 def create_company_info(info):
