@@ -22,6 +22,7 @@ import stripe
 from flask import redirect, url_for
 from flask import render_template
 import logging
+from flask_caching import Cache
 
 
 # Initialize the Dash app with a default Bootstrap theme
