@@ -21,3 +21,5 @@ flask_mail
 stripe
 logging
 authlib
+asyncio
+flask_caching
