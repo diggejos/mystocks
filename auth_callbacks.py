@@ -1,14 +1,13 @@
-from dash import Input, Output, State, no_update
+from dash import Input, Output, State
 from flask import session
 from models import User, bcrypt, db  # Make sure to import the app instance
-from layouts import themes, login_layout, dashboard_layout, forgot_layout, login_overlay
+from layouts import themes
 import dash_bootstrap_components as dbc
 import utils as ut
 import dash
 import re
 from dash.exceptions import PreventUpdate
-from flask import redirect, url_for
-from dash import dcc, html
+from flask import url_for
 
 
 # Define a function to register the callback
@@ -225,7 +224,8 @@ def register_auth_callbacks(app, server, mail):
          Output('req-uppercase', 'className'),
          Output('req-lowercase', 'className'),
          Output('req-digit', 'className'),
-         Output('req-special', 'className')],
+         # Output('req-special', 'className')
+         ],
         Input('password', 'value')
     )
     def update_password_requirements(password):
@@ -236,9 +236,9 @@ def register_auth_callbacks(app, server, mail):
         uppercase_class = 'text-muted' if not re.search(r"[A-Z]", password) else 'text-success'
         lowercase_class = 'text-muted' if not re.search(r"[a-z]", password) else 'text-success'
         digit_class = 'text-muted' if not re.search(r"\d", password) else 'text-success'
-        special_class = 'text-muted' if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password) else 'text-success'
+        # special_class = 'text-muted' if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password) else 'text-success'
 
-        return length_class, uppercase_class, lowercase_class, digit_class, special_class
+        return length_class, uppercase_class, lowercase_class, digit_class
 
     @app.callback(
         [Output('profile-req-length', 'className'),
@@ -303,3 +303,5 @@ def register_auth_callbacks(app, server, mail):
     )
     def enable_disable_theme_dropdown(login_status):
         return not login_status
+
+   
