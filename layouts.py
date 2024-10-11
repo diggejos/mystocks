@@ -20,14 +20,16 @@ def create_navbar(themes):
             [
                 # Row for the brand logo with left margin
                 dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.NavbarBrand([
-                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px'),
-                                "WatchMyStocks", 
-                            ], href="/", className="ms-3", style={"font-size": "16px"})  # Add margin on the left side of the logo
-                        ),
-                    ],
+                    dbc.Col(
+                        dbc.NavbarBrand(
+                            [
+                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px', width='45px'),  # Logo visible on all devices
+                                html.Span("WatchMyStocks", className="ms-2 desktop-only", style={"font-size": "16px"})  # Text only on desktop
+                            ],
+                            href="/", 
+                            className="d-flex align-items-center"  # Ensures logo and text are aligned in a single line
+                        )
+                    ),
                     align="center",
                     className="g-0 flex-grow-1"
                 ),
@@ -457,7 +459,7 @@ def create_footer():
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
             html.A(
-                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "auto"}),
+                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "25px"}),
                 href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out WatchMyStocks!",
                 target="_blank",
                 style={"margin-right": "10px"}
@@ -473,7 +475,7 @@ def create_footer():
                     html.P("© 2024 WatchMyStocks. All rights reserved.", className="text-center")
                 ], className="d-flex justify-content-center")
             ])
-        ], fluid=True),
+        ], fluid=True,style={"height": "180px"}),
         className="footer"
     )
 
@@ -696,18 +698,17 @@ def create_dashboard_layout(watchlist_management_layout):
                             id="toggle-filters-button",
                             color="info",
                             outline=False,
-                            size="m",
-                            className="mobile-only toggler-icon",
+                            size="sm",
+                            className="mobile-only toggler-icon align-items-center",
                             style={
                                 "position": "fixed",
-                                "top": "70px",
+                                "top": "73px",
                                 "left": "10px",
                                 "z-index": "1001",
-                                # "margin-bottom": "10px",
                                 "font-weight": "bold",
-                                "font-size": "18px"
+                                "font-size": "18px",
                             },
-                            children= html.Span([" Manage ", html.Span("Watchlist", className="bg-primary text-white rounded px-2")
+                            children= html.Span(["  Manage ", html.Span("Watchlist", className="bg-primary text-white rounded px-2")
                                                ]),
                         )
 
@@ -818,7 +819,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                     
                                     # dcc.Graph(id='stock-graph', style={'height': '500px', 'backgroundColor': 'transparent'})
                                     dcc.Loading(id="loading-prices", type="default", children=[
-                                        dcc.Graph(id='stock-graph', style={'height': '500px', 'backgroundColor': 'transparent'})
+                                        dcc.Graph(id='stock-graph', style={'min-height': '1000px', 'backgroundColor': 'transparent'},config={'displayModeBar': False})
                                     ])
                                 ])
                             )
@@ -888,7 +889,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                         labelStyle={"margin-right": "20px"}
                                     ),
                                     dcc.Loading(id="loading-comparison", type="default", children=[
-                                        dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'})
+                                        dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'},config={'displayModeBar': False})
                                     ])
                                 ])
                             )
@@ -953,7 +954,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                     dcc.Loading(
                                         id="loading-forecast",
                                         type="default",
-                                        children=[dcc.Graph(id='forecast-graph', style={'height': '500px'})]
+                                        children=[dcc.Graph(id='forecast-graph', style={'height': '500px'},config={'displayModeBar': False})]
                                     ),
                                     html.Div(id='forecast-blur-overlay', style={
                                         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
@@ -1060,7 +1061,7 @@ def create_profile_layout():
                                 html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
                                 html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
                                 html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
-                                html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
+                                # html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
                             ], className='mb-3'),
 
                             dbc.Label("Confirm New Password"),
@@ -1215,7 +1216,7 @@ def create_register_layout(plan):
                             html.Li("At least one uppercase letter", id='req-uppercase', className='text-muted'),
                             html.Li("At least one lowercase letter", id='req-lowercase', className='text-muted'),
                             html.Li("At least one digit", id='req-digit', className='text-muted'),
-                            html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='req-special', className='text-muted')
+                            # html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='req-special', className='text-muted')
                         ], className='mb-3'),
                         
                         dcc.Store(id='selected-plan', data=plan),
@@ -1225,7 +1226,8 @@ def create_register_layout(plan):
 
                         # Register button
                         dbc.Button("Register", id='register-button', color='primary', className='mt-2 w-100'),
-                        html.Div(id='register-output', className='mt-3'),
+                        dcc.Loading(html.Div(id='register-output', className='mt-3')),
+                        
                                                
                     ])
                 ])
