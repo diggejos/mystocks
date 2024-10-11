@@ -64,10 +64,6 @@ def favicon():
 import logging
 from flask import render_template
 
-@server.errorhandler(404)
-def page_not_found(e):
-    logging.error(f"404 error: {str(e)}")
-    return render_template('404.html'), 404
 
 server.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -240,6 +236,11 @@ SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
 with app.server.app_context():
     db.create_all()
 
+
+@server.errorhandler(404)
+def page_not_found(e):
+    logging.error(f"404 error: {str(e)}")
+    return render_template('404.html'), 404
 
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
