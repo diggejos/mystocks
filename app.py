@@ -1489,7 +1489,7 @@ app.index_string = '''
         <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
         <meta name="keywords" content="stock, stocks, stocks dashboard, finance, stocks forecasting, stocks news, stocks monitoring, stocks recommendations, finance, financial advisor, watchlist, watchmystocks, mystocks, apple stock, microsoft stock">
         <meta name="author" content="WatchMyStocks">
-        <meta property="og:title" content="Your Stock Monitoring Dashboard" />
+        <meta property="og:title" content="Stocks Monitoring Dashboard" />
         <meta property="og:description" content="Stocks monitoring, recommendations, news and more" />
         <meta property="og:image" content="https://mystocksportfolio.io/assets/logo_with_transparent_background.png" />
         <meta property="og:url" content="https://mystocksportfolio.io/" />
