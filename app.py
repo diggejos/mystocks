@@ -253,7 +253,7 @@ app.layout = html.Div([
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
     dbc.Container(id='page-content', fluid=True),
-    dcc.Store(id='active-tab', data='📰 News'), 
+    dcc.Store(id='active-tab', data='📈 Prices'), 
     dcc.Store(id='forecast-data-store'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
@@ -266,7 +266,7 @@ app.layout = html.Div([
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
     DeferScript(src='assets/script.js'),
     # Store to keep track of the active tab globally
-    dcc.Store(id='active-tab-store', data='news-tab')  # Default active tab
+    dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
   
 
 ])
@@ -1030,7 +1030,6 @@ def update_forecast_simulation_dropdown(individual_stocks):
 
 
 
-
 @app.callback(
     [Output('filters-collapse', 'is_open'),
      Output('mobile-overlay', 'style'),
@@ -1055,6 +1054,8 @@ def toggle_sidebar(n_clicks, is_open, button_class):
 
     # If no clicks yet, return the default state
     return is_open, {"display": "none"}, button_class
+
+
 
 
 
@@ -1435,6 +1436,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 
 app.index_string = '''
