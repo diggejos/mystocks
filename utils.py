@@ -136,9 +136,9 @@ def fetch_news(symbols, max_articles=4):
         else:
             news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
 
-    return html.Div(news_content)
+    return    dcc.Loading(id="loading-more-news", type="default", children=[html.Div(news_content)])
 
-
+                                 
 
 def fetch_analyst_recommendations(symbol):
     ticker = yf.Ticker(symbol)
@@ -337,8 +337,8 @@ def validate_password(password):
         return "Password must contain at least one digit."
     
     # Check for at least one special character
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password):
-        return "Password must contain at least one special character."
+    # if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password):
+    #     return "Password must contain at least one special character."
     
     # If all conditions are met
     return None
