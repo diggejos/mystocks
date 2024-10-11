@@ -16,43 +16,58 @@ from dash.exceptions import PreventUpdate
 from layouts import themes
 import asyncio
 
+
 def get_data_callbacks(app, server, cache):
     
-    # Asynchronous preloading functions
     async def preload_data_async(cache):
-        await asyncio.gather(
-            preload_prices_async(cache),
-            preload_news_async(cache)
-        )
-    
+        try:
+            await asyncio.gather(
+                preload_prices_async(cache),
+                preload_news_async(cache)
+            )
+        except Exception as e:
+            print(f"Error during preloading: {e}")
+
     async def preload_prices_async(cache):
-        print("Preloading prices data asynchronously...")
-        prices_data = yf.download(['AAPL', 'MSFT'], pd.to_datetime('today') - timedelta(days=365), pd.to_datetime('today'), "day")
-        cache.set('prices_data', prices_data)
+        try:
+            print("Preloading prices data asynchronously...")
+            prices_data = yf.download(['AAPL', 'MSFT'], pd.to_datetime('today') - timedelta(days=365), pd.to_datetime('today'), interval="1d")
+            if not prices_data.empty:
+                cache.set('prices_data', prices_data)
+            else:
+                print("Failed to preload prices data: empty DataFrame")
+        except Exception as e:
+            print(f"Error during price preload: {e}")
     
     async def preload_news_async(cache):
-        print("Preloading news data asynchronously...")
-        news_data = ut.fetch_news(['AAPL', 'MSFT'])
-        cache.set('news_data', news_data)
-    
+        try:
+            print("Preloading news data asynchronously...")
+            news_data = ut.fetch_news(['AAPL', 'MSFT'])
+            if news_data:
+                cache.set('news_data', news_data)
+            else:
+                print("Failed to preload news data: empty data")
+        except Exception as e:
+            print(f"Error during news preload: {e}")
+
+
     # Preload data at startup
     def run_preload(cache):
         print("Starting async preload...")
-    
+
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:  # No event loop is running
         loop = None
-    
+
     if loop and loop.is_running():
         # If already in an event loop, create the task
         asyncio.create_task(preload_data_async(cache))
     else:
         # If no event loop is running, run the task
         asyncio.run(preload_data_async(cache))
-    
-    print("Async preload completed.")
 
+    print("Async preload completed.")
 
     @cache.memoize(timeout=600)  # Cache the result for 10 minutes
     def fetch_news_with_cache(stock_symbols):
@@ -67,13 +82,11 @@ def get_data_callbacks(app, server, cache):
     @cache.memoize(timeout=600)  # Cache for 15 minutes
     def get_stock_data_cached(symbol, start_date, end_date, interval):
         return yf.download(symbol, start=start_date, end=end_date, interval=interval)
-    
-    
+
     preloaded_prices = cache.get('prices_data')
     preloaded_news = cache.get('news_data')
-    
-
-
+        
+        
     @app.callback(
         [
             Output('individual-stocks-store', 'data', allow_duplicate=True),
@@ -196,7 +209,7 @@ def get_data_callbacks(app, server, cache):
 
         # Update options for the dropdowns
         options = [{'label': stock, 'value': stock}
-                   for stock in individual_stocks]
+                    for stock in individual_stocks]
 
         # If no individual stocks and no benchmark selected, return default message
         if not individual_stocks and benchmark_selection == 'None':
@@ -257,17 +270,16 @@ def get_data_callbacks(app, server, cache):
         # Fetch stock data from Yahoo Finance
         data = []
         df = preloaded_prices
-        
+
         for symbol in individual_stocks:
             try:
 
                 if selected_prices_stocks in ['AAPL', 'MSFT']:
                             df = preloaded_prices
                 else:
-                           df = get_stock_data_cached(
+                            df = get_stock_data_cached(
                                 symbol, start_date, end_date, interval)
-                       
-                
+
                 # df = get_stock_data_cached(
                 #     symbol, start_date, end_date, interval)
 
@@ -403,8 +415,7 @@ def get_data_callbacks(app, server, cache):
         else:
             fig_indexed = px.line(
                 title="No data available.", template=plotly_theme)
-            
-  
+
         # Prepare the stock price graph
         df_prices_filtered = df_all[df_all['Stock'].isin(
             selected_prices_stocks)]
@@ -428,7 +439,7 @@ def get_data_callbacks(app, server, cache):
                 # Add the Volume trace first to make it appear behind
                 if 'Volume' in movag_input:
                     fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
-                                               marker=dict(color='darkgray'), opacity=0.6),
+                                                marker=dict(color='darkgray'), opacity=0.6),
                                         row=i + 1, col=1, secondary_y=True)
                     fig_stock.update_yaxes(
                         showgrid=False, secondary_y=True, row=i + 1, col=1)
@@ -436,7 +447,7 @@ def get_data_callbacks(app, server, cache):
                 # Add the price traces (line or candlestick) after the volume
                 if chart_type == 'line':
                     fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
-                                                   line=dict(color='steelblue', width=3)), row=i + 1, col=1)
+                                                    line=dict(color='steelblue', width=3)), row=i + 1, col=1)
 
                     last_close = df_stock['Close'].iloc[-2]
                     latest_close = df_stock['Close'].iloc[-1]
@@ -494,11 +505,11 @@ def get_data_callbacks(app, server, cache):
                 # Add moving averages after the price line or candlestick
                 if '30D_MA' in movag_input:
                     fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
-                                                   line=dict(color='green')), row=i + 1, col=1)
+                                                    line=dict(color='green')), row=i + 1, col=1)
 
                 if '100D_MA' in movag_input:
                     fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
-                                                   line=dict(color='red')), row=i + 1, col=1)
+                                                    line=dict(color='red')), row=i + 1, col=1)
 
         fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, bargap=0.0, bargroupgap=0.0, dragmode=False,  # Disable zoom and pan
                                 margin=dict(l=40, r=40, t=40, b=40))
@@ -510,9 +521,8 @@ def get_data_callbacks(app, server, cache):
         if selected_news_stocks in ['AAPL', 'MSFT']:
                 news_content = preloaded_news
         else:
-               news_content = fetch_news_with_cache(selected_news_stocks)  # Fetc
-               
-               
+                news_content = fetch_news_with_cache(selected_news_stocks)  # Fetc
+
         # news_content = fetch_news_with_cache(selected_news_stocks)
 
         # Fetch related news for the stocks in the watchlist
