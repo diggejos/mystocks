@@ -23,7 +23,7 @@ def create_navbar(themes):
                     dbc.Col(
                         dbc.NavbarBrand(
                             [
-                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px', width='45px'),  # Logo visible on all devices
+                                html.Img(src='/assets/logo_with_transparent_background.png', height='42px', width='45px', alt="WacthMyStocks Logo"),  # Logo visible on all devices
                                 html.Span("WatchMyStocks", className="ms-2 desktop-only", style={"font-size": "16px"})  # Text only on desktop
                             ],
                             href="/", 
@@ -1194,7 +1194,7 @@ def create_register_layout(plan):
 
                         html.A([
                             dbc.Button([
-                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2'),  # Google logo
+                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2', alt="Google Logo"),  # Google logo
                                 "Sign Up with Google"
                             ], id='google-signup-button', color='danger', className='mt-2 w-100')
                         ], href="/login/google") ,
@@ -1262,7 +1262,7 @@ def create_login_layout():
                         html.H3("Login with Google", className="text-center mt-4"),
                         html.A([
                             dbc.Button([
-                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2'),
+                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2', alt="Google Logo"),
                                 "Login with Google"
                             ], id='google-login-button', color='danger', className='mt-2 w-100')
                         ], href="/login/google"),
