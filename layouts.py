@@ -638,7 +638,7 @@ def create_dashboard_layout(watchlist_management_layout):
                 dbc.Card([
                     dbc.CardBody([
 
-                        html.H1("Stocks monitoring dashboard - WatchMyStocks", style={"display": "none"}),
+                        html.H1("Stocks monitoring dashboard. Save your watchlist today - WatchMyStocks", style={"display": "none"}),
 
                         # The stock suggestions input, buttons, and date range will always be visible
                         html.Div([
