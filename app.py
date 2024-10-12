@@ -1482,11 +1482,12 @@ app.index_string = '''
         })(window,document,'script','dataLayer','GTM-T6SPT9FD');</script>
         <!-- End Google Tag Manager -->
         {%metas%}
-        <title>Stocks monitoring and recommendation made easy - WatchMyStocks</title>
+        <title>Stocks Dashboard, save your watchlist today - WatchMyStocks</title>
         <link rel="stylesheet" href="/assets/styles.css?v=1.0">
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
+        <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stocks recommendations, and chat with an AI financial advisor. Save your watchlist today!">
+        <meta name="description" content="Your stocks monitoring Dashboard. Save your watchlist today">
         <meta name="keywords" content="stock, stocks, stocks dashboard, finance, stocks forecasting, stocks news, stocks monitoring, stocks recommendations, finance, financial advisor, watchlist, watchmystocks, mystocks, apple stock, microsoft stock">
         <meta name="author" content="WatchMyStocks">
         <meta property="og:title" content="Stocks Monitoring Dashboard" />
@@ -1494,8 +1495,6 @@ app.index_string = '''
         <meta property="og:image" content="https://mystocksportfolio.io/assets/logo_with_transparent_background.png" />
         <meta property="og:url" content="https://mystocksportfolio.io/" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="description" content="Learn how compounding can significantly grow your investments.">
-        <meta name="description" content="Learn how compounding and diversification can significantly grow your investments.">
         <link rel="canonical" href="https://mystocksportfolio.io/" />
         <link rel="icon" href="/assets/logo_with_transparent_background_favicon.png" type="image/png">
         <link rel="icon" href="{{ url_for('assets', filename='logo_with_transparent_favicon.png') }}" type="image/png">
