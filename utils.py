@@ -112,7 +112,7 @@ def fetch_news(symbols, max_articles=4):
                             ),
                             html.Img(
                                 src=article['thumbnail']['resolutions'][0]['url'],
-                                style={"max-width": "150px", "height": "auto", "margin-bottom": "10px", "loading": "lazy"}
+                                style={"max-width": "150px", "height": "auto", "margin-bottom": "10px", "loading": "lazy"},alt="stock news"
                             ) if 'thumbnail' in article else html.Div(),
                             html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
                             html.Footer(
