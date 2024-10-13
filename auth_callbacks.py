@@ -179,6 +179,9 @@ def register_auth_callbacks(app, server, mail):
     
                 # Send welcome email
                 ut.send_welcome_email(email, username, mail)
+                
+                ut.schedule_watchlist_email(email, username,mail,app)
+
     
                 return dbc.Alert("Registration successful! Please confirm your email.", color="success")
             except Exception as e:
@@ -303,5 +306,3 @@ def register_auth_callbacks(app, server, mail):
     )
     def enable_disable_theme_dropdown(login_status):
         return not login_status
-
-   
