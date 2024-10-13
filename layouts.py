@@ -6,9 +6,7 @@ import utils as ut
 
 
 
-
 themes = {
-    # 'Darkmode': {'dbc': dbc.themes.CYBORG, 'plotly': 'plotly_dark'},
     'Lightmode': {'dbc': dbc.themes.SPACELAB, 'plotly': 'simple_white'},
     'Darkmode': {'dbc': dbc.themes.DARKLY, 'plotly': 'plotly_dark'}
 }
@@ -638,7 +636,12 @@ def create_dashboard_layout(watchlist_management_layout):
                 dbc.Card([
                     dbc.CardBody([
 
-                        html.H1("Stocks monitoring dashboard. Save your watchlist today - WatchMyStocks", style={"display": "none"}),
+                        html.H1("Stocks monitoring dashboard - WatchMyStocks", style={"display": "none"}),
+                        html.H2("Stocks monitoring made easy", style={"display": "none"}),
+                        html.H2("Create your personal watchlist", style={"display": "none"}),
+                        html.H3("Apple Stock, aaple", style={"display": "none"}),
+                        html.H3("Microsoft Stock, msft", style={"display": "none"}),
+
 
                         # The stock suggestions input, buttons, and date range will always be visible
                         html.Div([
@@ -1194,7 +1197,7 @@ def create_register_layout(plan):
 
                         html.A([
                             dbc.Button([
-                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2', alt="Google Logo"),  # Google logo
+                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2', alt="Google Logo",loading="lazy" ),  # Google logo
                                 "Sign Up with Google"
                             ], id='google-signup-button', color='danger', className='mt-2 w-100')
                         ], href="/login/google") ,
@@ -1340,35 +1343,40 @@ def create_carousel():
                 "src": "/assets/gif1.gif",
                 "alt": "Demo 1",
                 "header": "Analyse and compare Stocks",
-                "caption": "Financial indicators, custom time windows, and more."
+                "caption": "Financial indicators, custom time windows, and more.",
+                "loading": "lazy"
             },
             {
                 "key": "2",
                 "src": "/assets/gif4.gif",
                 "alt": "Demo 2",
                 "header": "Save your Watchlist(s)",
-                "caption": "Create your Account, save your Watchlist(s) and your custom Theme."
+                "caption": "Create your Account, save your Watchlist(s) and your custom Theme.",
+                "loading": "lazy"
             },
             {
                 "key": "3",
                 "src": "/assets/gif2.gif",
                 "alt": "Demo 3",
                 "header": "Get latest Stock News",
-                "caption": "Get tailored News Updates."
+                "caption": "Get tailored News Updates.",
+                "loading": "lazy"
             },
             {
                 "key": "4",
                 "src": "/assets/gif3.gif",
                 "alt": "Demo 4",
                 "header": "Stock Forecasts and Recommendations",
-                "caption": "Visualize forecasts and access analyst recommendations."
+                "caption": "Visualize forecasts and access analyst recommendations.",
+                "loading": "lazy"
             },
             {
                 "key": "5",
                 "src": "/assets/gif5.gif",
                 "alt": "Demo 5",
                 "header": "Gen AI powered Chatbot",
-                "caption": "Chat with your financial advisor bot powered by Chat GPT-3.5 Turbo."
+                "caption": "Chat with your financial advisor bot powered by Chat GPT-3.5 Turbo.",
+                "loading": "lazy"
             }
         ],
         controls=True,
@@ -1428,7 +1436,8 @@ def create_about_layout(create_carousel):
                     "font-size": "24px",  # Increase text size
                     "font-weight": "bold",  # Make it bold
                     "text-align": "center",  # Center the text
-                    "margin": "20px 0"  # Add some margin around the paragraph
+                    "margin": "20px 0" ,
+                    "position":"fixed"# Add some margin around the paragraph
                 })
             ], className="mx-auto", style={"max-width": "800px"}))
         ])
