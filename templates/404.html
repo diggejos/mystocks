@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Not Found</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Link directly to the CSS file in the assets folder -->
+    <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
     <div class="container text-center">
@@ -12,12 +13,12 @@
         <p>Sorry, the page you're looking for doesn't exist.</p>
         <p>Here are some helpful links to get you back on track:</p>
         <ul>
-            <li><a href="{{ url_for('index') }}">Home</a></li>
-            <li><a href="{{ url_for('about') }}">About Us</a></li>
-            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('contact') }}">Contact Us</a></li>
+            <li><a href="/">Home</a></li>  <!-- Direct link to home page -->
+            <li><a href="/about">About</a></li>  <!-- Direct link to your About page -->
+            <li><a href="/register">Register</a></li>  <!-- Direct link to your Register page -->
+            <li><a href="/login">Login</a></li>  <!-- Direct link to your Login page -->
         </ul>
-        <p><a href="{{ url_for('index') }}" class="btn btn-primary">Go to Homepage</a></p>
+        <p><a href="/" class="btn btn-primary">Go to Homepage</a></p>
     </div>
 </body>
 </html>
