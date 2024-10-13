@@ -1439,14 +1439,20 @@ app.clientside_callback(
 )
 
 
-
 app.index_string = '''
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-960985880"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-960985880'); </script>
-        <!-- Hotjar Tracking Code for Site 5148807 (name missing) -->
+        <!-- Google tag (gtag.js) for AW-960985880 -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-960985880"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-960985880');
+        </script>
+        
+        <!-- Hotjar Tracking Code (lazy-loaded on interaction) -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 function loadHotjar() {
@@ -1459,35 +1465,48 @@ app.index_string = '''
                         a.appendChild(r);
                     })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
                 }
-        
+
+                // Load Hotjar only on user interaction
                 window.addEventListener('scroll', loadHotjar, {once: true});
                 window.addEventListener('click', loadHotjar, {once: true});
             });
         </script>
-        
-        <!-- Google tag (gtag.js) -->
+
+        <!-- Google tag (gtag.js) for G-9BR02FMBX1 -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-9BR02FMBX1"></script>
         <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-        
-          gtag('config', 'G-9BR02FMBX1');
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-9BR02FMBX1');
         </script>
-        <!-- Google Tag Manager -->
-        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-        })(window,document,'script','dataLayer','GTM-T6SPT9FD');</script>
-        <!-- End Google Tag Manager -->
+
+        <!-- Google Tag Manager (Lazy-Loaded) -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                function loadGoogleTagManager() {
+                    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                    })(window,document,'script','dataLayer','GTM-T6SPT9FD');
+                }
+
+                window.addEventListener('scroll', loadGoogleTagManager, {once: true});
+                window.addEventListener('click', loadGoogleTagManager, {once: true});
+            });
+        </script>
+
         {%metas%}
         <title>Stocks Dashboard, save your watchlist today - WatchMyStocks</title>
+        
+        <!-- Preload styles and favicon -->
+        <link rel="preload" href="/assets/styles.css" as="style">
         <link rel="stylesheet" href="/assets/styles.css?v=1.0">
+        
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stocks recommendations, and chat with an AI financial advisor. Save your watchlist today!">
-        <meta name="description" content="Your stocks monitoring Dashboard. Save your watchlist today">
         <meta name="keywords" content="stock, stocks, stocks dashboard, finance, stocks forecasting, stocks news, stocks monitoring, stocks recommendations, finance, financial advisor, watchlist, watchmystocks, mystocks, apple stock, microsoft stock">
         <meta name="author" content="WatchMyStocks">
         <meta property="og:title" content="Stocks Monitoring Dashboard" />
@@ -1497,11 +1516,11 @@ app.index_string = '''
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://mystocksportfolio.io/" />
         <link rel="icon" href="/assets/logo_with_transparent_background_favicon.png" type="image/png">
-        <link rel="icon" href="{{ url_for('assets', filename='logo_with_transparent_favicon.png') }}" type="image/png">
-
 
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
+        
+        <!-- Style adjustments for responsiveness -->
         <style>
             .news-row > .col-md-6 {
                 flex: 0 0 50%;
@@ -1514,12 +1533,14 @@ app.index_string = '''
                 }
             }
         </style>
+
+        <!-- Structured data for SEO -->
         <script type="application/ld+json">
         {
           "@context": "https://schema.org",
           "@type": "WebSite",
           "url": "https://mystocksportfolio.io/",
-          "name": "myStocksportoflio",
+          "name": "myStocksPortfolio",
           "description": "Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor.",
           "publisher": {
             "@type": "Organization",
@@ -1527,22 +1548,28 @@ app.index_string = '''
           }
         }
         </script>
-        
     </head>
     <body>
         <!-- Google Tag Manager (noscript) -->
-        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T6SPT9FD"
-        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T6SPT9FD"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        </noscript>
         <!-- End Google Tag Manager (noscript) -->
+
         {%app_entry%}
+
         <footer>
             {%config%}
-            {%scripts%}
+            {%scripts%} <!-- Dash scripts go here -->
             {%renderer%}
         </footer>
     </body>
 </html>
 '''
+
+
+
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
 
