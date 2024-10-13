@@ -1517,6 +1517,7 @@ app.index_string = '''
         <link rel="preload" href="https://cdn.jsdelivr.net/.../bootstrap.min.css" as="style">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/.../bootstrap.min.css">
         <meta charset="UTF-8">
+        <meta name="yandex-verification" content="234fe899dd410f3e" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stocks recommendations, and chat with an AI financial advisor. Save your watchlist today!">
         <meta name="keywords" content="stock, stocks, stocks dashboard, finance, stocks forecasting, stocks news, stocks monitoring, stocks recommendations, finance, financial advisor, watchlist, watchmystocks, mystocks, apple stock, microsoft stock">
