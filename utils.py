@@ -15,6 +15,7 @@ from flask import render_template
 from models import User
 from flask import session
 from dash import dcc
+import os
 
 
 def generate_unique_username(base_username):
@@ -34,17 +35,16 @@ def generate_unique_username(base_username):
         counter += 1
 
 
-
 def get_user_role():
     # Check if user is logged in
     logged_in = session.get('logged_in', False)
     username = session.get('username', None)
-    
+
     if not logged_in:
         return 'logged_out'
-    
+
     user = User.query.filter_by(username=username).first()
-    
+
     # Define user roles based on subscription status
     if user and user.subscription_status == 'premium':
         return 'premium'
@@ -55,11 +55,29 @@ def get_user_role():
 
 
 def send_welcome_email(user_email, username, mail):
-    msg = Message("Welcome to WatchMyStocks!", 
-                  sender="mystocks.monitoring@gmail.com", 
+    msg = Message("Welcome to WatchMyStocks!",
+                  sender="mystocks.monitoring@gmail.com",
                   recipients=[user_email])
     msg.html = render_template('welcome_email.html', username=username)
     mail.send(msg)
+
+
+def send_watchlist_email(user_email, username,mail,app):
+    with app.app_context():
+        msg = Message("How to Create Your First Watchlist!", 
+                      recipients=[user_email], 
+                      sender="mystocks.monitoring@gmail.com")
+
+        # Attach the GIF
+        with app.open_resource(os.path.join('assets', 'watchlist-tutorial.gif')) as gif:
+            msg.attach("watchlist-tutorial.gif", "image/gif", gif.read())
+
+        # Use cid to reference the attached GIF in the email body
+        msg.html = render_template('watchlist_email.html', username=username, gif_cid='watchlist-tutorial.gif')
+        mail.send(msg)
+
+        print(f"Email sent to {user_email}")
+
     
 def send_confirmation_email(email, token, mail):
      msg = Message('Confirm Your Email', sender='mystocks.monitoring@gmail.com', recipients=[email])
@@ -466,6 +484,13 @@ def confirm_token(token, server, expiration=3600):
     return email
 
 
+def page_not_found_layout():
+    return html.Div([
+        html.H1("404: Page Not Found"),
+        html.P("Sorry, the page you're looking for doesn't exist."),
+        dcc.Link('Go back to Home', href='/')
+    ])
+
 
 def create_blog_post(title, date, author, image_src, content_file, cta_text, cta_href, article_id):
     return html.Div(
@@ -479,6 +504,7 @@ def create_blog_post(title, date, author, image_src, content_file, cta_text, cta
                 html.Img(
                     src=image_src, 
                     alt=title, 
+                    # loading="lazy" ,
                     className="img-fluid rounded", 
                     style={"width": "auto", "max-width": "500px", "height": "auto"}  # Maintain original width but max 600px
                 ),
