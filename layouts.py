@@ -1197,7 +1197,7 @@ def create_register_layout(plan):
 
                         html.A([
                             dbc.Button([
-                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2', alt="Google Logo",loading="lazy" ),  # Google logo
+                                html.Img(src='/assets/google_logo.png', height="30px", className='mr-2', alt="Google Logo"),  # Google logo
                                 "Sign Up with Google"
                             ], id='google-signup-button', color='danger', className='mt-2 w-100')
                         ], href="/login/google") ,
