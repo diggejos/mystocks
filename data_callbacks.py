@@ -937,7 +937,10 @@ def get_data_callbacks(app, server, cache):
             db.session.commit()
 
         # Load and return updated watchlist options for the user
-        watchlists = Watchlist.query.filter_by(user_id=user.id).all()
+        # watchlists = Watchlist.query.filter_by(user_id=user.id).all()
+        # Only fetch 'id', 'name', and 'stocks' columns from Watchlist table instead of all fields
+        watchlists = Watchlist.query.with_entities(Watchlist.id, Watchlist.name, Watchlist.stocks).filter_by(user_id=user.id).all()
+
         watchlist_options = [{'label': w.name, 'value': w.id}
                              for w in watchlists]
 
