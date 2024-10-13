@@ -112,6 +112,8 @@ def ensure_flask_routes_are_handled():
     if request.path.startswith("/login"):
         return None  # Flask will handle these routes
 
+from flask import render_template, abort
+
 
 import secrets
 
@@ -237,11 +239,6 @@ with app.server.app_context():
     db.create_all()
 
 
-@server.errorhandler(404)
-def page_not_found(e):
-    logging.error(f"404 error: {str(e)}")
-    return render_template('404.html'), 404
-
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
@@ -266,6 +263,8 @@ app.layout = html.Div([
     ly.create_modal_register(),
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
     DeferScript(src='assets/script.js'),
+    DeferScript(src="/assets/plotly.js"),  # Loads Plotly script after rendering
+    DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
   
@@ -656,15 +655,21 @@ def toggle_navbar(n_clicks, is_open, current_class):
     return is_open, current_class
 
 
+@server.errorhandler(404)
+def page_not_found(e):
+    # logging.error(f"404 error: {str(e)}")
+    return render_template('404.html'), 404
+
+
 @app.callback(
     [Output('page-content', 'children'),
-     Output('login-status', 'data', allow_duplicate=True),
-     Output('login-username-store', 'data', allow_duplicate=True),
-     Output('login-link', 'style'),
-     Output('logout-button', 'style'),
-     Output('profile-link', 'style'),
-     Output('register-link', 'style'),
-     Output('sticky-footer-container', 'style')],
+      Output('login-status', 'data', allow_duplicate=True),
+      Output('login-username-store', 'data', allow_duplicate=True),
+      Output('login-link', 'style'),
+      Output('logout-button', 'style'),
+      Output('profile-link', 'style'),
+      Output('register-link', 'style'),
+      Output('sticky-footer-container', 'style')],
     [Input('url', 'pathname')],
     prevent_initial_call=True
 )
@@ -702,7 +707,7 @@ def display_page_and_update_ui(pathname):
         }
 
     # Pages where the footer should be hidden
-    pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password', '/subscription', '/register-free', '/register-paid', '/blog']
+    pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password', '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
@@ -725,6 +730,10 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password']:
+        
+        return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+
     else:
         # Default to dashboard if no specific path matches
         return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
@@ -1439,6 +1448,8 @@ app.clientside_callback(
 )
 
 
+
+
 app.index_string = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -1503,7 +1514,8 @@ app.index_string = '''
         <!-- Preload styles and favicon -->
         <link rel="preload" href="/assets/styles.css" as="style">
         <link rel="stylesheet" href="/assets/styles.css?v=1.0">
-        
+        <link rel="preload" href="https://cdn.jsdelivr.net/.../bootstrap.min.css" as="style">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/.../bootstrap.min.css">
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stocks recommendations, and chat with an AI financial advisor. Save your watchlist today!">
@@ -1567,8 +1579,6 @@ app.index_string = '''
     </body>
 </html>
 '''
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8051)
