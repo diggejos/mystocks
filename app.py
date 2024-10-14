@@ -23,11 +23,14 @@ from flask import redirect, url_for
 from flask import render_template
 import logging
 from flask_caching import Cache
+from flask_minify import Minify
 
 
 # Initialize the Dash app with a default Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
 server = app.server
+
+Minify(app=server, html=True, js=True, cssless=True)
 
 #@server.route('/sitemap.xml')
 #def sitemap_xml():
@@ -904,32 +907,46 @@ def update_modal_shown(is_open, modal_shown):
     return modal_shown  # Keep the current state
 
 
+@app.callback(
+    [Output('new-watchlist-name', 'disabled'),
+      Output('saved-watchlists-dropdown', 'disabled'),
+      Output('saved-watchlists-dropdown', 'clearable'),  # Control clearable property
+      Output('create-watchlist-button', 'disabled'),
+      Output('delete-watchlist-button', 'disabled'),
+      Output('create-watchlist-button', 'className'),
+      Output('delete-watchlist-button', 'className')
+      ],
+    [Input('login-status', 'data')]
+    # prevent_initial_call=True  # Updated to valid boolean value
+)
+def update_watchlist_management_layout(login_status):
+    if login_status:
+        return False, False, True, False, False, "small-button", "small-button"  # Enable components and make the dropdown clearable
+    else:
+        # return True, True, False, True, True  # Disable components and make the dropdown not clearable
+        return dash.no_update, dash.no_update,dash.no_update,True,True,dash.no_update,dash.no_update
+
 
 @app.callback(
     Output('login-overlay', 'is_open'),
-    [Input('theme-dropdown-wrapper', 'n_clicks'),
-     Input('create-watchlist-button', 'n_clicks'),
-     Input('delete-watchlist-button', 'n_clicks')],
+    [Input('clickable-watchlist-area', 'n_clicks')],
     [State('login-status', 'data'),
-     State('login-overlay', 'is_open')]
- )
-def show_overlay_if_logged_out(theme_n_clicks, create_n_clicks, delete_n_clicks, login_status, is_overlay_open):
-        logging.info(
-            f"Login status: {login_status}, theme_n_clicks: {theme_n_clicks}, create_n_clicks: {create_n_clicks}, delete_n_clicks: {delete_n_clicks}")
-        theme_n_clicks = theme_n_clicks or 0
-        create_n_clicks = create_n_clicks or 0
-        delete_n_clicks = delete_n_clicks or 0
+     State('login-overlay', 'is_open')] 
+)
+def show_overlay_if_logged_out(click_n_clicks, login_status, is_overlay_open):
+    # Initialize click_n_clicks to avoid NoneType error
+    click_n_clicks = click_n_clicks or 0
 
-        if not login_status and (theme_n_clicks > 0 or create_n_clicks > 0 or delete_n_clicks > 0):
-            logging.info("Showing overlay")
-            return True
+    # If login_status is False (not logged in) and the area is clicked
+    if not login_status and click_n_clicks > 0:
+        return True  # Show the login overlay
 
-        if is_overlay_open:
-            logging.info("Overlay already open")
-            return True
+    # Keep the overlay open if it’s already open
+    if is_overlay_open:
+        return True
 
-        logging.info("Overlay not shown")
-        return False
+    # Otherwise, don't show the overlay
+    return False
 
 
 @app.callback(
@@ -1325,29 +1342,6 @@ def cancel_subscription(n_clicks):
 
 
 from dash import no_update
-
-
-
-
-@app.callback(
-    [Output('new-watchlist-name', 'disabled', allow_duplicate=True),
-     Output('saved-watchlists-dropdown', 'disabled', allow_duplicate=True),
-     Output('saved-watchlists-dropdown', 'clearable', allow_duplicate=True),  # Control clearable property
-     Output('create-watchlist-button', 'disabled', allow_duplicate=True),
-     Output('delete-watchlist-button', 'disabled', allow_duplicate=True),
-     Output('create-watchlist-button', 'className'),
-     Output('delete-watchlist-button', 'className')
-     ],
-    [Input('login-status', 'data')],
-    prevent_initial_call='initial_duplicate'
-)
-def update_watchlist_management_layout(login_status):
-    if login_status:
-        return False, False, True, False, False, "small-button", "small-button"  # Enable components and make the dropdown clearable
-    else:
-        # return True, True, False, True, True  # Disable components and make the dropdown not clearable
-        return no_update, no_update,no_update,no_update,no_update,no_update,no_update
-
 
 
 @app.callback(
