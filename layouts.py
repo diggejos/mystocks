@@ -477,35 +477,50 @@ def create_footer():
         className="footer"
     )
 
-
-
 def create_watchlist_management_layout():
     return dbc.Container([
-        
-        html.Label([
-            "Saved ",
-            html.Span("Watchlists", className="bg-success text-white rounded px-2")
-        ]),
-        # html.Label("Saved Watchlists:", className="font-weight-bold", style={"margin-top": "10px"}),
-        html.Div([
-            dcc.Dropdown(
-                id='saved-watchlists-dropdown',
-                placeholder="Select a saved Watchlist",
-                options=[],
-                disabled=True,
-                searchable=False,
-                style={"margin-bottom": "10px"}
-            )
-        ]),
-        dcc.Input(
-            id='new-watchlist-name',
-            placeholder="Enter Watchlist Name and save it",
-            className="form-control",
-            disabled=True
+
+        # Create a clickable area to trigger the overlay
+        html.Div(
+            id="clickable-watchlist-area",  # ID for the clickable area
+            children=[
+                html.Label([
+                    "Saved ",
+                    html.Span("Watchlists", className="bg-success text-white rounded px-2")
+                ]),
+                html.Div([
+                    dcc.Dropdown(
+                        id='saved-watchlists-dropdown',
+                        placeholder="Select a saved Watchlist",
+                        options=[],
+                        disabled=True,
+                        searchable=False,
+                        style={"margin-bottom": "10px"}
+                    )
+                ]),
+                dcc.Input(
+                    id='new-watchlist-name',
+                    placeholder="Enter Watchlist Name and save it",
+                    className="form-control",
+                    disabled=True
+                ),
+                dbc.Button("💾 save", id='create-watchlist-button', color='primary', className="grayed-out small-button"),
+                dbc.Button("X delete", id='delete-watchlist-button', color='danger', className="grayed-out small-button")
+            ],
+            n_clicks=0,  # Initialize click counter
+            style={'border': '1px transparent', 'border-radius': '5px', 'padding': '10px', 'cursor': 'pointer'}
         ),
-        dbc.Button("💾 save", id='create-watchlist-button', color='primary', className="grayed-out small-button"),
-        dbc.Button("X delete", id='delete-watchlist-button', color='danger', className="grayed-out small-button")
+        
+        # Optional: You can add more content if needed
     ])
+
+# Overlay component added to the main layout
+overlay = dbc.Offcanvas(
+    "You need to be logged in to perform this action",
+    id="login-overlay",
+    is_open=False,
+    title="Login Required"
+)
 
 
 def paywall_logged_out():
