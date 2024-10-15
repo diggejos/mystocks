@@ -880,37 +880,44 @@ app.clientside_callback(
     Input('tabs', 'value')
 )
 
-@app.callback(
+app.clientside_callback(
+    """
+    function(n_intervals, n_clicks, login_status, modal_shown, is_open) {
+        // Show modal after 30 seconds if not logged in and modal hasn't been shown yet
+        if (n_intervals > 0 && !login_status && !modal_shown) {
+            return true;  // Open the modal
+        }
+        
+        // Close modal when "Register" button is clicked
+        if (n_clicks) {
+            return false;  // Close the modal
+        }
+        
+        // Keep modal open or closed based on current state
+        return is_open;
+    }
+    """,
     Output('register-modal', 'is_open'),
     [Input('register-modal-timer', 'n_intervals'),
      Input('close-register-modal-button', 'n_clicks')],
     [State('login-status', 'data'),
      State('modal-shown-store', 'data'),
-     State('register-modal', 'is_open')],
-    prevent_initial_call=True
+     State('register-modal', 'is_open')]
 )
-def control_modal(n_intervals, n_clicks, login_status, modal_shown, is_open):
-    # Show modal after 30 seconds if not logged in and modal hasn't been shown yet
-    if n_intervals > 0 and not login_status and not modal_shown:
-        return True  # Open the modal
-    
-    # Close modal when "Register" button is clicked
-    if n_clicks:
-        return False  # Close the modal
-    
-    # Keep modal open or closed based on current state
-    return is_open
 
-
-@app.callback(
+app.clientside_callback(
+    """
+    function(is_open, modal_shown) {
+        if (is_open && !modal_shown) {
+            return true;  // Mark that the modal has been shown
+        }
+        return modal_shown;  // Keep the current state
+    }
+    """,
     Output('modal-shown-store', 'data'),
     [Input('register-modal', 'is_open')],
     [State('modal-shown-store', 'data')]
 )
-def update_modal_shown(is_open, modal_shown):
-    if is_open and not modal_shown:
-        return True  # Mark that the modal has been shown
-    return modal_shown  # Keep the current state
 
 
 @app.callback(
