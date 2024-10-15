@@ -850,29 +850,35 @@ def sync_tabs_and_footer(desktop_tab, n_clicks_news, n_clicks_prices, n_clicks_c
     # Default return (if nothing was triggered)
     return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, current_active_tab
 
-@app.callback(
+
+app.clientside_callback(
+    """
+    function(active_tab) {
+        // List of tabs where the date range should be hidden
+        var hidden_tabs = ['news-tab', 'simulate-tab', 'recommendations-tab', 'topshots-tab'];
+        
+        // Check if the active tab is in the list of hidden tabs
+        if (hidden_tabs.includes(active_tab)) {
+            return {'display': 'none'};
+        } else {
+            return {'display': 'block'};
+        }
+    }
+    """,
     Output('date-range-container', 'style'),
     Input('tabs', 'active_tab')
 )
-def toggle_date_range_visibility(active_tab):
-    # List of tabs where the date range should be hidden
-    hidden_tabs = ['news-tab', 'simulate-tab', 'recommendations-tab', 'topshots-tab']
+
     
-    if active_tab in hidden_tabs:
-        return {'display': 'none'}
-    else:
-        return {'display': 'block'}
-
-
-
-# Add a callback to update the active-tab store
-@app.callback(
+app.clientside_callback(
+    """
+    function(value) {
+        return value;
+    }
+    """,
     Output('active-tab', 'data'),
     Input('tabs', 'value')
 )
-def update_active_tab(value):
-    return value
-
 
 @app.callback(
     Output('register-modal', 'is_open'),
