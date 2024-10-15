@@ -33,7 +33,7 @@ server = app.server
 
 #Minify(app=server, html=True, js=True, cssless=True)
 
-app.server.config['COMPRESS_LEVEL'] = 8  # Set compression level (1-9, default is 6)
+app.server.config['COMPRESS_LEVEL'] = 9  # Set compression level (1-9, default is 6)
 app.server.config['COMPRESS_MIN_SIZE'] = 500  # Minimum size (in bytes) to trigger compression
 app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/javascript']  # File types to compress
 compress = Compress()
