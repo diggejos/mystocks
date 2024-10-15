@@ -32,8 +32,8 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB, "https://cd
 server = app.server
 
 Minify(app=server, html=True, js=True, cssless=True)
-compress = Compress()
-compress.init_app(server)
+#compress = Compress()
+#compress.init_app(server)
 
 #@server.route('/sitemap.xml')
 #def sitemap_xml():
