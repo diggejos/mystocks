@@ -88,11 +88,6 @@ app.server.config['COMPRESS_LEVEL'] = 7  # Set compression level (1-9, default i
 app.server.config['COMPRESS_MIN_SIZE'] = 500  # Minimum size (in bytes) to trigger compression
 app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/javascript']  # File types to compress
 
-# Initialize Flask-Compress for compression
-compress = Compress()
-compress.init_app(app.server)
-
-
 # Initialize Cache object
 cache = Cache(app.server)
 
