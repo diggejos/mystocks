@@ -44,8 +44,8 @@ OpenAI GPT-3.5
  
 https://mystocksportfolio.io
 
-![gif5](https://github.com/user-attachments/assets/ffb3fe12-b38a-4f82-9faa-4346b257c293)
-![gif4](https://github.com/user-attachments/assets/364f28fe-98d2-4622-9df4-6243ed24c9cf)
-![gif3](https://github.com/user-attachments/assets/7c900de4-1465-4373-b064-24a9dc18112e)
-![gif2](https://github.com/user-attachments/assets/8efdafcc-eb3d-4c81-bd70-30aba3283b3c)
-![gif1](https://github.com/user-attachments/assets/9aaeb683-0bf6-4a39-a410-539d8069aaf5)
+![[Stock monitoring dashboard interface]](https://github.com/user-attachments/assets/ffb3fe12-b38a-4f82-9faa-4346b257c293)
+![[Stock monitoring dashboard interface]](https://github.com/user-attachments/assets/364f28fe-98d2-4622-9df4-6243ed24c9cf)
+![[Stock monitoring dashboard interface]](https://github.com/user-attachments/assets/7c900de4-1465-4373-b064-24a9dc18112e)
+![[Stock monitoring dashboard interface]](https://github.com/user-attachments/assets/8efdafcc-eb3d-4c81-bd70-30aba3283b3c)
+![[Stock monitoring dashboard interface]](https://github.com/user-attachments/assets/9aaeb683-0bf6-4a39-a410-539d8069aaf5)
