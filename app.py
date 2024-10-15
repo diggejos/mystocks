@@ -1055,9 +1055,30 @@ def update_forecast_simulation_dropdown(individual_stocks):
     options = [{'label': stock, 'value': stock} for stock in individual_stocks]
     return options, options
 
+app.clientside_callback(
+    """
+    function(n_clicks, is_open, button_class) {
+        // If the button has been clicked
+        if (n_clicks) {
+            // Toggle the sidebar open/close state
+            var new_is_open = !is_open;
+            var overlay_style = {"display": new_is_open ? "block" : "none"};
 
+            // Toggle the button class to switch between hamburger and "X" icons
+            if (new_is_open) {
+                button_class = "mobile-only toggler-icon open";  // Add the "open" class
+            } else {
+                button_class = "mobile-only toggler-icon";  // No "open" class
+            }
 
-@app.callback(
+            // Return the updated values
+            return [new_is_open, overlay_style, button_class];
+        }
+
+        // If no clicks yet, return the default state
+        return [is_open, {"display": "none"}, button_class];
+    }
+    """,
     [Output('filters-collapse', 'is_open'),
      Output('mobile-overlay', 'style'),
      Output('toggle-filters-button', 'className')],
@@ -1065,27 +1086,6 @@ def update_forecast_simulation_dropdown(individual_stocks):
     [State('filters-collapse', 'is_open'),
      State('toggle-filters-button', 'className')]
 )
-def toggle_sidebar(n_clicks, is_open, button_class):
-    if n_clicks:
-        # Toggle the sidebar open/close state
-        new_is_open = not is_open
-        overlay_style = {"display": "block"} if new_is_open else {"display": "none"}
-        
-        # Toggle the button class to switch between hamburger and "X" icons
-        if new_is_open:
-            button_class = "mobile-only toggler-icon open"  # Add the "open" class
-        else:
-            button_class = "mobile-only toggler-icon"  # No "open" class
-
-        return new_is_open, overlay_style, button_class
-
-    # If no clicks yet, return the default state
-    return is_open, {"display": "none"}, button_class
-
-
-
-
-
 
 @app.callback(
     [Output('forecast-blur-overlay', 'children'),
