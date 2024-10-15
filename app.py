@@ -24,6 +24,7 @@ from flask import render_template
 import logging
 from flask_caching import Cache
 from flask_minify import Minify
+from flask_compress import Compress
 
 
 # Initialize the Dash app with a default Bootstrap theme
@@ -31,6 +32,8 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB, "https://cd
 server = app.server
 
 Minify(app=server, html=True, js=True, cssless=True)
+compress = Compress()
+compress.init_app(server)
 
 #@server.route('/sitemap.xml')
 #def sitemap_xml():
