@@ -39,10 +39,6 @@ app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application
 compress = Compress()
 compress.init_app(server)
 
-#@server.route('/sitemap.xml')
-#def sitemap_xml():
-#    return send_from_directory(os.path.join(os.getcwd(), 'static'), 'sitemap.xml')
-
 from flask import send_file
 @server.route('/sitemap.xml')
 def sitemap_xml():
