@@ -1506,8 +1506,8 @@ app.index_string = '''
         <title>Stocks Dashboard, save your watchlist today - WatchMyStocks</title>
         
         <!-- Preload styles and favicon -->
-        <link rel="preload" href="/assets/styles.css" as="style">
-        <link rel="stylesheet" href="/assets/styles.css?v=1.0">
+        <link rel="preload" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/styles.css" as="style">
+        <link rel="stylesheet" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/styles.css?v=1.0">
         <link rel="preload" href="https://cdn.jsdelivr.net/.../bootstrap.min.css" as="style">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/.../bootstrap.min.css">
         <meta charset="UTF-8">
@@ -1522,7 +1522,7 @@ app.index_string = '''
         <meta property="og:url" content="https://mystocksportfolio.io/" />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://mystocksportfolio.io/" />
-        <link rel="icon" href="/assets/logo_with_transparent_background_favicon.png" type="image/png">
+        <link rel="icon" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/logo_with_transparent_background_favicon.png" type="image/png">
 
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
