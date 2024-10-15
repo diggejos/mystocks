@@ -31,9 +31,13 @@ from flask_compress import Compress
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
 server = app.server
 
-Minify(app=server, html=True, js=True, cssless=True)
-#compress = Compress()
-#compress.init_app(server)
+#Minify(app=server, html=True, js=True, cssless=True)
+
+app.server.config['COMPRESS_LEVEL'] = 7  # Set compression level (1-9, default is 6)
+app.server.config['COMPRESS_MIN_SIZE'] = 500  # Minimum size (in bytes) to trigger compression
+app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/javascript']  # File types to compress
+compress = Compress()
+compress.init_app(server)
 
 #@server.route('/sitemap.xml')
 #def sitemap_xml():
@@ -83,10 +87,6 @@ app.server.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # Customize
 
 app.server.config['CACHE_TYPE'] = 'SimpleCache'  # You can also use 'RedisCache', 'FileSystemCache', etc.
 app.server.config['CACHE_DEFAULT_TIMEOUT'] = 600  # Cache timeout in seconds (10 minutes)
-
-app.server.config['COMPRESS_LEVEL'] = 7  # Set compression level (1-9, default is 6)
-app.server.config['COMPRESS_MIN_SIZE'] = 500  # Minimum size (in bytes) to trigger compression
-app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/javascript']  # File types to compress
 
 # Initialize Cache object
 cache = Cache(app.server)
