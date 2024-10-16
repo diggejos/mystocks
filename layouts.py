@@ -249,8 +249,8 @@ blog_layout = dbc.Container(
                             author="WatchMyStocks",
                             image_src="/assets/compounding.png",
                             content_file="compounding_blog_content.md",
-                            cta_text="Sign Up for Free to Start Investing",
-                            cta_href="/register",
+                            cta_text="Sign up for free",
+                            cta_href="/register-free",
                             article_id="article-compounding"
                         ),
 
@@ -261,8 +261,8 @@ blog_layout = dbc.Container(
                             author="WatchMyStocks",
                             image_src="/assets/diversification.png",
                             content_file="diversification_blog_content.md",
-                            cta_text="Learn More",
-                            cta_href="/register",
+                            cta_text="Sign up for free",
+                            cta_href="/register-free",
                             article_id="article-diversification"
                         ),
                     
@@ -452,12 +452,12 @@ def create_footer():
                     html.Ul([
                         html.Li(html.A("About WatchMyStocks", href="/about", className="footer-link")),
                         html.Li(html.A("Contact Us", href="mailto:mystocks.monitoring@gmail.com?subject=mystocks%20request", className="footer-link")),
-                        html.Li(html.A("Dashboard", href="/", className="footer-link")),
+                        html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
                     ], className="list-unstyled")
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
             html.A(
-                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "38.4px", "height": "21.6px"}),
+                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "25px"}),
                 href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out WatchMyStocks!",
                 target="_blank",
                 style={"margin-right": "10px"}
@@ -488,16 +488,16 @@ def create_watchlist_management_layout():
                     "Saved ",
                     html.Span("Watchlists", className="bg-success text-white rounded px-2")
                 ]),
-                html.Div([
-                    dcc.Dropdown(
+      
+                dcc.Dropdown(
                         id='saved-watchlists-dropdown',
                         placeholder="Select a saved Watchlist",
                         options=[],
-                        disabled=True,
+                        disabled=False,
                         searchable=False,
                         style={"margin-bottom": "10px"}
-                    )
-                ]),
+                ),
+                
                 dcc.Input(
                     id='new-watchlist-name',
                     placeholder="Enter Watchlist Name and save it",
@@ -523,6 +523,8 @@ overlay = dbc.Offcanvas(
 )
 
 
+
+
 def paywall_logged_out():
     return html.Div(
         className="bg-light bg-primary-with-shadow",
@@ -537,7 +539,7 @@ def paywall_logged_out():
                 html.Li("🔥 Access to top-performing stocks based on KPIs", style={'font-size': '16px'}),
                 html.Li("📈 Weekly updates on the hottest stocks", style={'font-size': '16px'}),
                 html.Li("💼 Personalized recommendations based on your risk profile", style={'font-size': '16px'}),
-            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left', 'font-weight': 'normal'}),
             
             html.Div([
                 dbc.Button("Sign Up", href="/register", color="success", size="lg", className="mt-3 me-3"),
@@ -560,7 +562,7 @@ def paywall_free_user():
                 html.Li("🔥 Top-performing stocks based on financial KPIs", style={'font-size': '16px'}),
                 html.Li("📈 Weekly updates on the hottest stocks", style={'font-size': '16px'}),
                 html.Li("💼 Personalized recommendations based on your risk profile", style={'font-size': '16px'}),
-            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left','font-weight': 'normal'}),
             
             html.Div([
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
@@ -584,7 +586,7 @@ def paywall_logged_out_forecast():
                 html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
                 html.Li("📈 Perform up to 3 forecasts simultaneously", style={'font-size': '16px', 'text-align': 'left'}),
                 html.Li("⏱️ Choose your individual forecast horizon", style={'font-size': '16px', 'text-align': 'left'}),
-            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left','font-weight': 'normal'}),
             
             html.Div([
                 dbc.Button("Sign Up", href="/register", color="success", size="lg", className="mt-3 me-3"),
@@ -607,7 +609,7 @@ def paywall_free_user_forecast():
                 html.Li("🌡️ time series forecast", style={'font-size': '16px', 'text-align': 'left'}),
                 html.Li("📈 Perform up to 3 forecasts simultaneously", style={'font-size': '16px', 'text-align': 'left'}),
                 html.Li("⏱️ Choose your individual forecast horizon", style={'font-size': '16px', 'text-align': 'left'}),
-            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left','font-weight': 'normal'}),
             
             html.Div([
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
@@ -631,7 +633,7 @@ def paywall_recommendation():
                 html.Li("💸 sell, hold and buy analyst recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
                 html.Li("📈 historical change of recommendations ", style={'font-size': '16px', 'text-align': 'left'}),
                 html.Li("🔎 get recommendations for your watchlist", style={'font-size': '16px', 'text-align': 'left'}),
-            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left'}),
+            ], style={'list-style-type': '"✔️ "', 'margin-top': '20px', 'text-align': 'left','font-weight': 'normal'}),
             
             html.Div([
                 dbc.Button("Sign Up for free", href="/register-free", color="success", size="lg", className="mt-3 me-3"),
