@@ -770,91 +770,95 @@ def update_active_tab_class(current_tab):
     ]
 
 
+app.clientside_callback(
+    """
+    function(desktop_tab, n_clicks_news, n_clicks_prices, n_clicks_compare,
+             n_clicks_forecast, n_clicks_simulate, n_clicks_recommendations,
+             n_clicks_topshots, pathname, current_active_tab) {
 
-@app.callback(
-    [Output('tabs', 'active_tab'),  # Sync desktop tab
-     Output('footer-news-tab', 'className'),  # Sync mobile footer tab classes
+        var active_class = 'footer-tab active';
+        var inactive_class = 'footer-tab';
+
+        var footer_to_tab = {
+            'footer-news-tab': 'news-tab',
+            'footer-prices-tab': 'prices-tab',
+            'footer-compare-tab': 'compare-tab',
+            'footer-forecast-tab': 'forecast-tab',
+            'footer-simulate-tab': 'simulate-tab',
+            'footer-recommendations-tab': 'recommendations-tab',
+            'footer-topshots-tab': 'topshots-tab',
+        };
+
+        if (!dash_clientside.callback_context.triggered || dash_clientside.callback_context.triggered[0].prop_id === 'url.pathname') {
+            if (pathname === '/news') {
+                return ['news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'];
+            } else if (pathname === '/prices') {
+                return ['prices-tab', inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'prices-tab'];
+            } else if (pathname === '/comparison') {
+                return ['compare-tab', inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, 'compare-tab'];
+            } else if (pathname === '/forecast') {
+                return ['forecast-tab', inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, 'forecast-tab'];
+            } else if (pathname === '/simulation') {
+                return ['simulate-tab', inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, 'simulate-tab'];
+            } else if (pathname === '/recommendations') {
+                return ['recommendations-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, 'recommendations-tab'];
+            } else if (pathname === '/topshots') {
+                return ['topshots-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, 'topshots-tab'];
+            } else {
+                return ['news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'];
+            }
+        }
+
+        if (dash_clientside.callback_context.triggered[0].prop_id === 'tabs.active_tab') {
+            return [desktop_tab,
+                    desktop_tab === 'news-tab' ? active_class : inactive_class,
+                    desktop_tab === 'prices-tab' ? active_class : inactive_class,
+                    desktop_tab === 'compare-tab' ? active_class : inactive_class,
+                    desktop_tab === 'forecast-tab' ? active_class : inactive_class,
+                    desktop_tab === 'simulate-tab' ? active_class : inactive_class,
+                    desktop_tab === 'recommendations-tab' ? active_class : inactive_class,
+                    desktop_tab === 'topshots-tab' ? active_class : inactive_class,
+                    desktop_tab];
+        }
+
+        var triggered_id = dash_clientside.callback_context.triggered[0].prop_id.split('.')[0];
+        if (footer_to_tab.hasOwnProperty(triggered_id)) {
+            var selected_tab = footer_to_tab[triggered_id];
+            return [selected_tab,
+                    selected_tab === 'news-tab' ? active_class : inactive_class,
+                    selected_tab === 'prices-tab' ? active_class : inactive_class,
+                    selected_tab === 'compare-tab' ? active_class : inactive_class,
+                    selected_tab === 'forecast-tab' ? active_class : inactive_class,
+                    selected_tab === 'simulate-tab' ? active_class : inactive_class,
+                    selected_tab === 'recommendations-tab' ? active_class : inactive_class,
+                    selected_tab === 'topshots-tab' ? active_class : inactive_class,
+                    selected_tab];
+        }
+
+        return [dash_clientside.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, current_active_tab];
+    }
+    """,
+    [Output('tabs', 'active_tab'),
+     Output('footer-news-tab', 'className'),
      Output('footer-prices-tab', 'className'),
      Output('footer-compare-tab', 'className'),
      Output('footer-forecast-tab', 'className'),
      Output('footer-simulate-tab', 'className'),
      Output('footer-recommendations-tab', 'className'),
      Output('footer-topshots-tab', 'className'),
-     Output('active-tab-store', 'data')],  # Store the active tab globally
-    [Input('tabs', 'active_tab'),  # Desktop tab clicks
-     Input('footer-news-tab', 'n_clicks'),  # Mobile footer tab clicks
+     Output('active-tab-store', 'data')],
+    [Input('tabs', 'active_tab'),
+     Input('footer-news-tab', 'n_clicks'),
      Input('footer-prices-tab', 'n_clicks'),
      Input('footer-compare-tab', 'n_clicks'),
      Input('footer-forecast-tab', 'n_clicks'),
      Input('footer-simulate-tab', 'n_clicks'),
      Input('footer-recommendations-tab', 'n_clicks'),
      Input('footer-topshots-tab', 'n_clicks'),
-     Input('url', 'pathname')],  # Detect page load
-    [State('active-tab-store', 'data')],  # Get current active tab
-    prevent_initial_call=False  # Allow callback to fire on page load
+     Input('url', 'pathname')],
+    [State('active-tab-store', 'data')],
+    prevent_initial_call=False
 )
-def sync_tabs_and_footer(desktop_tab, n_clicks_news, n_clicks_prices, n_clicks_compare,
-                         n_clicks_forecast, n_clicks_simulate, n_clicks_recommendations, n_clicks_topshots,
-                         pathname, current_active_tab):
-    
-    ctx = dash.callback_context
-    active_class = 'footer-tab active'
-    inactive_class = 'footer-tab'
-
-    # Map footer clicks to their corresponding tab values
-    footer_to_tab = {
-        'footer-news-tab': 'news-tab',
-        'footer-prices-tab': 'prices-tab',
-        'footer-compare-tab': 'compare-tab',
-        'footer-forecast-tab': 'forecast-tab',
-        'footer-simulate-tab': 'simulate-tab',
-        'footer-recommendations-tab': 'recommendations-tab',
-        'footer-topshots-tab': 'topshots-tab',
-    }
-
-    # Handle page load by checking the pathname
-    if not ctx.triggered or ctx.triggered[0]['prop_id'] == 'url.pathname':
-        if pathname == '/news':
-            return 'news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'
-        elif pathname == '/prices':
-            return 'prices-tab', inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'prices-tab'
-        elif pathname == '/comparison':
-            return 'compare-tab', inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, 'compare-tab'
-        elif pathname == '/forecast':
-            return 'forecast-tab', inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, 'forecast-tab'
-        elif pathname == '/simulation':
-            return 'simulate-tab', inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, 'simulate-tab'
-        elif pathname == '/recommendations':
-            return 'recommendations-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, 'recommendations-tab'
-        elif pathname == '/topshots':
-            return 'topshots-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, 'topshots-tab'
-        else:
-            return 'news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'
-
-    # Handle desktop tab clicks
-    if ctx.triggered[0]['prop_id'] == 'tabs.active_tab':
-        return desktop_tab, active_class if desktop_tab == 'news-tab' else inactive_class, \
-            active_class if desktop_tab == 'prices-tab' else inactive_class, \
-            active_class if desktop_tab == 'compare-tab' else inactive_class, \
-            active_class if desktop_tab == 'forecast-tab' else inactive_class, \
-            active_class if desktop_tab == 'simulate-tab' else inactive_class, \
-            active_class if desktop_tab == 'recommendations-tab' else inactive_class, \
-            active_class if desktop_tab == 'topshots-tab' else inactive_class, desktop_tab
-
-    # Handle footer tab clicks
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    if triggered_id in footer_to_tab:
-        selected_tab = footer_to_tab[triggered_id]
-        return selected_tab, active_class if selected_tab == 'news-tab' else inactive_class, \
-            active_class if selected_tab == 'prices-tab' else inactive_class, \
-            active_class if selected_tab == 'compare-tab' else inactive_class, \
-            active_class if selected_tab == 'forecast-tab' else inactive_class, \
-            active_class if selected_tab == 'simulate-tab' else inactive_class, \
-            active_class if selected_tab == 'recommendations-tab' else inactive_class, \
-            active_class if selected_tab == 'topshots-tab' else inactive_class, selected_tab
-
-    # Default return (if nothing was triggered)
-    return dash.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, current_active_tab
 
 
 app.clientside_callback(
