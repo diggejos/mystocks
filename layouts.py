@@ -457,7 +457,7 @@ def create_footer():
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
             html.A(
-                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "30px", "height": "25px"}),
+                html.Img(src="/assets/X-Logo.png", alt="Share on X", style={"width": "38.4px", "height": "21.6px"}),
                 href="https://twitter.com/share?url=https://mystocksportfolio.io&text=Check out WatchMyStocks!",
                 target="_blank",
                 style={"margin-right": "10px"}
