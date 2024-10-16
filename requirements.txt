@@ -25,3 +25,4 @@ asyncio
 flask_caching
 flask_minify
 flask_compress
+flask_brotli
