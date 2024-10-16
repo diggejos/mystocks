@@ -703,7 +703,7 @@ def get_data_callbacks(app, server, cache):
                 if 'error' in forecast_data[symbol]:
                     # Create an empty figure with an error message
                     fig = go.Figure()
-                    fig.update_layout(template=plotly_theme)
+                    fig.update_layout(template=plotly_theme, dragmode=False)
                     fig.add_annotation(
                         text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}", showarrow=False)
                     forecast_figures.append(fig)
@@ -855,7 +855,8 @@ def get_data_callbacks(app, server, cache):
                     showlegend=False,
                     template=plotly_theme,
                     yaxis=dict(visible=False),
-                    margin=dict(t=100, l=10, r=10, b=10)
+                    margin=dict(t=100, l=10, r=10, b=10),
+                    dragmode=False
                 )
 
                 return html.Div([
@@ -874,20 +875,21 @@ def get_data_callbacks(app, server, cache):
                         f"No data available for {stock_symbol} from {investment_date.strftime('%Y-%m-%d')}", className='mb-2')
                 ])
         return dash.no_update
-
+    
+   
     @app.callback(
         [Output('saved-watchlists-dropdown', 'options'),
-         Output('saved-watchlists-dropdown', 'value'),
-         Output('new-watchlist-name', 'value')],
+          Output('saved-watchlists-dropdown', 'value'),
+          Output('new-watchlist-name', 'value')],
         [Input('login-status', 'data'),
-         Input('create-watchlist-button', 'n_clicks'),
-         Input('delete-watchlist-button', 'n_clicks')],
+          Input('create-watchlist-button', 'n_clicks'),
+          Input('delete-watchlist-button', 'n_clicks')],
         [State('new-watchlist-name', 'value'),
-         State('individual-stocks-store', 'data'),
-         State('saved-watchlists-dropdown', 'value'),
-         # Get the selected theme (name, not URL)
-         State('theme-store', 'data'),
-         State('login-username-store', 'data')],
+          State('individual-stocks-store', 'data'),
+          State('saved-watchlists-dropdown', 'value'),
+          # Get the selected theme (name, not URL)
+          State('theme-store', 'data'),
+          State('login-username-store', 'data')],
         # Ensures the callback is not fired before any inputs are triggered
         prevent_initial_call=True
     )
@@ -942,7 +944,7 @@ def get_data_callbacks(app, server, cache):
         watchlists = Watchlist.query.with_entities(Watchlist.id, Watchlist.name, Watchlist.stocks).filter_by(user_id=user.id).all()
 
         watchlist_options = [{'label': w.name, 'value': w.id}
-                             for w in watchlists]
+                              for w in watchlists]
 
         # Clear the new watchlist name input after creation or update
         return watchlist_options, selected_watchlist_id, ''
@@ -1309,9 +1311,22 @@ def get_data_callbacks(app, server, cache):
         if active_tab == '🌡️ Forecast' and stored_forecast:
             return stored_forecast
         return dash.no_update
-
-    # Callbacks to toggle the collapse for each question
-    @app.callback(
+    
+    
+    app.clientside_callback(
+        """
+        function(n1, n2, n3, n4, n5, is_open1, is_open2, is_open3, is_open4, is_open5) {
+            let triggered_id = dash_clientside.callback_context.triggered[0].prop_id.split('.')[0];
+    
+            return [
+                triggered_id === 'faq-q1' ? !is_open1 : is_open1,
+                triggered_id === 'faq-q2' ? !is_open2 : is_open2,
+                triggered_id === 'faq-q3' ? !is_open3 : is_open3,
+                triggered_id === 'faq-q4' ? !is_open4 : is_open4,
+                triggered_id === 'faq-q5' ? !is_open5 : is_open5
+            ];
+        }
+        """,
         [Output("collapse-q1", "is_open"),
          Output("collapse-q2", "is_open"),
          Output("collapse-q3", "is_open"),
@@ -1328,30 +1343,17 @@ def get_data_callbacks(app, server, cache):
          State("collapse-q4", "is_open"),
          State("collapse-q5", "is_open")]
     )
-    def toggle_collapse_FAQ(n1, n2, n3, n4, n5, is_open1, is_open2, is_open3, is_open4, is_open5):
-        ctx = dash.callback_context
 
-        if not ctx.triggered:
-            return is_open1, is_open2, is_open3, is_open4, is_open5
-
-        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-        return (
-            not is_open1 if triggered_id == 'faq-q1' else is_open1,
-            not is_open2 if triggered_id == 'faq-q2' else is_open2,
-            not is_open3 if triggered_id == 'faq-q3' else is_open3,
-            not is_open4 if triggered_id == 'faq-q4' else is_open4,
-            not is_open5 if triggered_id == 'faq-q5' else is_open5,
-        )
-
-    # Callback to toggle TOC on mobile
-    @app.callback(
+    app.clientside_callback(
+        """
+        function(n_clicks, is_open) {
+            if (n_clicks) {
+                return !is_open;
+            }
+            return is_open;
+        }
+        """,
         Output("toc-collapse", "is_open"),
-        [Input("toc-toggle", "n_clicks")],
-        [State("toc-collapse", "is_open")],
-        prevent_initial_call=True
+        Input("toc-toggle", "n_clicks"),
+        State("toc-collapse", "is_open")
     )
-    def toggle_toc(n_clicks, is_open):
-        if n_clicks:
-            return not is_open
-        return is_open
