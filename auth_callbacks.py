@@ -99,38 +99,40 @@ def register_auth_callbacks(app, server, mail):
 
 
 
-    @app.callback(
-    Output('url-redirect', 'href',allow_duplicate=True),
-    [Input('free-signup-button', 'n_clicks')],
-    prevent_initial_call=True
-    )
-    def redirect_to_free_signup(free_clicks):
-        if free_clicks:
-            # Redirect to free registration page
-            return '/register-free'
-        return dash.no_update
-    
-    
-    @app.callback(
-        Output('url-redirect', 'href'),
-        [Input('paid-signup-button', 'n_clicks')],
-        [State('login-status', 'data'),
-         State('login-username-store', 'data')],
+    app.clientside_callback(
+        """
+        function(free_clicks) {
+            if (free_clicks) {
+                return '/register-free';
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output('url-redirect', 'href',allow_duplicate=True),
+        Input('free-signup-button', 'n_clicks'),
         prevent_initial_call=True
     )
-    def redirect_to_paid_signup(paid_clicks, login_status, username):
-        if paid_clicks:
-            # Ensure user is logged in
-            if login_status and username:
-                # Redirect to checkout session creation if logged in
-                return '/create-checkout-session'
-            else:
-                # Redirect to login if not logged in
-                return '/register-paid'
-        
-        return dash.no_update
-
     
+    app.clientside_callback(
+        """
+        function(paid_clicks, login_status, username) {
+            if (paid_clicks) {
+                if (login_status && username) {
+                    return '/create-checkout-session';
+                } else {
+                    return '/register-paid';
+                }
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output('url-redirect', 'href'),
+        [Input('paid-signup-button', 'n_clicks')],
+        [State('login-status', 'data'), State('login-username-store', 'data')],
+        prevent_initial_call=True
+    )
+
+
 
 
     @app.callback(
@@ -242,6 +244,7 @@ def register_auth_callbacks(app, server, mail):
         # special_class = 'text-muted' if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password) else 'text-success'
 
         return length_class, uppercase_class, lowercase_class, digit_class
+    
 
     @app.callback(
         [Output('profile-req-length', 'className'),
@@ -299,10 +302,14 @@ def register_auth_callbacks(app, server, mail):
     
 
 
-    
-    @app.callback(
-    Output('theme-dropdown', 'disabled'),
-    Input('login-status', 'data')
+    app.clientside_callback(
+        """
+        function(login_status) {
+            // If login_status is true (logged in), enable the dropdown
+            // If login_status is false (logged out), disable the dropdown
+            return !login_status;
+        }
+        """,
+        Output('theme-dropdown', 'disabled'),
+        Input('login-status', 'data')
     )
-    def enable_disable_theme_dropdown(login_status):
-        return not login_status
