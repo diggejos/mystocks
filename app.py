@@ -247,7 +247,6 @@ SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
 with app.server.app_context():
     db.create_all()
 
-
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
@@ -276,11 +275,14 @@ app.layout = html.Div([
     DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
+  
+
 ])
 
 
 auth_callbacks.register_auth_callbacks(app, server, mail)
 data_callbacks.get_data_callbacks(app, server, cache)
+
 
 
 @server.route('/check-session')
@@ -355,6 +357,7 @@ def reset_password(token):
     
     
 # SUBSCRIBER ROUTES---------------------------   
+
 @server.route('/create-checkout-session', methods=['POST', 'GET'])
 def create_checkout_session():
     try:
@@ -664,25 +667,35 @@ app.clientside_callback(
 )
 
 
+
 @server.errorhandler(404)
 def page_not_found(e):
     # logging.error(f"404 error: {str(e)}")
     return render_template('404.html'), 404
 
 
+
 @app.callback(
-    [Output('page-content', 'children'),
-      Output('login-status', 'data', allow_duplicate=True),
-      Output('login-username-store', 'data', allow_duplicate=True),
-      Output('login-link', 'style'),
-      Output('logout-button', 'style'),
-      Output('profile-link', 'style'),
-      Output('register-link', 'style'),
-      Output('sticky-footer-container', 'style')],
+    [
+        Output('page-content', 'children'),
+        Output('login-status', 'data', allow_duplicate=True),
+        Output('login-username-store', 'data', allow_duplicate=True),
+        Output('login-link', 'style'),
+        Output('logout-button', 'style'),
+        Output('profile-link', 'style'),
+        Output('register-link', 'style'),
+        Output('sticky-footer-container', 'style')
+    ],
     [Input('url', 'pathname')],
     prevent_initial_call=True
 )
 def display_page_and_update_ui(pathname):
+    ctx = dash.callback_context
+    
+    # Avoid triggering callback if non-existent elements are referenced
+    if not ctx.triggered:
+        raise PreventUpdate
+
     # Get session info
     logged_in = session.get('logged_in', False)
     username = session.get('username', None)
@@ -720,7 +733,7 @@ def display_page_and_update_ui(pathname):
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
-    # Return the appropriate layout based on the page and user state
+    # Return layout based on the path and login state
     if pathname in ['/about', '/demo']:  # '/demo' now maps to about_layout
         return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/faqs':  # FAQ layout
@@ -740,16 +753,26 @@ def display_page_and_update_ui(pathname):
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password']:
-        
         return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
-    else:
-        # Default to dashboard if no specific path matches
-        return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    # Default to dashboard if no specific path matches
+    return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
 
-
-@app.callback(
+app.clientside_callback(
+    """
+    function(current_tab) {
+        // Determine which tab is active and apply the "active" class accordingly
+        return [
+            current_tab === '📰 News' ? "nav-link active" : "nav-link",
+            current_tab === '📈 Prices' ? "nav-link active" : "nav-link",
+            current_tab === '⚖️ Compare' ? "nav-link active" : "nav-link",
+            current_tab === '🌡️ Forecast' ? "nav-link active" : "nav-link",
+            current_tab === '📊 Simulate' ? "nav-link active" : "nav-link",
+            current_tab === '❤️ Reccomendations' ? "nav-link active" : "nav-link"
+        ];
+    }
+    """,
     [Output('tab-prices', 'className'),
      Output('tab-news', 'className'),
      Output('tab-comparison', 'className'),
@@ -758,16 +781,7 @@ def display_page_and_update_ui(pathname):
      Output('tab-reccommendation', 'className')],
     [Input('tabs', 'value')]
 )
-def update_active_tab_class(current_tab):
-    # Determine which tab is active and apply the "active" class accordingly
-    return [
-        "nav-link active" if current_tab == '📰 News' else "nav-link",
-        "nav-link active" if current_tab == '📈 Prices' else "nav-link",
-        "nav-link active" if current_tab == '⚖️ Compare' else "nav-link",
-        "nav-link active" if current_tab == '🌡️ Forecast' else "nav-link",
-        "nav-link active" if current_tab == '📊 Simulate' else "nav-link",
-        "nav-link active" if current_tab == '❤️ Reccomendations' else "nav-link"
-    ]
+
 
 
 app.clientside_callback(
@@ -861,6 +875,7 @@ app.clientside_callback(
 )
 
 
+
 app.clientside_callback(
     """
     function(active_tab) {
@@ -879,7 +894,7 @@ app.clientside_callback(
     Input('tabs', 'active_tab')
 )
 
-    
+            
 app.clientside_callback(
     """
     function(value) {
@@ -889,6 +904,9 @@ app.clientside_callback(
     Output('active-tab', 'data'),
     Input('tabs', 'value')
 )
+
+
+
 
 app.clientside_callback(
     """
@@ -930,6 +948,9 @@ app.clientside_callback(
 )
 
 
+from dash.dependencies import Input, Output, State
+
+
 @app.callback(
     [Output('new-watchlist-name', 'disabled'),
       Output('saved-watchlists-dropdown', 'disabled'),
@@ -947,29 +968,36 @@ def update_watchlist_management_layout(login_status):
         return False, False, True, False, False, "small-button", "small-button"  # Enable components and make the dropdown clearable
     else:
         # return True, True, False, True, True  # Disable components and make the dropdown not clearable
-        return dash.no_update, dash.no_update,dash.no_update,True,True,dash.no_update,dash.no_update
+        return True, True,True,True,True,dash.no_update,dash.no_update
 
 
-@app.callback(
+
+app.clientside_callback(
+    """
+    function(click_n_clicks, login_status, is_overlay_open) {
+        // Initialize click_n_clicks to avoid NoneType error
+        click_n_clicks = click_n_clicks || 0;
+
+        // If not logged in and the area is clicked, show the overlay
+        if (!login_status && click_n_clicks > 0) {
+            return true;
+        }
+
+        // Keep the overlay open if it’s already open
+        if (is_overlay_open) {
+            return true;
+        }
+
+        // Otherwise, don't show the overlay
+        return false;
+    }
+    """,
     Output('login-overlay', 'is_open'),
     [Input('clickable-watchlist-area', 'n_clicks')],
     [State('login-status', 'data'),
-     State('login-overlay', 'is_open')] 
+     State('login-overlay', 'is_open')]
 )
-def show_overlay_if_logged_out(click_n_clicks, login_status, is_overlay_open):
-    # Initialize click_n_clicks to avoid NoneType error
-    click_n_clicks = click_n_clicks or 0
 
-    # If login_status is False (not logged in) and the area is clicked
-    if not login_status and click_n_clicks > 0:
-        return True  # Show the login overlay
-
-    # Keep the overlay open if it’s already open
-    if is_overlay_open:
-        return True
-
-    # Otherwise, don't show the overlay
-    return False
 
 
 @app.callback(
@@ -1012,6 +1040,8 @@ def update_recommendation_visibility(login_status, username):
         'backdrop-filter': 'blur(2px)'
     }
     return paywall, blur_style
+
+
 
 
 @app.callback(
@@ -1062,24 +1092,21 @@ def update_topshots_visibility(login_status, username):
     return paywall, blur_style
 
 
-app.clientside_callback(
-    """
-    function(individual_stocks) {
-        if (!individual_stocks || individual_stocks.length === 0) {
-            return [[], []];
-        }
-        
-        var options = individual_stocks.map(function(stock) {
-            return {'label': stock, 'value': stock};
-        });
-        
-        return [options, options];
-    }
-    """,
+
+
+@app.callback(
     [Output('forecast-stock-input', 'options'),
-     Output('simulation-stock-input', 'options')],
-    [Input('individual-stocks-store', 'data')]
+      Output('simulation-stock-input', 'options')],
+    Input('individual-stocks-store', 'data')
 )
+def update_forecast_simulation_dropdown(individual_stocks):
+    if not individual_stocks:
+        return [], []
+    
+    options = [{'label': stock, 'value': stock} for stock in individual_stocks]
+    return options, options
+
+
 
 app.clientside_callback(
     """
@@ -1112,6 +1139,8 @@ app.clientside_callback(
     [State('filters-collapse', 'is_open'),
      State('toggle-filters-button', 'className')]
 )
+
+
 
 @app.callback(
     [Output('forecast-blur-overlay', 'children'),
@@ -1307,6 +1336,7 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
 
 
 
+
 @app.callback(
     Output("cancel-subscription-modal", "is_open"),
     [Input("cancel-subscription-btn", "n_clicks"),
@@ -1365,8 +1395,6 @@ def cancel_subscription(n_clicks):
     raise PreventUpdate
 
 
-from dash import no_update
-
 
 @app.callback(
     Output('stock-suggestions-input', 'options'),
@@ -1390,6 +1418,7 @@ def update_stock_suggestions(company_name):
     except Exception as e:
         # Handle cases where the API request fails or other issues
         return [{'label': 'Error retrieving stock suggestions', 'value': ''}]
+
 
 
 @app.callback(
@@ -1419,28 +1448,16 @@ def update_theme(*args, login_status=None, username=None):
     return dbc.themes.SPACELAB, 'plotly_white'
 
 
-app.clientside_callback(
-    """
-    function(theme) {
-        return theme;
-    }
-    """,
+
+@app.callback(
     Output('theme-switch', 'href'),
     Input('theme-store', 'data')
 )
+def update_stylesheet(theme):
+    return theme
 
 
-@app.callback(
-    Output('plotly-theme-store', 'data',allow_duplicate=True),
-    [Input('theme-store', 'data')],
-    prevent_initial_call=True
-)
-def update_plotly_theme(theme):
-    if theme == dbc.themes.CYBORG or theme == dbc.themes.DARKLY:
-        return 'plotly_dark'
-    elif theme == dbc.themes.SOLAR:
-        return 'plotly_dark'
-    return 'plotly_white'
+
 
 @app.callback(
     Output('meta-description', 'content'),
@@ -1464,6 +1481,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 
 
