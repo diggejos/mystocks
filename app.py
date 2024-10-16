@@ -277,14 +277,11 @@ app.layout = html.Div([
     DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
-  
-
 ])
 
 
 auth_callbacks.register_auth_callbacks(app, server, mail)
 data_callbacks.get_data_callbacks(app, server, cache)
-
 
 
 @server.route('/check-session')
@@ -359,7 +356,6 @@ def reset_password(token):
     
     
 # SUBSCRIBER ROUTES---------------------------   
-
 @server.route('/create-checkout-session', methods=['POST', 'GET'])
 def create_checkout_session():
     try:
@@ -1015,8 +1011,6 @@ def update_recommendation_visibility(login_status, username):
     return paywall, blur_style
 
 
-
-
 @app.callback(
     [Output('topshots-blur-overlay', 'children'),
      Output('topshots-blur-overlay', 'style')],
@@ -1065,19 +1059,24 @@ def update_topshots_visibility(login_status, username):
     return paywall, blur_style
 
 
-
-
-@app.callback(
+app.clientside_callback(
+    """
+    function(individual_stocks) {
+        if (!individual_stocks || individual_stocks.length === 0) {
+            return [[], []];
+        }
+        
+        var options = individual_stocks.map(function(stock) {
+            return {'label': stock, 'value': stock};
+        });
+        
+        return [options, options];
+    }
+    """,
     [Output('forecast-stock-input', 'options'),
-      Output('simulation-stock-input', 'options')],
-    Input('individual-stocks-store', 'data')
+     Output('simulation-stock-input', 'options')],
+    [Input('individual-stocks-store', 'data')]
 )
-def update_forecast_simulation_dropdown(individual_stocks):
-    if not individual_stocks:
-        return [], []
-    
-    options = [{'label': stock, 'value': stock} for stock in individual_stocks]
-    return options, options
 
 app.clientside_callback(
     """
@@ -1305,7 +1304,6 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
 
 
 
-
 @app.callback(
     Output("cancel-subscription-modal", "is_open"),
     [Input("cancel-subscription-btn", "n_clicks"),
@@ -1364,7 +1362,6 @@ def cancel_subscription(n_clicks):
     raise PreventUpdate
 
 
-
 from dash import no_update
 
 
@@ -1390,7 +1387,6 @@ def update_stock_suggestions(company_name):
     except Exception as e:
         # Handle cases where the API request fails or other issues
         return [{'label': 'Error retrieving stock suggestions', 'value': ''}]
-
 
 
 @app.callback(
@@ -1420,14 +1416,15 @@ def update_theme(*args, login_status=None, username=None):
     return dbc.themes.SPACELAB, 'plotly_white'
 
 
-
-@app.callback(
+app.clientside_callback(
+    """
+    function(theme) {
+        return theme;
+    }
+    """,
     Output('theme-switch', 'href'),
     Input('theme-store', 'data')
 )
-def update_stylesheet(theme):
-    return theme
-
 
 
 @app.callback(
@@ -1464,7 +1461,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
 
 
 
