@@ -452,7 +452,7 @@ def create_footer():
                     html.Ul([
                         html.Li(html.A("About WatchMyStocks", href="/about", className="footer-link")),
                         html.Li(html.A("Contact Us", href="mailto:mystocks.monitoring@gmail.com?subject=mystocks%20request", className="footer-link")),
-                        html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
+                        html.Li(html.A("Dashboard", href="/", className="footer-link")),
                     ], className="list-unstyled")
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
