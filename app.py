@@ -25,6 +25,7 @@ import logging
 from flask_caching import Cache
 from flask_minify import Minify
 from flask_compress import Compress
+from flask_brotli import Brotli
 
 
 # Initialize the Dash app with a default Bootstrap theme
@@ -41,7 +42,7 @@ compress = Compress()
 compress.init_app(server)
 
 Minify(app=server, html=True, js=True, cssless=True)
-
+Brotli(app)
 
 from flask import send_file
 @server.route('/sitemap.xml')
