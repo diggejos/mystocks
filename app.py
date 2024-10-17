@@ -272,7 +272,6 @@ app.layout = html.Div([
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
     DeferScript(src='assets/script.js'),
     #DeferScript(src="/assets/plotly.js"),  # Loads Plotly script after rendering
-    DeferScript(src='https://cdn.plot.ly/plotly-latest.min.js')
     DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
