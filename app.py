@@ -1569,6 +1569,14 @@ app.index_string = '''
         <link rel="canonical" href="https://mystocksportfolio.io/" />
         <link rel="icon" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/logo_with_transparent_background_favicon.png" type="image/png">
 
+             <!-- Defer Plotly scripts to avoid render-blocking -->
+        <script defer src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+        <!-- Defer Dash scripts -->
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/dash/1.16.3/dash.min.js"></script>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/dash-bootstrap-components/0.10.7/dash_bootstrap_components.min.js"></script>
+
+
         {%css%}
         <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
         
