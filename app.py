@@ -750,7 +750,7 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password']:
+    elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password','/assets/dash_bootstrap_components.v1_6_0.min.js']:
         return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
     # Default to dashboard if no specific path matches
