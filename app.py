@@ -271,7 +271,6 @@ app.layout = html.Div([
     ly.create_modal_register(),
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
     DeferScript(src='assets/script.js'),
-    #DeferScript(src="/assets/plotly.js"),  # Loads Plotly script after rendering
     DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
@@ -1557,7 +1556,6 @@ app.index_string = '''
         <link rel="preload" href="https://cdn.jsdelivr.net/.../bootstrap.min.css" as="style">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/.../bootstrap.min.css">
         <meta charset="UTF-8">
-        <script defer src="https://cdn.plot.ly/plotly-basic-latest.min.js"></script>
         <meta name="yandex-verification" content="234fe899dd410f3e" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Your Stocks monitoring Dashboard: visualize trends, get stocks recommendations and forecasts, and chat with an AI financial advisor. Save your watchlist today!">
