@@ -1541,6 +1541,12 @@ app.index_string = '''
                 window.addEventListener('click', loadGoogleTagManager, {once: true});
             });
         </script>
+        <script>
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/assets/service-worker.js')
+            .then(function() { console.log('Service Worker Registered'); });
+          }
+        </script>
 
         {%metas%}
         <title>Stocks Dashboard, save your watchlist today - WatchMyStocks</title>
