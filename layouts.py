@@ -452,7 +452,7 @@ def create_footer():
                     html.Ul([
                         html.Li(html.A("About WatchMyStocks", href="/about", className="footer-link")),
                         html.Li(html.A("Contact Us", href="mailto:mystocks.monitoring@gmail.com?subject=mystocks%20request", className="footer-link")),
-                        html.Li(html.A("Dashboard", href="/", className="footer-link")),
+                        html.Li(html.A("Dashboard", href="/dashboard", className="footer-link")),
                     ], className="list-unstyled")
                 ], md=12, className="d-flex justify-content-center")  # Center the column
             ]),
@@ -578,7 +578,7 @@ def paywall_logged_out_forecast():
             html.Div([
                 html.P("Sign up to Premium to unlock this content...", style={'display': 'inline', 'margin-bottom': '20px', 'font-size': '18px'}),
 
-            ], style={'text-align': 'center', 'margin-top': '30px'}),
+            ], style={'text-align': 'center', 'margin-top': '0px'}),
             
             html.P("By signing up, you’ll unlock:", style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold'}),
 
@@ -593,7 +593,7 @@ def paywall_logged_out_forecast():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff', 'margin-top': '-1000px'}
     )
 
 
@@ -615,7 +615,7 @@ def paywall_free_user_forecast():
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#ffc107'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#ffc107', 'margin-top': '-1000px'}
     )
 
 
@@ -971,10 +971,13 @@ def create_dashboard_layout(watchlist_management_layout):
                                         **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
                                         These predictions should be considered with caution and should not be used as financial advice.
                                     ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
+                                    
+                                    html.Div(id='forecast-kpi-output', className='mb-3'),  # Updated Output for KPIs
+                                    
                                     dcc.Loading(
                                         id="loading-forecast",
                                         type="default",
-                                        children=[dcc.Graph(id='forecast-graph', style={'height': '500px'},config={'displayModeBar': False})]
+                                        children=[dcc.Graph(id='forecast-graph', style={'height': '1300px'},config={'displayModeBar': False})]
                                     ),
                                     html.Div(id='forecast-blur-overlay', style={
                                         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
