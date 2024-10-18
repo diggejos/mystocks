@@ -484,42 +484,6 @@ def generate_forecast_data(selected_stocks, horizon):
     return forecast_data
 
 
-
-# def generate_forecast_data(selected_stocks, horizon):
-#     """
-#     Generate forecast data using Prophet for selected stocks and return the forecast results.
-#     """
-#     forecast_data = {}
-#     for symbol in selected_stocks:
-#         try:
-#             df = yf.download(symbol, period='5y')  # Fetch 5 years of data
-#             if df.empty:
-#                 raise ValueError(f"No data found for {symbol}")
-
-#             df.reset_index(inplace=True)
-#             df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
-#             model = Prophet(daily_seasonality = True)
-            
-#             model.fit(df_prophet)
-
-#             future = model.make_future_dataframe(periods=horizon)
-#             forecast = model.predict(future)
-
-#             forecast_data[symbol] = {
-#                 'historical': df,
-#                 'forecast': forecast
-#             }
-
-#         except Exception as e:
-#             forecast_data[symbol] = {
-#                 'error': str(e)
-#             }
-#     return forecast_data
-
-# forecast_data = generate_forecast_data(["MSFT"],90)
-# 
-
-
 def generate_confirmation_token(email, server):
     serializer = URLSafeTimedSerializer(server.config['SECRET_KEY'])
     return serializer.dumps(email, salt='email-confirmation-salt')
