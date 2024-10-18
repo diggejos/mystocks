@@ -506,7 +506,7 @@ def create_blog_post(title, date, author, image_src, content_file, cta_text, cta
                     alt=title, 
                     # loading="lazy" ,
                     className="img-fluid rounded", 
-                    style={"width": "auto", "max-width": "500px", "height": "auto"}  # Maintain original width but max 600px
+                    style={"width": "auto", "max-width": "350px", "height": "auto"}  # Maintain original width but max 600px
                 ),
                 className="text-center mb-4"
             ),
