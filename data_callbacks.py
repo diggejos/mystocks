@@ -672,148 +672,209 @@ def get_data_callbacks(app, server, cache):
             responsive=True,  # Enable responsive behavior
             className="table-sm table-responsive"
         )
-
+    
     @app.callback(
-        [Output('forecast-graph', 'figure'),
-         Output('forecast-stock-warning', 'children'),
-         Output('forecast-data-store', 'data')],
-        [Input('generate-forecast-button', 'n_clicks'),
-         Input('plotly-theme-store', 'data')],
-        [State('forecast-stock-input', 'value'),
-         State('forecast-horizon-input', 'value'),
-         State('predefined-ranges', 'value')]  # Added predefined-ranges state
+    [Output('forecast-graph', 'figure'),
+     Output('forecast-stock-warning', 'children'),
+     Output('forecast-kpi-output', 'children'),
+     Output('forecast-data-store', 'data'),
+     Output('forecast-attempt-store', 'data')],  # Track forecast attempts for logged-out users
+    [Input('generate-forecast-button', 'n_clicks'),
+     Input('plotly-theme-store', 'data')],
+    [State('forecast-stock-input', 'value'),
+     State('forecast-horizon-input', 'value'),
+     State('predefined-ranges', 'value'),
+     State('login-status', 'data'),
+     State('login-username-store', 'data'),
+     State('forecast-attempt-store', 'data')]
     )
-    def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefined_range):
-        # If the button is not rendered in the current view, skip the callback
+    def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefined_range, login_status, username, forecast_attempt):
         if n_clicks is None:
             raise PreventUpdate
-
-        # Proceed with the normal forecast generation logic
-        if selected_stocks:
-            if len(selected_stocks) > 3:
-                return dash.no_update, "Please select up to 3 stocks only.", dash.no_update
-
-            # Use the modularized forecast generation function
-            forecast_data = ut.generate_forecast_data(selected_stocks, horizon)
-
-            forecast_figures = []
-            today = pd.to_datetime('today')
-
-            for symbol in selected_stocks:
-                if 'error' in forecast_data[symbol]:
-                    # Create an empty figure with an error message
-                    fig = go.Figure()
-                    fig.update_layout(template=plotly_theme, dragmode=False)
-                    fig.add_annotation(
-                        text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}", showarrow=False)
-                    forecast_figures.append(fig)
-                    continue
-
-                df = forecast_data[symbol]['historical']
-                forecast = forecast_data[symbol]['forecast']
-
-                # Set start date based on predefined range
-                if predefined_range == 'YTD':
-                    start_date = datetime(today.year, 1, 1)
-                elif predefined_range == '1M':
-                    start_date = today - timedelta(days=30)
-                elif predefined_range == '3M':
-                    start_date = today - timedelta(days=3 * 30)
-                elif predefined_range == '12M':
-                    start_date = today - timedelta(days=365)
-                elif predefined_range == '24M':
-                    start_date = today - timedelta(days=730)
-                elif predefined_range == '5Y':
-                    start_date = today - timedelta(days=1825)
-                else:
-                    # Default range if no match
-                    start_date = pd.to_datetime('2024-01-01')
-
-                df_filtered = df[df['Date'] >= start_date]
-                forecast_filtered = forecast[forecast['ds'] >= start_date]
-
+    
+        # Handle forecast attempts for logged-out users via session
+        if not login_status or not username:
+            if forecast_attempt is None:
+                forecast_attempt = 0
+    
+            if forecast_attempt >= 2:  # Allow 2 attempts, after that the paywall will trigger
+                return dash.no_update, "You've already generated a free forecast. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
+            
+            # Increment attempt count after generating the first and second forecast
+            forecast_attempt += 1
+    
+        # Handle logged-in users: Check if they are free users and limit their forecast attempts
+        if username:
+            user = User.query.filter_by(username=username).first()
+    
+            if user and user.subscription_status == 'free' and user.forecast_attempts >= 2:
+                return dash.no_update, "You've already generated a free forecast. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
+    
+            # Increment forecast attempts for logged-in free users
+            if user and user.subscription_status == 'free':
+                user.forecast_attempts += 1
+                db.session.commit()
+    
+        # No stocks selected, show a warning
+        if not selected_stocks:
+            return dash.no_update, "Please select at least one stock.", dash.no_update, dash.no_update, forecast_attempt
+    
+        if len(selected_stocks) > 3:
+            return dash.no_update, "Please select up to 3 stocks only.", dash.no_update, dash.no_update, forecast_attempt
+    
+        # Generate forecast using the modularized function
+        forecast_data = ut.generate_forecast_data(selected_stocks, horizon)
+    
+        forecast_figures = []
+        kpi_outputs = []
+        today = pd.to_datetime('today')
+    
+        for symbol in selected_stocks:
+            if 'error' in forecast_data[symbol]:
+                # Create an empty figure with an error message
                 fig = go.Figure()
-                fig.update_layout(template=plotly_theme)
-
-                # Add forecast mean line
-                fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'],
-                    y=forecast_filtered['yhat'],
-                    mode='lines',
-                    name=f'{symbol} Forecast',
-                    line=dict(color='blue')
-                ))
-
-                # Add the confidence interval (bandwidth)
-                fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'],
-                    y=forecast_filtered['yhat_upper'],
-                    mode='lines',
-                    name='Upper Bound',
-                    line=dict(width=0),
-                    showlegend=False
-                ))
-
-                fig.add_trace(go.Scatter(
-                    x=forecast_filtered['ds'],
-                    y=forecast_filtered['yhat_lower'],
-                    fill='tonexty',  # Fill to the next trace (yhat_upper)
-                    mode='lines',
-                    name='Lower Bound',
-                    line=dict(width=0),
-                    fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
-                    showlegend=False
-                ))
-
-                # Add historical data
-                fig.add_trace(go.Scatter(
-                    x=df_filtered['Date'],
-                    y=df_filtered['Close'],
-                    mode='lines',
-                    name=f'{symbol} Historical',
-                    line=dict(color='green')
-                ))
-
-                fig.update_layout(
-                    title=f"Stock Price Forecast for {symbol}",
-                    xaxis_title="Date",
-                    yaxis_title="Price",
-                    height=600,
-                    showlegend=False,
-                    template=plotly_theme  # Ensure theme is applied
+                fig.update_layout(template=plotly_theme, dragmode=False)
+                fig.add_annotation(
+                    text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}",
+                    showarrow=False
                 )
-
                 forecast_figures.append(fig)
-
-            if not forecast_figures:
-                return dash.no_update, dash.no_update, dash.no_update
-
-            # Combine all forecasts into subplots
-            combined_fig = make_subplots(
-                rows=len(forecast_figures), cols=1,
-                shared_xaxes=True,
-                subplot_titles=selected_stocks
+                continue
+    
+            df = forecast_data[symbol]['historical']
+            forecast = forecast_data[symbol]['forecast']
+            kpis = forecast_data[symbol]['kpi']
+    
+            # Generate KPI cards for each stock
+            kpi_outputs.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H5(f"KPI for {symbol}", className="card-title"),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div([
+                                    html.H6("Expected Price", className="card-subtitle mb-2 text-muted"),
+                                    html.H4(f"${kpis['expected_price']:.2f}", className="text-success")
+                                ], className="text-center")
+                            ], width=4),
+                            dbc.Col([
+                                html.Div([
+                                    html.H6("Upper Bound", className="card-subtitle mb-2 text-muted"),
+                                    html.H4(f"${kpis['upper_bound']:.2f}", className="text-primary")
+                                ], className="text-center")
+                            ], width=4),
+                            dbc.Col([
+                                html.Div([
+                                    html.H6("Lower Bound", className="card-subtitle mb-2 text-muted"),
+                                    html.H4(f"${kpis['lower_bound']:.2f}", className="text-danger")
+                                ], className="text-center")
+                            ], width=4)
+                        ])
+                    ]),
+                    className="mb-4 shadow-sm"
+                )
             )
-
-            for i, fig in enumerate(forecast_figures):
-                for trace in fig['data']:
-                    combined_fig.add_trace(trace, row=i+1, col=1)
-
-            combined_fig.update_layout(
-                template=plotly_theme,  # Apply theme to combined figure
-                title=None,
-                height=400 * len(forecast_figures),
+    
+            # Set start date based on predefined range
+            if predefined_range == 'YTD':
+                start_date = datetime(today.year, 1, 1)
+            elif predefined_range == '1M':
+                start_date = today - timedelta(days=30)
+            elif predefined_range == '3M':
+                start_date = today - timedelta(days=3 * 30)
+            elif predefined_range == '12M':
+                start_date = today - timedelta(days=365)
+            elif predefined_range == '24M':
+                start_date = today - timedelta(days=730)
+            elif predefined_range == '5Y':
+                start_date = today - timedelta(days=1825)
+            else:
+                start_date = pd.to_datetime('2024-01-01')
+    
+            df_filtered = df[df['Date'] >= start_date]
+            forecast_filtered = forecast[forecast['ds'] >= start_date]
+    
+            fig = go.Figure()
+            fig.update_layout(template=plotly_theme)
+    
+            # Add forecast mean line
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'],
+                y=forecast_filtered['yhat'],
+                mode='lines',
+                name=f'{symbol} Forecast',
+                line=dict(color='blue')
+            ))
+    
+            # Add the confidence interval (bandwidth)
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'],
+                y=forecast_filtered['yhat_upper'],
+                mode='lines',
+                name='Upper Bound',
+                line=dict(width=0),
+                showlegend=False
+            ))
+    
+            fig.add_trace(go.Scatter(
+                x=forecast_filtered['ds'],
+                y=forecast_filtered['yhat_lower'],
+                fill='tonexty',  # Fill to the next trace (yhat_upper)
+                mode='lines',
+                name='Lower Bound',
+                line=dict(width=0),
+                fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
+                showlegend=False
+            ))
+    
+            # Add historical data
+            fig.add_trace(go.Scatter(
+                x=df_filtered['Date'],
+                y=df_filtered['Close'],
+                mode='lines',
+                name=f'{symbol} Historical',
+                line=dict(color='green')
+            ))
+    
+            fig.update_layout(
+                title=f"Stock Price Forecast for {symbol}",
+                xaxis_title="Date",
+                yaxis_title="Price",
+                height=400,
                 showlegend=False,
-                margin=dict(l=40, r=40, t=40, b=40)
+                dragmode=False,
+                template=plotly_theme
             )
+    
+            forecast_figures.append(fig)
+    
+        if not forecast_figures:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, forecast_attempt
+    
+        # Combine all forecasts into subplots
+        combined_fig = make_subplots(
+            rows=len(forecast_figures), cols=1,
+            shared_xaxes=True,
+            subplot_titles=selected_stocks,
+            vertical_spacing=0.05  # Adjust this value to control spacing
+        )
+    
+        for i, fig in enumerate(forecast_figures):
+            for trace in fig['data']:
+                combined_fig.add_trace(trace, row=i+1, col=1)
+    
+        combined_fig.update_layout(
+            template=plotly_theme,
+            title=None,
+            height=400 * len(forecast_figures),
+            showlegend=False,
+            margin=dict(l=40, r=40, t=40, b=40)
+        )
+    
+        # Return forecast data and track attempt count
+        return combined_fig, "", kpi_outputs, combined_fig, forecast_attempt
 
-            return combined_fig, "", combined_fig
 
-        # Ensure the default empty figure also uses the plotly theme
-        empty_fig = go.Figure()
-        empty_fig.update_layout(template=plotly_theme)
-
-        return empty_fig, "", dash.no_update
 
     @app.callback(Output('simulation-result', 'children'),
                   Input('simulate-button', 'n_clicks'),
