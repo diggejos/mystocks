@@ -243,9 +243,12 @@ SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
 
 
        
+
+       
 # Create the database tables
 with app.server.app_context():
     db.create_all()
+
 
 app.layout = html.Div([
     dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
@@ -271,10 +274,12 @@ app.layout = html.Div([
     ly.create_modal_register(),
     dcc.Store(id='device-type', data='desktop') , # Default to desktop
     DeferScript(src='assets/script.js'),
+    DeferScript(src="/assets/plotly.js"),  # Loads Plotly script after rendering
     DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
-    dcc.Store(id='active-tab-store', data='prices-tab')  # Default active tab
-  
+    dcc.Store(id='active-tab-store', data='prices-tab'),  # Default active tab
+    dcc.Store(id='forecast-attempt-store', data=0)  # Initialize the forecast attempts at 0
+
 ])
 
 
@@ -750,7 +755,7 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password','/assets/dash_bootstrap_components.v1_6_0.min.js']:
+    elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password']:
         return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
     # Default to dashboard if no specific path matches
@@ -1138,6 +1143,7 @@ app.clientside_callback(
      State('toggle-filters-button', 'className')]
 )
 
+                
 @app.callback(
     [Output('forecast-blur-overlay', 'children'),
      Output('forecast-blur-overlay', 'style')],
@@ -1200,7 +1206,8 @@ def update_forecast_visibility(login_status, username, forecast_attempt):
     }
     return paywall, blur_style
             
-          
+           
+
 
 @app.callback(
     [Output('profile-username', 'value'),
@@ -1468,6 +1475,8 @@ def update_stylesheet(theme):
     return theme
 
 
+
+
 @app.callback(
     Output('meta-description', 'content'),
     Input('url', 'pathname')
@@ -1480,6 +1489,7 @@ def update_meta_description(pathname):
     else:
         return "Your Stocks monitoring Dashboard: visualize trends, get stocks recommendations and forecasts, and chat with an AI financial advisor. Save your watchlist today!"
 
+
 app.clientside_callback(
     """
     function(n_clicks) {
@@ -1489,6 +1499,8 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
+
 
 
 app.index_string = '''
