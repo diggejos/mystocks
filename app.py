@@ -1455,8 +1455,6 @@ def update_stylesheet(theme):
     return theme
 
 
-
-
 @app.callback(
     Output('meta-description', 'content'),
     Input('url', 'pathname')
@@ -1466,11 +1464,8 @@ def update_meta_description(pathname):
         return "Learn how compounding can significantly grow your investments."
     elif pathname == '/blog/diversification':
         return "Understand how diversification can reduce risk in your investment portfolio."
-    return "WatchMyStocks - Explore the magic of long-term investments."
-else:
-    return "Your Stocks monitoring Dashboard: visualize trends, get stocks recommendations and forecasts, and chat with an AI financial advisor. Save your watchlist today!"
-
-
+    else:
+        return "Your Stocks monitoring Dashboard: visualize trends, get stocks recommendations and forecasts, and chat with an AI financial advisor. Save your watchlist today!"
 
 app.clientside_callback(
     """
@@ -1481,8 +1476,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
-
 
 
 app.index_string = '''
