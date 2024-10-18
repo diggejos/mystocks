@@ -971,9 +971,11 @@ def create_dashboard_layout(watchlist_management_layout):
                                         **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
                                         These predictions should be considered with caution and should not be used as financial advice.
                                     ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
-                                    
-                                    html.Div(id='forecast-kpi-output', className='mb-3'),  # Updated Output for KPIs
-                                    
+
+                                    dcc.Loading(
+                                        html.Div(id='forecast-kpi-output', className='mb-3')
+                                    ),  
+
                                     dcc.Loading(
                                         id="loading-forecast",
                                         type="default",
