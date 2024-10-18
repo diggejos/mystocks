@@ -1138,39 +1138,52 @@ app.clientside_callback(
      State('toggle-filters-button', 'className')]
 )
 
-
-
 @app.callback(
     [Output('forecast-blur-overlay', 'children'),
      Output('forecast-blur-overlay', 'style')],
     [Input('login-status', 'data'),
-     Input('login-username-store', 'data')]
+     Input('login-username-store', 'data'),
+     Input('forecast-attempt-store', 'data')]  # Store tracking forecast attempts for logged-out users
 )
-def update_forecast_visibility(login_status, username):
+def update_forecast_visibility(login_status, username, forecast_attempt):
+    # Case: User is logged out or session user (no username)
     if not login_status or not username:
-        # Case: User is logged out, show the 'logged out' paywall
-        paywall = ly.paywall_logged_out_forecast()
-        blur_style = {
-            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-            'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
-            'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(2px)'
-        }
-        return paywall, blur_style
+        if forecast_attempt is None:
+            forecast_attempt = 0
 
-    # Case: User is logged in, fetch user from the database
+        if forecast_attempt < 2:
+            # Allow two free forecasts for logged-out users
+            blur_style = {'display': 'none'}
+            return '', blur_style
+        else:
+            # Show the paywall after the second successful attempt
+            paywall = ly.paywall_logged_out_forecast()
+            blur_style = {
+                'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
+                'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
+                'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                'backdrop-filter': 'blur(2px)'
+            }
+            return paywall, blur_style
+
+    # Case: User is logged in
     user = User.query.filter_by(username=username).first()
 
     if user and user.subscription_status == 'free':
-        # Case: Free user, show the 'free user' paywall
-        paywall = ly.paywall_free_user_forecast()
-        blur_style = {
-            'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-            'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
-            'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-            'backdrop-filter': 'blur(2px)'
-        }
-        return paywall, blur_style
+        # For logged-in free users, allow two attempts before showing the paywall
+        if user.forecast_attempts < 2:
+            blur_style = {'display': 'none'}
+            return '', blur_style
+        else:
+            # Show the paywall after the second successful attempt
+            paywall = ly.paywall_free_user_forecast()
+            blur_style = {
+                'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
+                'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
+                'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
+                'backdrop-filter': 'blur(2px)'
+            }
+            return paywall, blur_style
 
     elif user and user.subscription_status == 'premium':
         # Case: Premium user, no paywall and no blur
@@ -1186,8 +1199,8 @@ def update_forecast_visibility(login_status, username):
         'backdrop-filter': 'blur(2px)'
     }
     return paywall, blur_style
-
-
+            
+          
 
 @app.callback(
     [Output('profile-username', 'value'),
