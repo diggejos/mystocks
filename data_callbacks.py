@@ -673,42 +673,54 @@ def get_data_callbacks(app, server, cache):
             className="table-sm table-responsive"
         )
     
+    
+    from flask import session
+    from dash.exceptions import PreventUpdate
+
     @app.callback(
-    [Output('forecast-graph', 'figure'),
-     Output('forecast-stock-warning', 'children'),
-     Output('forecast-kpi-output', 'children'),
-     Output('forecast-data-store', 'data'),
-     Output('forecast-attempt-store', 'data')],  # Track forecast attempts for logged-out users
-    [Input('generate-forecast-button', 'n_clicks'),
-     Input('plotly-theme-store', 'data')],
-    [State('forecast-stock-input', 'value'),
-     State('forecast-horizon-input', 'value'),
-     State('predefined-ranges', 'value'),
-     State('login-status', 'data'),
-     State('login-username-store', 'data'),
-     State('forecast-attempt-store', 'data')]
+        [Output('forecast-graph', 'figure'),
+         Output('forecast-stock-warning', 'children'),
+         Output('forecast-kpi-output', 'children'),
+         Output('forecast-data-store', 'data'),
+         Output('forecast-attempt-store', 'data')],  # Track forecast attempts for logged-out users
+        [Input('generate-forecast-button', 'n_clicks'),
+         Input('plotly-theme-store', 'data')],
+        [State('forecast-stock-input', 'value'),
+         State('forecast-horizon-input', 'value'),
+         State('predefined-ranges', 'value'),
+         State('login-status', 'data'),
+         State('login-username-store', 'data'),
+         State('forecast-attempt-store', 'data')]
     )
     def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefined_range, login_status, username, forecast_attempt):
+        # Do nothing if the generate button hasn't been clicked
         if n_clicks is None:
             raise PreventUpdate
     
-        # Handle forecast attempts for logged-out users via session
+        # Case 1: Handle forecast attempts for logged-out users (via Flask session)
         if not login_status or not username:
-            if forecast_attempt is None:
-                forecast_attempt = 0
+            if 'forecast_attempts' not in session:
+                session['forecast_attempts'] = 0  # Initialize session if not already done
     
-            if forecast_attempt >= 2:  # Allow 2 attempts, after that the paywall will trigger
-                return dash.no_update, "You've already generated a free forecast. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
-            
-            # Increment attempt count after generating the first and second forecast
-            forecast_attempt += 1
+            # Use Flask session to persist forecast attempts
+            forecast_attempt = session['forecast_attempts']
     
-        # Handle logged-in users: Check if they are free users and limit their forecast attempts
+            # Check if the user has already generated 2 forecasts
+            if forecast_attempt >= 2:
+                # Return a message if they try to generate more than 2 forecasts
+                return dash.no_update, "You've already generated two free forecasts. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
+    
+            # Increment the attempt count after generating the first and second forecast
+            session['forecast_attempts'] += 1
+            forecast_attempt += 1  # Sync it with the dcc.Store
+    
+        # Case 2: Handle logged-in users (similar logic as before)
         if username:
             user = User.query.filter_by(username=username).first()
     
+            # Check if the user is free and has already used two forecasts
             if user and user.subscription_status == 'free' and user.forecast_attempts >= 2:
-                return dash.no_update, "You've already generated a free forecast. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
+                return dash.no_update, "You've already generated two free forecasts. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
     
             # Increment forecast attempts for logged-in free users
             if user and user.subscription_status == 'free':
@@ -719,6 +731,7 @@ def get_data_callbacks(app, server, cache):
         if not selected_stocks:
             return dash.no_update, "Please select at least one stock.", dash.no_update, dash.no_update, forecast_attempt
     
+        # Check if the user has selected more than 3 stocks
         if len(selected_stocks) > 3:
             return dash.no_update, "Please select up to 3 stocks only.", dash.no_update, dash.no_update, forecast_attempt
     
@@ -744,37 +757,42 @@ def get_data_callbacks(app, server, cache):
             df = forecast_data[symbol]['historical']
             forecast = forecast_data[symbol]['forecast']
             kpis = forecast_data[symbol]['kpi']
-    
-            # Generate KPI cards for each stock
+            
             kpi_outputs.append(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H5(f"KPI for {symbol}", className="card-title"),
+                        html.H5(f"Forecast for {symbol}", className="card-title"),
                         dbc.Row([
                             dbc.Col([
                                 html.Div([
-                                    html.H6("Expected Price", className="card-subtitle mb-2 text-muted"),
-                                    html.H4(f"${kpis['expected_price']:.2f}", className="text-success")
+                                    html.H6("Latest Actual Price", className="card-subtitle mb-2 text-muted"),
+                                    html.H5(f"${kpis['latest_actual_price']:.2f}", className="text-dark")
                                 ], className="text-center")
-                            ], width=4),
+                            ], width=3),
+                            dbc.Col([
+                                html.Div([
+                                    html.H6("Expected Price", className="card-subtitle mb-2 text-muted"),
+                                    html.H5(f"${kpis['expected_price']:.2f} ({kpis['percentage_difference']:+.2f}%)", className="text-success")
+                                ], className="text-center")
+                            ], width=3),
                             dbc.Col([
                                 html.Div([
                                     html.H6("Upper Bound", className="card-subtitle mb-2 text-muted"),
-                                    html.H4(f"${kpis['upper_bound']:.2f}", className="text-primary")
+                                    html.H5(f"${kpis['upper_bound']:.2f}", className="text-primary")
                                 ], className="text-center")
-                            ], width=4),
+                            ], width=3),
                             dbc.Col([
                                 html.Div([
                                     html.H6("Lower Bound", className="card-subtitle mb-2 text-muted"),
-                                    html.H4(f"${kpis['lower_bound']:.2f}", className="text-danger")
+                                    html.H5(f"${kpis['lower_bound']:.2f}", className="text-danger")
                                 ], className="text-center")
-                            ], width=4)
+                            ], width=3)
                         ])
                     ]),
-                    className="mb-4 shadow-sm"
+                    className="mb-4 shadow-sm bg-light"
                 )
             )
-    
+
             # Set start date based on predefined range
             if predefined_range == 'YTD':
                 start_date = datetime(today.year, 1, 1)
@@ -843,7 +861,7 @@ def get_data_callbacks(app, server, cache):
                 height=400,
                 showlegend=False,
                 dragmode=False,
-                template=plotly_theme
+                template=plotly_theme,
             )
     
             forecast_figures.append(fig)
@@ -868,13 +886,14 @@ def get_data_callbacks(app, server, cache):
             title=None,
             height=400 * len(forecast_figures),
             showlegend=False,
-            margin=dict(l=40, r=40, t=40, b=40)
+            margin=dict(l=40, r=40, t=40, b=40),
+            dragmode=False
         )
     
-        # Return forecast data and track attempt count
-        return combined_fig, "", kpi_outputs, combined_fig, forecast_attempt
-
-
+        # Return the generated forecast, KPI output, and updated forecast attempt count
+        return combined_fig, "", kpi_outputs, combined_fig, forecast_attempt  # Sync forecast_attempt with the store
+    
+   
 
     @app.callback(Output('simulation-result', 'children'),
                   Input('simulate-button', 'n_clicks'),
