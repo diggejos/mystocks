@@ -239,30 +239,27 @@ mail = Mail(app.server)
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
-
-
-
-       
-
-       
+    
 # Create the database tables
 with app.server.app_context():
     db.create_all()
 
 
 app.layout = html.Div([
-    dcc.Store(id='conversation-store', data=[]),  # Store to keep the conversation history
+    # Store to keep the conversation history
+    dcc.Store(id='conversation-store', data=[]),
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
     dcc.Store(id='theme-store', data=dbc.themes.SPACELAB),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
     dcc.Store(id='login-status', data=False),  # Store to track login status
-    dcc.Store(id='login-username-store', data=None),  # Store to persist the username
+    # Store to persist the username
+    dcc.Store(id='login-username-store', data=None),
     html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
     ly.create_navbar(themes),  # Navbar
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
     dbc.Container(id='page-content', fluid=True),
-    dcc.Store(id='active-tab', data='📈 Prices'), 
+    dcc.Store(id='active-tab', data='📈 Prices'),
     dcc.Store(id='forecast-data-store'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
@@ -272,20 +269,21 @@ app.layout = html.Div([
     html.Div(ly.create_sticky_footer_mobile(), id="sticky-footer-container"),
     ly.create_footer(),  # Footer
     ly.create_modal_register(),
-    dcc.Store(id='device-type', data='desktop') , # Default to desktop
+    dcc.Store(id='device-type', data='desktop'),  # Default to desktop
     DeferScript(src='assets/script.js'),
-    DeferScript(src="/assets/plotly.js"),  # Loads Plotly script after rendering
+    # Loads Plotly script after rendering
+    DeferScript(src="/assets/plotly.js"),
     DeferScript(src="/assets/dash_bootstrap_components.v1_6_0.min.js"),
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab'),  # Default active tab
-    dcc.Store(id='forecast-attempt-store', data=0)  # Initialize the forecast attempts at 0
+    # Initialize the forecast attempts at 0
+    dcc.Store(id='forecast-attempt-store', data=0)
 
 ])
 
 
 auth_callbacks.register_auth_callbacks(app, server, mail)
 data_callbacks.get_data_callbacks(app, server, cache)
-
 
 
 @server.route('/check-session')
@@ -316,7 +314,8 @@ def confirm_email(token):
 
         # For premium users, redirect to checkout
         if user.subscription_status == 'premium':
-            session['username'] = user.username  # Ensure session has the username
+            # Ensure session has the username
+            session['username'] = user.username
             return redirect(url_for('create_checkout_session'))
 
         # For free users, show confirmation message and redirect to login after 5 seconds
@@ -350,16 +349,17 @@ def reset_password(token):
 
         # Reset the password
         user = User.query.filter_by(email=email).first_or_404()
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashed_password = bcrypt.generate_password_hash(
+            password).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
 
         return render_template('password_reset.html', message="Your password has been reset successfully. You can now ", show_login_link=True)
     else:
         return render_template('password_reset.html', message=None, show_login_link=False)
-    
-    
-# SUBSCRIBER ROUTES---------------------------   
+
+
+# SUBSCRIBER ROUTES---------------------------
 
 @server.route('/create-checkout-session', methods=['POST', 'GET'])
 def create_checkout_session():
@@ -387,13 +387,15 @@ def create_checkout_session():
             }],
             mode='subscription',
             customer_email=user.email,  # Pass the user's email to Stripe
-            success_url=url_for('subscription_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            success_url=url_for(
+                'subscription_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('subscription_cancel', _external=True),
         )
         return redirect(checkout_session.url, code=303)
 
     except Exception as e:
         return str(e)
+
 
 @app.server.route('/cancel-subscription', methods=['POST', 'GET'])
 def cancel_subscription():
@@ -413,7 +415,8 @@ def cancel_subscription():
         if user.stripe_subscription_id:
             try:
                 # Attempt to retrieve the subscription from Stripe
-                stripe_subscription = stripe.Subscription.retrieve(user.stripe_subscription_id)
+                stripe_subscription = stripe.Subscription.retrieve(
+                    user.stripe_subscription_id)
                 logging.info(f"Subscription retrieved: {stripe_subscription}")
             except stripe.error.InvalidRequestError as e:
                 if 'resource_missing' in str(e):
@@ -470,7 +473,8 @@ def cancel_subscription():
                 try:
                     # Cancel the subscription
                     stripe.Subscription.delete(stripe_subscription.id)
-                    logging.info(f"Subscription deleted: {stripe_subscription.id}")
+                    logging.info(
+                        f"Subscription deleted: {stripe_subscription.id}")
 
                     # Update the database immediately
                     user.subscription_status = 'free'
@@ -553,7 +557,6 @@ def cancel_subscription():
         '''
 
 
-    
 @app.server.route('/subscription-cancel')
 def subscription_cancel():
     return """
@@ -566,11 +569,10 @@ def subscription_cancel():
     """
 
 
-
 @app.server.route('/subscription-success')
 def subscription_success():
     session_id = request.args.get('session_id')
-    
+
     try:
         # Retrieve the Stripe session using the session_id
         stripe_session = stripe.checkout.Session.retrieve(session_id)
@@ -581,11 +583,14 @@ def subscription_success():
 
         if user:
             # Log the session info for debugging
-            logging.info(f"User {user.username} successfully subscribed. Stripe Session: {stripe_session}")
+            logging.info(
+                f"User {user.username} successfully subscribed. Stripe Session: {stripe_session}")
 
             # Retrieve the Stripe subscription from the session and save it to the user
-            stripe_subscription = stripe.Subscription.retrieve(stripe_session['subscription'])
-            user.stripe_subscription_id = stripe_subscription.id  # Save the latest subscription ID
+            stripe_subscription = stripe.Subscription.retrieve(
+                stripe_session['subscription'])
+            # Save the latest subscription ID
+            user.stripe_subscription_id = stripe_subscription.id
 
             # Mark the user's payment status as complete in the database
             user.payment_status = True
@@ -607,7 +612,7 @@ def subscription_success():
         # Log other general errors
         logging.error(f"An error occurred: {str(e)}")
         return f"Error: {str(e)}"
-    
+
     # Redirect to the dashboard after success
     return """
     <html>
@@ -670,12 +675,16 @@ app.clientside_callback(
 )
 
 
-
 @server.errorhandler(404)
 def page_not_found(e):
     # logging.error(f"404 error: {str(e)}")
     return render_template('404.html'), 404
 
+
+@server.route('/forecast')
+def forecast_page():
+    # Serve the forecast tab as a standalone page
+    return render_template('forecast.html')
 
 
 @app.callback(
@@ -694,7 +703,7 @@ def page_not_found(e):
 )
 def display_page_and_update_ui(pathname):
     ctx = dash.callback_context
-    
+
     # Avoid triggering callback if non-existent elements are referenced
     if not ctx.triggered:
         raise PreventUpdate
@@ -718,7 +727,8 @@ def display_page_and_update_ui(pathname):
 
     # Adjust layout if the user is logged in
     if logged_in and username:
-        user = User.query.filter_by(username=username).first()  # Fetch user info
+        user = User.query.filter_by(
+            username=username).first()  # Fetch user info
         if user:
             is_free_user = user.subscription_status == 'free'
             is_premium_user = user.subscription_status == 'premium'
@@ -732,7 +742,8 @@ def display_page_and_update_ui(pathname):
         }
 
     # Pages where the footer should be hidden
-    pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password', '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
+    pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password',
+        '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
@@ -755,8 +766,9 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname not in ['/about', '/demo','/faqs','/','/register', '/subscription','/register-free','/register-paid','/login','/profile','/forgot-password']:
+    elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
         return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+  
 
     # Default to dashboard if no specific path matches
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
@@ -1144,6 +1156,27 @@ app.clientside_callback(
 )
 
                 
+@server.route('/')
+def index():
+    if 'forecast_attempts' not in session:
+        session['forecast_attempts'] = 0  # Initialize the attempt count in Flask session
+    return render_template('index.html')  # Or the Dash app
+
+
+@app.callback(
+    Output('forecast-attempt-store', 'data',allow_duplicate=True),
+    [Input('generate-forecast-button', 'n_clicks')],
+    [State('login-status', 'data')],
+    prevent_initial_call=True
+)
+def sync_forecast_attempt_store(n_clicks, login_status):
+    if not login_status:  # Handle logged-out users only
+        return session.get('forecast_attempts', 0)  # Return the Flask session value for attempts
+
+    raise PreventUpdate  # For logged-in users, don't update the store here
+
+
+                
 @app.callback(
     [Output('forecast-blur-overlay', 'children'),
      Output('forecast-blur-overlay', 'style')],
@@ -1353,8 +1386,6 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
     raise PreventUpdate
 
 
-
-
 @app.callback(
     Output("cancel-subscription-modal", "is_open"),
     [Input("cancel-subscription-btn", "n_clicks"),
@@ -1384,8 +1415,6 @@ def toggle_cancel_modal(open_click, close_click, confirm_click, is_open):
         return False  # Close modal after confirmation
     
     return is_open
-
-
 
 @app.callback(
     Output('cancel-subscription-btn', 'style'),
@@ -1475,8 +1504,6 @@ def update_stylesheet(theme):
     return theme
 
 
-
-
 @app.callback(
     Output('meta-description', 'content'),
     Input('url', 'pathname')
@@ -1499,8 +1526,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
-
 
 
 app.index_string = '''
