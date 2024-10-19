@@ -440,10 +440,11 @@ def get_ticker(company_name):
     return company_codes
 
 
+
 def generate_forecast_data(selected_stocks, horizon):
     """
     Generate forecast data using Prophet for selected stocks and return the forecast results,
-    including KPIs for expected price at the end of the forecast horizon.
+    including KPIs for expected price, actual latest price, and percentage difference.
     """
     forecast_data = {}
     for symbol in selected_stocks:
@@ -453,25 +454,36 @@ def generate_forecast_data(selected_stocks, horizon):
                 raise ValueError(f"No data found for {symbol}")
 
             df.reset_index(inplace=True)
-            # Correct renaming of columns
+            # Prepare data for Prophet
             df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
             model = Prophet(daily_seasonality=True)
             
+            # Fit the model
             model.fit(df_prophet)
 
+            # Make future predictions
             future = model.make_future_dataframe(periods=horizon)
             forecast = model.predict(future)
+
+            # Get the latest actual value from the historical data
+            latest_actual_price = df['Close'].iloc[-1]
 
             # KPIs: Extract the expected price at the end of the horizon
             expected_price = forecast['yhat'].iloc[-1]
             expected_upper = forecast['yhat_upper'].iloc[-1]
             expected_lower = forecast['yhat_lower'].iloc[-1]
 
+            # Calculate percentage difference between latest actual price and expected price
+            percentage_difference = ((expected_price - latest_actual_price) / latest_actual_price) * 100
+
+            # Store forecast data and KPIs
             forecast_data[symbol] = {
                 'historical': df,
                 'forecast': forecast,
                 'kpi': {
                     'expected_price': expected_price,
+                    'percentage_difference': percentage_difference,  # Include percentage difference
+                    'latest_actual_price': latest_actual_price,  # Include the latest actual price
                     'upper_bound': expected_upper,
                     'lower_bound': expected_lower
                 }
@@ -481,7 +493,89 @@ def generate_forecast_data(selected_stocks, horizon):
             forecast_data[symbol] = {
                 'error': str(e)
             }
+
     return forecast_data
+
+
+
+# def generate_forecast_data(selected_stocks, horizon):
+#     """
+#     Generate forecast data using Prophet for selected stocks and return the forecast results,
+#     including KPIs for expected price at the end of the forecast horizon.
+#     """
+#     forecast_data = {}
+#     for symbol in selected_stocks:
+#         try:
+#             df = yf.download(symbol, period='5y')  # Fetch 5 years of data
+#             if df.empty:
+#                 raise ValueError(f"No data found for {symbol}")
+
+#             df.reset_index(inplace=True)
+#             # Correct renaming of columns
+#             df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+#             model = Prophet(daily_seasonality=True)
+            
+#             model.fit(df_prophet)
+
+#             future = model.make_future_dataframe(periods=horizon)
+#             forecast = model.predict(future)
+
+#             # KPIs: Extract the expected price at the end of the horizon
+#             expected_price = forecast['yhat'].iloc[-1]
+#             expected_upper = forecast['yhat_upper'].iloc[-1]
+#             expected_lower = forecast['yhat_lower'].iloc[-1]
+
+#             forecast_data[symbol] = {
+#                 'historical': df,
+#                 'forecast': forecast,
+#                 'kpi': {
+#                     'expected_price': expected_price,
+#                     'upper_bound': expected_upper,
+#                     'lower_bound': expected_lower
+#                 }
+#             }
+
+#         except Exception as e:
+#             forecast_data[symbol] = {
+#                 'error': str(e)
+#             }
+#     return forecast_data
+
+
+
+# def generate_forecast_data(selected_stocks, horizon):
+#     """
+#     Generate forecast data using Prophet for selected stocks and return the forecast results.
+#     """
+#     forecast_data = {}
+#     for symbol in selected_stocks:
+#         try:
+#             df = yf.download(symbol, period='5y')  # Fetch 5 years of data
+#             if df.empty:
+#                 raise ValueError(f"No data found for {symbol}")
+
+#             df.reset_index(inplace=True)
+#             df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+#             model = Prophet(daily_seasonality = True)
+            
+#             model.fit(df_prophet)
+
+#             future = model.make_future_dataframe(periods=horizon)
+#             forecast = model.predict(future)
+
+#             forecast_data[symbol] = {
+#                 'historical': df,
+#                 'forecast': forecast
+#             }
+
+#         except Exception as e:
+#             forecast_data[symbol] = {
+#                 'error': str(e)
+#             }
+#     return forecast_data
+
+# forecast_data = generate_forecast_data(["MSFT"],90)
+# 
 
 
 def generate_confirmation_token(email, server):
@@ -540,5 +634,3 @@ def create_blog_post(title, date, author, image_src, content_file, cta_text, cta
         ],
         className="blog-post",
     )
-
-
