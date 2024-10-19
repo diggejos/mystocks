@@ -594,7 +594,7 @@ def paywall_logged_out_forecast():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff', 'margin-top': '-1000px'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff', 'margin-top': '100px'}
     )
 
 
@@ -616,7 +616,7 @@ def paywall_free_user_forecast():
                 dbc.Button("Upgrade to Premium", href="/register", color="success", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#ffc107', 'margin-top': '-1000px'}
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#ffc107', 'margin-top': '100px'}
     )
 
 
