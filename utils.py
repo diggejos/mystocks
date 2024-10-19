@@ -634,3 +634,5 @@ def create_blog_post(title, date, author, image_src, content_file, cta_text, cta
         ],
         className="blog-post",
     )
+
+
