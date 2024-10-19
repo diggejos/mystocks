@@ -1,1439 +1,638 @@
-import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html
-from dash.dependencies import Input, Output, State, ALL, MATCH
 import yfinance as yf
-import plotly.express as px
+from dash import html
+from datetime import datetime
 import pandas as pd
-from datetime import datetime, timedelta
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import json
-import utils as ut
-# Make sure to import the app instance
-from models import User, db, Watchlist, StockKPI
-from dash.exceptions import PreventUpdate
-from layouts import themes
-import asyncio
+from dash import dash_table
+import re
+import requests
+from prophet import Prophet
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
+from flask import url_for
+from flask import render_template
+from models import User
+from flask import session
+from dash import dcc
+import os
+import logging
+
+logging.getLogger('cmdstanpy').setLevel(logging.WARNING)
 
 
-def get_data_callbacks(app, server, cache):
-    
-    async def preload_data_async(cache):
-        try:
-            await asyncio.gather(
-                preload_prices_async(cache),
-                preload_news_async(cache)
-            )
-        except Exception as e:
-            print(f"Error during preloading: {e}")
 
-    async def preload_prices_async(cache):
-        try:
-            print("Preloading prices data asynchronously...")
-            prices_data = yf.download(['AAPL', 'MSFT'], pd.to_datetime('today') - timedelta(days=365), pd.to_datetime('today'), interval="1d")
-            if not prices_data.empty:
-                cache.set('prices_data', prices_data)
-            else:
-                print("Failed to preload prices data: empty DataFrame")
-        except Exception as e:
-            print(f"Error during price preload: {e}")
-    
-    async def preload_news_async(cache):
-        try:
-            print("Preloading news data asynchronously...")
-            news_data = ut.fetch_news(['AAPL', 'MSFT'])
-            if news_data:
-                cache.set('news_data', news_data)
-            else:
-                print("Failed to preload news data: empty data")
-        except Exception as e:
-            print(f"Error during news preload: {e}")
+def generate_unique_username(base_username):
+    # Remove any non-alphanumeric characters and make it lowercase
+    clean_username = re.sub(r'\W+', '', base_username).lower()
+    # Check if the username already exists
+    user = User.query.filter_by(username=clean_username).first()
+    if not user:
+        return clean_username
+    # Append a number to the username to make it unique
+    counter = 1
+    while True:
+        new_username = f"{clean_username}{counter}"
+        user = User.query.filter_by(username=new_username).first()
+        if not user:
+            return new_username
+        counter += 1
 
 
-    # Preload data at startup
-    def run_preload(cache):
-        print("Starting async preload...")
+def get_user_role():
+    # Check if user is logged in
+    logged_in = session.get('logged_in', False)
+    username = session.get('username', None)
 
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:  # No event loop is running
-        loop = None
+    if not logged_in:
+        return 'logged_out'
 
-    if loop and loop.is_running():
-        # If already in an event loop, create the task
-        asyncio.create_task(preload_data_async(cache))
+    user = User.query.filter_by(username=username).first()
+
+    # Define user roles based on subscription status
+    if user and user.subscription_status == 'premium':
+        return 'premium'
+    elif user:
+        return 'free'
     else:
-        # If no event loop is running, run the task
-        asyncio.run(preload_data_async(cache))
+        return 'logged_out'
 
-    print("Async preload completed.")
 
-    @cache.memoize(timeout=600)  # Cache the result for 10 minutes
-    def fetch_news_with_cache(stock_symbols):
-        # Your existing function to fetch the news
-        return ut.fetch_news(stock_symbols)
+def send_welcome_email(user_email, username, mail):
+    msg = Message("Welcome to WatchMyStocks!",
+                  sender="mystocks.monitoring@gmail.com",
+                  recipients=[user_email])
+    msg.html = render_template('welcome_email.html', username=username)
+    mail.send(msg)
 
-    @cache.memoize(timeout=600)  # Cache the result for 10 minutes
-    def fetch_analyst_reco_with_cache(symbol):
-        # Your existing function to fetch the news
-        return ut.fetch_analyst_recommendations(symbol)
 
-    @cache.memoize(timeout=600)  # Cache for 15 minutes
-    def get_stock_data_cached(symbol, start_date, end_date, interval):
-        return yf.download(symbol, start=start_date, end=end_date, interval=interval)
+def send_watchlist_email(user_email, username,mail,app):
+    with app.app_context():
+        msg = Message("How to Create Your First Watchlist!", 
+                      recipients=[user_email], 
+                      sender="mystocks.monitoring@gmail.com")
 
-    preloaded_prices = cache.get('prices_data')
-    preloaded_news = cache.get('news_data')
-        
-        
-    @app.callback(
-        [
-            Output('individual-stocks-store', 'data', allow_duplicate=True),
-            Output('watchlist-summary', 'children'),
-            Output('stock-graph', 'figure'),
-            Output('stock-graph', 'style'),
-            Output('stock-news', 'children'),
-            Output('indexed-comparison-graph', 'figure'),
-            Output('indexed-comparison-stock-dropdown', 'options'),
-            Output('indexed-comparison-stock-dropdown', 'value'),
-            Output('prices-stock-dropdown', 'options'),
-            Output('prices-stock-dropdown', 'value'),
-            Output('news-stock-dropdown', 'options'),
-            Output('news-stock-dropdown', 'value'),
-            Output('stock-suggestions-input', 'value')
-        ],
-        [
-            Input('stock-suggestions-input', 'value'),
-            Input('reset-stocks-button', 'n_clicks'),
-            Input('refresh-data-icon', 'n_clicks'),
-            Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks'),
-            Input('chart-type', 'value'),
-            Input('movag_input', 'value'),
-            Input('benchmark-selection', 'value'),
-            Input('predefined-ranges', 'value'),
-            Input('indexed-comparison-stock-dropdown', 'value'),
-            Input('prices-stock-dropdown', 'value'),
-            Input('news-stock-dropdown', 'value'),
-            Input('saved-watchlists-dropdown', 'value'),
-            Input('plotly-theme-store', 'data')
-        ],
-        [State('individual-stocks-store', 'data')],
-        prevent_initial_call='initial_duplicate'
+        # Attach the GIF
+        with app.open_resource(os.path.join('assets', 'watchlist-tutorial.gif')) as gif:
+            msg.attach("watchlist-tutorial.gif", "image/gif", gif.read())
+
+        # Use cid to reference the attached GIF in the email body
+        msg.html = render_template('watchlist_email.html', username=username, gif_cid='watchlist-tutorial.gif')
+        mail.send(msg)
+
+        print(f"Email sent to {user_email}")
+
+    
+def send_confirmation_email(email, token, mail):
+     msg = Message('Confirm Your Email', sender='mystocks.monitoring@gmail.com', recipients=[email])
+     link = url_for('confirm_email', token=token, _external=True)
+     msg.body = f'Please confirm your email by clicking the link: {link}'
+     mail.send(msg)
+ 
+def send_reset_email(user_email, reset_url, mail):
+    msg = Message("Password Reset Request", 
+                  sender="mystocks.monitoring@gmail.com", 
+                  recipients=[user_email])
+    msg.html = render_template('reset_password_email.html', reset_url=reset_url)
+    mail.send(msg)
+    
+    
+def send_cancellation_email(user_email, username,mail):
+    msg = Message(
+        subject="Your WatchMyStocks Subscription Has Been Cancelled",
+        recipients=[user_email],
+        sender='mystocks.portfolio@gmail.com'
     )
-    def update_watchlist_and_graphs(
-        new_stock, reset_n_clicks, refresh_n_clicks, remove_clicks,
-        chart_type, movag_input, benchmark_selection, predefined_range,
-        selected_comparison_stocks, selected_prices_stocks, selected_news_stocks,
-        selected_watchlist, plotly_theme, individual_stocks
-    ):
+    msg.html = render_template('cancellation_email.html', username=username)
+    mail.send(msg)   
 
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return (
-                dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                dash.no_update
-            )
 
-        trigger = ctx.triggered[0]['prop_id']
 
-        watchlist = None
+def fetch_news(symbols, max_articles=4):
+    news_content = []
 
-        # Check if the watchlist dropdown triggered the update
-        if 'saved-watchlists-dropdown' in trigger and selected_watchlist:
-            watchlist = db.session.get(Watchlist, selected_watchlist)
-        if watchlist:
-            individual_stocks = json.loads(watchlist.stocks)
-            selected_prices_stocks = individual_stocks[:5]
-            selected_comparison_stocks = individual_stocks[:5]
-            selected_news_stocks = individual_stocks[:5]
-
-        # Ensure the predefined stocks are not forced into the dropdowns if another list is loaded
-        if not selected_comparison_stocks:
-            # Limit to last 5 stocks
-            selected_comparison_stocks = individual_stocks[-5:]
-        if not selected_prices_stocks:
-            # Limit to last 5 stocks
-            selected_prices_stocks = individual_stocks[-5:]
-        if not selected_news_stocks:
-            # Limit to last 5 stocks
-            selected_news_stocks = individual_stocks[-5:]
-
-        # Handle stock addition using the selected ticker from input
-        if 'stock-suggestions-input' in trigger and new_stock:
-            new_stock = new_stock.upper().strip()
-            if new_stock and new_stock not in individual_stocks:
-                individual_stocks.append(new_stock)
-
-                # Update selected_* variables to include the new stock
-                selected_comparison_stocks.append(new_stock)
-                # Limit to last 5
-                selected_comparison_stocks = selected_comparison_stocks[-5:]
-
-                selected_prices_stocks.append(new_stock)
-                selected_prices_stocks = selected_prices_stocks[-5:]
-
-                selected_news_stocks.append(new_stock)
-                selected_news_stocks = selected_news_stocks[-5:]
-
-        elif 'reset-stocks-button' in trigger:
-            individual_stocks = []
-            selected_comparison_stocks = []
-            selected_prices_stocks = []
-            selected_news_stocks = []
-
-        elif 'remove-stock' in trigger:
-            index_to_remove = json.loads(trigger.split('.')[0])['index']
-            if 0 <= index_to_remove < len(individual_stocks):
-                stock_removed = individual_stocks.pop(index_to_remove)
-                # Remove the stock from selected_* variables if present
-                if stock_removed in selected_comparison_stocks:
-                    selected_comparison_stocks.remove(stock_removed)
-                if stock_removed in selected_prices_stocks:
-                    selected_prices_stocks.remove(stock_removed)
-                if stock_removed in selected_news_stocks:
-                    selected_news_stocks.remove(stock_removed)
-
-        # Ensure selected_* variables only contain stocks in individual_stocks
-        selected_comparison_stocks = [
-            stock for stock in (selected_comparison_stocks or []) if stock in individual_stocks
-        ]
-        selected_prices_stocks = [
-            stock for stock in (selected_prices_stocks or []) if stock in individual_stocks
-        ]
-        selected_news_stocks = [
-            stock for stock in (selected_news_stocks or []) if stock in individual_stocks
-        ]
-
-        # Update options for the dropdowns
-        options = [{'label': stock, 'value': stock}
-                    for stock in individual_stocks]
-
-        # If no individual stocks and no benchmark selected, return default message
-        if not individual_stocks and benchmark_selection == 'None':
-            return (
-                individual_stocks,
-                ut.generate_watchlist_table(individual_stocks),
-                px.line(title="Please add at least one stock symbol.",
-                        template=plotly_theme),
-                {'height': '400px'},
-                html.Div("Please add at least one stock symbol."),
-                px.line(title="Please add at least one stock symbol.",
-                        template=plotly_theme),
-                options,
-                selected_comparison_stocks,
-                options,
-                selected_prices_stocks,
-                options,
-                selected_news_stocks,
-                ""
-            )
-
-        today = pd.to_datetime('today')
-
-        # Determine the start date and interval based on predefined range
-        if predefined_range == '5D_15m':
-            start_date = today - timedelta(days=5)
-            interval = '15m'
-        elif predefined_range == '1D_15m':
-            start_date = today - timedelta(hours=24)
-            interval = '5m'
-        elif predefined_range == 'YTD':
-            start_date = datetime(today.year, 1, 1)
-            interval = '1d'
-        elif predefined_range == '1M':
-            start_date = today - timedelta(days=30)
-            interval = '1d'
-        elif predefined_range == '3M':
-            start_date = today - timedelta(days=3 * 30)
-            interval = '1d'
-        elif predefined_range == '12M':
-            start_date = today - timedelta(days=365)
-            interval = '1d'
-        elif predefined_range == '24M':
-            start_date = today - timedelta(days=730)
-            interval = '1d'
-        elif predefined_range == '5Y':
-            start_date = today - timedelta(days=1825)
-            interval = '1d'
-        elif predefined_range == '10Y':
-            start_date = today - timedelta(days=3650)
-            interval = '1d'
-        else:
-            start_date = pd.to_datetime('2024-01-01')
-            interval = '1d'
-
-        end_date = today
-
-        # Fetch stock data from Yahoo Finance
-        data = []
-        df = preloaded_prices
-
-        for symbol in individual_stocks:
-            try:
-
-                if selected_prices_stocks in ['AAPL', 'MSFT']:
-                            df = preloaded_prices
-                else:
-                            df = get_stock_data_cached(
-                                symbol, start_date, end_date, interval)
-
-                # df = get_stock_data_cached(
-                #     symbol, start_date, end_date, interval)
-
-                # Conditional check for intraday data
-                if predefined_range in ['1D_15m']:
-                    # Check if there's data in the last 24 hours
-                    if df.empty:
-                        print(
-                            f"No intraday data found for {symbol} in the last 24 hours. Skipping to the next stock.")
-                        continue  # Skip to the next stock if no intraday data is available
-
-                # Continue processing the data if not intraday or if data is available
-                df.reset_index(inplace=True)
-                if 'Date' in df.columns:
-                    df['Date'] = pd.to_datetime(df['Date'])
-                    df.set_index('Date', inplace=True)
-                else:
-                    df['Datetime'] = pd.to_datetime(df['Datetime'])
-                    df.set_index('Datetime', inplace=True)
-
-                df = df.tz_localize(None)
-                df['Stock'] = symbol
-                df['30D_MA'] = df.groupby('Stock')['Close'].transform(
-                    lambda x: x.rolling(window=30, min_periods=1).mean())
-                df['100D_MA'] = df.groupby('Stock')['Close'].transform(
-                    lambda x: x.rolling(window=100, min_periods=1).mean())
-                data.append(df)
-
-            except Exception as e:
-                print(f"Error fetching data for {symbol}: {e}")
-                continue
-
-        if not data and benchmark_selection == 'None':
-            return (
-                individual_stocks,
-                ut.generate_watchlist_table(individual_stocks),
-                px.line(
-                    title="No data found for the given stock symbols and date range.", template=plotly_theme),
-                {'height': '400px'},
-                html.Div("No news found for the given stock symbols."),
-                px.line(
-                    title="No data found for the given stock symbols and date range.", template=plotly_theme),
-                options,
-                selected_comparison_stocks,
-                options,
-                selected_prices_stocks,
-                options,
-                selected_news_stocks,
-                ""
-            )
-
-        df_all = pd.concat(data) if data else pd.DataFrame()
-
-        # Create indexed data for comparison
-        indexed_data = {}
-        for symbol in individual_stocks:
-            if symbol in df_all['Stock'].unique():
-                df_stock = df_all[df_all['Stock'] == symbol].copy()
-                df_stock['Index'] = df_stock['Close'] / \
-                    df_stock['Close'].iloc[0] * 100
-                indexed_data[symbol] = df_stock[['Index']].rename(
-                    columns={"Index": symbol})
-
-        if benchmark_selection != 'None':
-            benchmark_data = get_stock_data_cached(
-                benchmark_selection, start_date, end_date, interval)
-            if not benchmark_data.empty:
-                benchmark_data.reset_index(inplace=True)
-                benchmark_data['Index'] = benchmark_data['Close'] / \
-                    benchmark_data['Close'].iloc[0] * 100
-
-        if indexed_data:
-            df_indexed = pd.concat(indexed_data, axis=1)
-            df_indexed.reset_index(inplace=True)
-            df_indexed.columns = ['Date'] + \
-                [symbol for symbol in indexed_data.keys()]
-            df_indexed['Date'] = pd.to_datetime(
-                df_indexed['Date'], errors='coerce')
-
-            available_stocks = [
-                stock for stock in selected_comparison_stocks if stock in df_indexed.columns]
-            if not available_stocks:
-                return (
-                    individual_stocks,
-                    ut.generate_watchlist_table(individual_stocks),
-                    px.line(
-                        title="Selected stocks are not available in the data.", template=plotly_theme),
-                    {'height': '400px'},
-                    html.Div("No data found for the selected comparison stocks."),
-                    px.line(
-                        title="Selected stocks are not available in the data.", template=plotly_theme),
-                    options,
-                    selected_comparison_stocks,
-                    options,
-                    selected_prices_stocks,
-                    options,
-                    selected_news_stocks,
-                    ""
-                )
-
-            df_indexed_filtered = df_indexed[['Date'] + available_stocks]
-
-            fig_indexed = px.line(
-                df_indexed_filtered, x='Date', y=available_stocks, template=plotly_theme)
-            fig_indexed.update_yaxes(matches=None, title_text=None)
-            fig_indexed.update_xaxes(title_text=None)
-            fig_indexed.update_layout(
-                dragmode=False,
-                legend=dict(
-                    yanchor="top",
-                    y=0.99,
-                    xanchor="left",
-                    x=0.01,
-                    font=dict(size=10)
-                ), legend_title_text=None, margin=dict(l=10, r=10, t=15, b=10))
-
-            fig_indexed.add_shape(
-                type='line',
-                x0=df_indexed['Date'].min(),
-                y0=100,
-                x1=df_indexed['Date'].max(),
-                y1=100,
-                line=dict(
-                    color="Black",
-                    width=2,
-                    dash="dot"
-                )
-            )
-
-            if benchmark_selection != 'None':
-                fig_indexed.add_scatter(x=benchmark_data['Date'], y=benchmark_data['Index'], mode='lines',
-                                        name=benchmark_selection, line=dict(dash='dot'))
-        else:
-            fig_indexed = px.line(
-                title="No data available.", template=plotly_theme)
-
-        # Prepare the stock price graph
-        df_prices_filtered = df_all[df_all['Stock'].isin(
-            selected_prices_stocks)]
-        num_stocks = len(selected_prices_stocks)
-        graph_height = 400 * num_stocks
-
-        fig_stock = make_subplots(
-            rows=num_stocks,
-            cols=1,
-            shared_xaxes=False,
-            vertical_spacing=0.05,
-            subplot_titles=selected_prices_stocks,
-            specs=[[{"secondary_y": True}]] * num_stocks,
-        )
-
-        for i, symbol in enumerate(selected_prices_stocks):
-            df_stock = df_prices_filtered[df_prices_filtered['Stock'] == symbol]
-
-            # Ensure there's enough data
-            if not df_stock.empty and len(df_stock) > 1:
-                # Add the Volume trace first to make it appear behind
-                if 'Volume' in movag_input:
-                    fig_stock.add_trace(go.Bar(x=df_stock.index, y=df_stock['Volume'], name=f'{symbol} Volume',
-                                                marker=dict(color='darkgray'), opacity=0.6),
-                                        row=i + 1, col=1, secondary_y=True)
-                    fig_stock.update_yaxes(
-                        showgrid=False, secondary_y=True, row=i + 1, col=1)
-
-                # Add the price traces (line or candlestick) after the volume
-                if chart_type == 'line':
-                    fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['Close'], name=f'{symbol} Close',
-                                                    line=dict(color='steelblue', width=3)), row=i + 1, col=1)
-
-                    last_close = df_stock['Close'].iloc[-2]
-                    latest_close = df_stock['Close'].iloc[-1]
-                    change_percent = (
-                        (latest_close - last_close) / last_close) * 100
-
-                    fig_stock.add_trace(go.Scatter(
-                        x=[df_stock.index[-1]],
-                        y=[latest_close],
-                        mode='markers',
-                        marker=dict(color='red', size=10),
-                        name=f'{symbol} Last Price'
-                    ), row=i + 1, col=1)
-
-                    latest_timestamp = df_stock.index[-1]
-                    fig_stock.add_annotation(
-                        x=latest_timestamp,
-                        y=latest_close,
-                        text=f"{latest_close:.2f} ({change_percent:.2f}%)<br>{latest_timestamp.strftime('%Y-%m-%d')}",
-                        showarrow=True,
-                        arrowhead=None,
-                        ax=20,
-                        ay=-40,
-                        row=i + 1,
-                        col=1,
-                        font=dict(color="blue", size=12),
-                        bgcolor='white'
-                    )
-
-                    fig_stock.add_shape(
-                        type="line",
-                        x0=df_stock.index.min(),
-                        x1=df_stock.index.max(),
-                        y0=latest_close,
-                        y1=latest_close,
-                        line=dict(
-                            color="red",
-                            width=2,
-                            dash="dot"
-                        ),
-                        row=i + 1, col=1
-                    )
-                elif chart_type == 'candlestick':
-                    fig_stock.add_trace(go.Candlestick(
-                        x=df_stock.index,
-                        open=df_stock['Open'],
-                        high=df_stock['High'],
-                        low=df_stock['Low'],
-                        close=df_stock['Close'],
-                        name=f'{symbol} Candlestick'), row=i + 1, col=1)
-
-                    fig_stock.update_xaxes(
-                        rangeslider={'visible': False}, row=i + 1, col=1)
-
-                # Add moving averages after the price line or candlestick
-                if '30D_MA' in movag_input:
-                    fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['30D_MA'], name=f'{symbol} 30D MA',
-                                                    line=dict(color='green')), row=i + 1, col=1)
-
-                if '100D_MA' in movag_input:
-                    fig_stock.add_trace(go.Scatter(x=df_stock.index, y=df_stock['100D_MA'], name=f'{symbol} 100D MA',
-                                                    line=dict(color='red')), row=i + 1, col=1)
-
-        fig_stock.update_layout(template=plotly_theme, height=graph_height, showlegend=False, bargap=0.0, bargroupgap=0.0, dragmode=False,  # Disable zoom and pan
-                                margin=dict(l=40, r=40, t=40, b=40))
-
-        fig_stock.update_yaxes(title_text=None, secondary_y=False)
-        fig_stock.update_yaxes(
-            title_text=None, secondary_y=True, showgrid=False)
-
-        if selected_news_stocks in ['AAPL', 'MSFT']:
-                news_content = preloaded_news
-        else:
-                news_content = fetch_news_with_cache(selected_news_stocks)  # Fetc
-
-        # news_content = fetch_news_with_cache(selected_news_stocks)
-
-        # Fetch related news for the stocks in the watchlist
-        # news_content = ut.fetch_news(selected_news_stocks)
-
-        return (
-            individual_stocks,
-            ut.generate_watchlist_table(individual_stocks),
-            fig_stock,
-            {'height': f'{graph_height}px', 'overflow': 'auto'},
-            news_content,
-            fig_indexed,
-            options,
-            selected_comparison_stocks,
-            options,
-            selected_prices_stocks,
-            options,
-            selected_news_stocks,
-            ""
-        )
-
-    @app.callback(
-        Output('top-stocks-table', 'children'),
-        [Input('risk-tolerance-dropdown', 'value')]
-    )
-    def get_top_stocks(risk_tolerance):
-        if risk_tolerance is None:
-            raise PreventUpdate
-
-        # Get the latest batch_id from the database
-        latest_batch = db.session.query(StockKPI.batch_id).order_by(
-            StockKPI.batch_id.desc()).first()
-
-        if latest_batch is None:
-            return html.Div("No stock data available.", style={"color": "red"})
-
-        latest_batch_id = latest_batch[0]  # Extract batch_id from the tuple
-
-        # Fetch top 20 stocks for the selected risk tolerance and latest batch_id
-        stock_data = StockKPI.query.filter_by(
-            risk_tolerance=risk_tolerance, batch_id=latest_batch_id).all()
-
-        # If no data found
-        if not stock_data:
-            return html.Div(f"No top stocks available for {risk_tolerance} risk tolerance.", style={"color": "red"})
-
-        # Normalize the momentum for the progress bar
-        max_momentum = max(
-            [stock.price_momentum for stock in stock_data if stock.price_momentum], default=1)
-
-        # Table headers with info icons and tooltips
-        table_header = [
-            html.Thead(html.Tr([
-                html.Th([
-                    "Stock", html.I(className="bi bi-info-circle-fill",
-                                    id="stock-info", style={"margin-left": "5px"}),
-                    dbc.Tooltip("The stock symbol or ticker for the company.",
-                                target="stock-info", placement="top")
-                ], style={"width": "100px"}),  # Reduced width for Stock column
-                html.Th([
-                    "P/E Ratio", html.I(className="bi bi-info-circle-fill",
-                                        id="pe-info", style={"margin-left": "0px", "width": "50px"}),
-                    dbc.Tooltip("Price-to-Earnings ratio: measures a company's current share price relative to its per-share earnings.",
-                                target="pe-info", placement="top")
-                ], className="d-none d-md-table-cell"),  # Hide on mobile
-                html.Th([
-                    "Beta", html.I(className="bi bi-info-circle-fill",
-                                   id="beta-info", style={"margin-left": "5px"}),
-                    dbc.Tooltip("Beta measures the stock's volatility relative to the overall market.",
-                                target="beta-info", placement="top")
-                ]),
-                html.Th([
-                    "ROE", html.I(className="bi bi-info-circle-fill",
-                                  id="roe-info", style={"margin-left": "5px"}),
-                    dbc.Tooltip("Return on Equity (ROE): shows how effectively a company uses shareholders' equity to generate profit.",
-                                target="roe-info", placement="top")
-                ]),
-                html.Th([
-                    "Momentum", html.I(className="bi bi-info-circle-fill",
-                                       id="momentum-info", style={"margin-left": "5px"}),
-                    dbc.Tooltip("Momentum measures the stock's recent price performance.",
-                                target="momentum-info", placement="top")
-                ])
-            ]))
-        ]
-
-        # Build the table rows with progress bars and labels side by side in one row using flexbox
-        rows = []
-        for idx, stock in enumerate(stock_data):
-            # Conditional styling for P/E Ratio (green for low values)
-            pe_style = {"backgroundColor": "lightgreen"} if stock.pe_ratio and stock.pe_ratio < 20 else {
-                "backgroundColor": "lightcoral"}
-
-            # Normalize the progress bar values
-            momentum_normalized = (
-                stock.price_momentum / max_momentum) * 100 if stock.price_momentum else 0
-            roe_percentage = stock.roe * 100 if stock.roe else 0
-            beta_normalized = (stock.beta / 3) * 100 if stock.beta else 0
-
-            # Add row with flexbox layout to place text and progress bar side by side
-            rows.append(html.Tr([
-                # Fixed and reduced width for Stock column
-                html.Td(stock.symbol, style={
-                        "width": "20px", "white-space": "nowrap", "text-overflow": "ellipsis", "overflow": "hidden"}),
-                html.Td(f"{stock.pe_ratio:.1f}" if stock.pe_ratio else "N/A", style=pe_style,
-                        className="d-none d-md-table-cell"),  # Hide on mobile, round to 1 digit after comma
-
-                # Beta column with small number and progress bar
-                html.Td([
-                    html.Div([
-                        html.Span(f"{stock.beta:.1f}", style={"margin-right": "5px", "font-size": "10px",
-                                  "min-width": "25px", "text-align": "right"}),  # Fixed width for Beta number
-                        dbc.Progress(value=beta_normalized, striped=True, color="info", style={
-                                     "height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
-                    ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
-                ]),
-
-                # ROE column with small number and progress bar
-                html.Td([
-                    html.Div([
-                        html.Span(f"{roe_percentage:.1f}%", style={"margin-right": "5px", "font-size": "10px",
-                                  "min-width": "25px", "text-align": "right"}),  # Fixed width for ROE number
-                        dbc.Progress(value=roe_percentage, striped=True, color="success", style={
-                                     "height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
-                    ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
-                ]),
-
-                # Momentum column with small number and progress bar
-                html.Td([
-                    html.Div([
-                        html.Span(f"{stock.price_momentum:.1f}", style={"margin-right": "5px", "font-size": "10px",
-                                  "min-width": "25px", "text-align": "right"}),  # Fixed width for Momentum number
-                        dbc.Progress(value=momentum_normalized, striped=True, color="info", style={
-                                     "height": "20px", "flex-grow": "1"})  # Allow progress bar to take remaining space
-                    ], style={"display": "flex", "align-items": "center", "white-space": "nowrap"})  # Prevent wrapping
-                ])
-            ]))
-
-        table_body = [html.Tbody(rows)]
-
-        # Return the complete table with headers and body, responsive for mobile
-        return dbc.Table(
-            table_header + table_body,
-            bordered=True,
-            hover=True,
-            striped=True,
-            responsive=True,  # Enable responsive behavior
-            className="table-sm table-responsive"
-        )
-    
-    
-    from flask import session
-    from dash.exceptions import PreventUpdate
-
-    @app.callback(
-        [Output('forecast-graph', 'figure'),
-         Output('forecast-stock-warning', 'children'),
-         Output('forecast-kpi-output', 'children'),
-         Output('forecast-data-store', 'data'),
-         Output('forecast-attempt-store', 'data')],  # Track forecast attempts for logged-out users
-        [Input('generate-forecast-button', 'n_clicks'),
-         Input('plotly-theme-store', 'data')],
-        [State('forecast-stock-input', 'value'),
-         State('forecast-horizon-input', 'value'),
-         State('predefined-ranges', 'value'),
-         State('login-status', 'data'),
-         State('login-username-store', 'data'),
-         State('forecast-attempt-store', 'data')]
-    )
-    def generate_forecasts(n_clicks, plotly_theme, selected_stocks, horizon, predefined_range, login_status, username, forecast_attempt):
-        # Do nothing if the generate button hasn't been clicked
-        if n_clicks is None:
-            raise PreventUpdate
-    
-        # Case 1: Handle forecast attempts for logged-out users (via Flask session)
-        if not login_status or not username:
-            if 'forecast_attempts' not in session:
-                session['forecast_attempts'] = 0  # Initialize session if not already done
-    
-            # Use Flask session to persist forecast attempts
-            forecast_attempt = session['forecast_attempts']
-    
-            # Check if the user has already generated 2 forecasts
-            if forecast_attempt >= 2:
-                # Return a message if they try to generate more than 2 forecasts
-                return dash.no_update, "You've already generated two free forecasts. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
-    
-            # Increment the attempt count after generating the first and second forecast
-            session['forecast_attempts'] += 1
-            forecast_attempt += 1  # Sync it with the dcc.Store
-    
-        # Case 2: Handle logged-in users (similar logic as before)
-        if username:
-            user = User.query.filter_by(username=username).first()
-    
-            # Check if the user is free and has already used two forecasts
-            if user and user.subscription_status == 'free' and user.forecast_attempts >= 2:
-                return dash.no_update, "You've already generated two free forecasts. Please upgrade for more.", dash.no_update, dash.no_update, forecast_attempt
-    
-            # Increment forecast attempts for logged-in free users
-            if user and user.subscription_status == 'free':
-                user.forecast_attempts += 1
-                db.session.commit()
-    
-        # No stocks selected, show a warning
-        if not selected_stocks:
-            return dash.no_update, "Please select at least one stock.", dash.no_update, dash.no_update, forecast_attempt
-    
-        # Check if the user has selected more than 3 stocks
-        if len(selected_stocks) > 3:
-            return dash.no_update, "Please select up to 3 stocks only.", dash.no_update, dash.no_update, forecast_attempt
-    
-        # Generate forecast using the modularized function
-        forecast_data = ut.generate_forecast_data(selected_stocks, horizon)
-    
-        forecast_figures = []
-        kpi_outputs = []
-        today = pd.to_datetime('today')
-    
-        for symbol in selected_stocks:
-            if 'error' in forecast_data[symbol]:
-                # Create an empty figure with an error message
-                fig = go.Figure()
-                fig.update_layout(template=plotly_theme, dragmode=False)
-                fig.add_annotation(
-                    text=f"Could not generate forecast for {symbol}: {forecast_data[symbol]['error']}",
-                    showarrow=False
-                )
-                forecast_figures.append(fig)
-                continue
-    
-            df = forecast_data[symbol]['historical']
-            forecast = forecast_data[symbol]['forecast']
-            kpis = forecast_data[symbol]['kpi']
-            
-            kpi_outputs.append(
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H5(f"Forecast for {symbol}", className="card-title"),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Div([
-                                    html.H6("Latest Actual Price", className="card-subtitle mb-2 text-muted"),
-                                    html.H5(f"${kpis['latest_actual_price']:.2f}", className="text-dark")
-                                ], className="text-center")
-                            ], width=3),
-                            dbc.Col([
-                                html.Div([
-                                    html.H6("Expected Price", className="card-subtitle mb-2 text-muted"),
-                                    html.H5(f"${kpis['expected_price']:.2f} ({kpis['percentage_difference']:+.2f}%)", className="text-success")
-                                ], className="text-center")
-                            ], width=3),
-                            dbc.Col([
-                                html.Div([
-                                    html.H6("Upper Bound", className="card-subtitle mb-2 text-muted"),
-                                    html.H5(f"${kpis['upper_bound']:.2f}", className="text-primary")
-                                ], className="text-center")
-                            ], width=3),
-                            dbc.Col([
-                                html.Div([
-                                    html.H6("Lower Bound", className="card-subtitle mb-2 text-muted"),
-                                    html.H5(f"${kpis['lower_bound']:.2f}", className="text-danger")
-                                ], className="text-center")
-                            ], width=3)
-                        ])
-                    ]),
-                    className="mb-4 shadow-sm bg-light"
-                )
-            )
-
-            # Set start date based on predefined range
-            if predefined_range == 'YTD':
-                start_date = datetime(today.year, 1, 1)
-            elif predefined_range == '1M':
-                start_date = today - timedelta(days=30)
-            elif predefined_range == '3M':
-                start_date = today - timedelta(days=3 * 30)
-            elif predefined_range == '12M':
-                start_date = today - timedelta(days=365)
-            elif predefined_range == '24M':
-                start_date = today - timedelta(days=730)
-            elif predefined_range == '5Y':
-                start_date = today - timedelta(days=1825)
-            else:
-                start_date = pd.to_datetime('2024-01-01')
-    
-            df_filtered = df[df['Date'] >= start_date]
-            forecast_filtered = forecast[forecast['ds'] >= start_date]
-    
-            fig = go.Figure()
-            fig.update_layout(template=plotly_theme)
-    
-            # Add forecast mean line
-            fig.add_trace(go.Scatter(
-                x=forecast_filtered['ds'],
-                y=forecast_filtered['yhat'],
-                mode='lines',
-                name=f'{symbol} Forecast',
-                line=dict(color='blue')
-            ))
-    
-            # Add the confidence interval (bandwidth)
-            fig.add_trace(go.Scatter(
-                x=forecast_filtered['ds'],
-                y=forecast_filtered['yhat_upper'],
-                mode='lines',
-                name='Upper Bound',
-                line=dict(width=0),
-                showlegend=False
-            ))
-    
-            fig.add_trace(go.Scatter(
-                x=forecast_filtered['ds'],
-                y=forecast_filtered['yhat_lower'],
-                fill='tonexty',  # Fill to the next trace (yhat_upper)
-                mode='lines',
-                name='Lower Bound',
-                line=dict(width=0),
-                fillcolor='rgba(0, 100, 255, 0.2)',  # Light blue fill
-                showlegend=False
-            ))
-    
-            # Add historical data
-            fig.add_trace(go.Scatter(
-                x=df_filtered['Date'],
-                y=df_filtered['Close'],
-                mode='lines',
-                name=f'{symbol} Historical',
-                line=dict(color='green')
-            ))
-    
-            fig.update_layout(
-                title=f"Stock Price Forecast for {symbol}",
-                xaxis_title="Date",
-                yaxis_title="Price",
-                height=400,
-                showlegend=False,
-                dragmode=False,
-                template=plotly_theme,
-            )
-    
-            forecast_figures.append(fig)
-    
-        if not forecast_figures:
-            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, forecast_attempt
-    
-        # Combine all forecasts into subplots
-        combined_fig = make_subplots(
-            rows=len(forecast_figures), cols=1,
-            shared_xaxes=True,
-            subplot_titles=selected_stocks,
-            vertical_spacing=0.05  # Adjust this value to control spacing
-        )
-    
-        for i, fig in enumerate(forecast_figures):
-            for trace in fig['data']:
-                combined_fig.add_trace(trace, row=i+1, col=1)
-    
-        combined_fig.update_layout(
-            template=plotly_theme,
-            title=None,
-            height=400 * len(forecast_figures),
-            showlegend=False,
-            margin=dict(l=40, r=40, t=40, b=40),
-            dragmode=False
-        )
-    
-        # Return the generated forecast, KPI output, and updated forecast attempt count
-        return combined_fig, "", kpi_outputs, combined_fig, forecast_attempt  # Sync forecast_attempt with the store
-    
-   
-
-    @app.callback(Output('simulation-result', 'children'),
-                  Input('simulate-button', 'n_clicks'),
-                  State('simulation-stock-input', 'value'),
-                  State('investment-amount', 'value'),
-                  State('investment-date', 'date'),
-                  State('plotly-theme-store', 'data'))
-    def simulate_investment(n_clicks, stock_symbol, investment_amount, investment_date, plotly_theme):
-        if n_clicks and stock_symbol and investment_amount and investment_date:
-            investment_date = pd.to_datetime(investment_date)
-            end_date = pd.to_datetime('today')
-            data = yf.download(
-                stock_symbol, start=investment_date, end=end_date)
-
-            if not data.empty:
-                initial_price = data['Close'].iloc[0]
-                current_price = data['Close'].iloc[-1]
-                shares_bought = investment_amount / initial_price
-                current_value = shares_bought * current_price
-                profit = current_value - investment_amount
-
-                # Create waterfall chart
-                fig_waterfall = go.Figure(go.Waterfall(
-                    name="Investment Analysis",
-                    orientation="v",
-                    measure=["absolute", "relative", "total"],
-                    x=["Initial Investment", "Profit/Loss", "Current Value"],
-                    y=[investment_amount, profit, current_value],
-                    text=[f"${investment_amount:.2f}",
-                          f"${profit:.2f}", f"${current_value:.2f}"],
-                    textposition="inside",
-                    insidetextfont={"color": "white"},
-                    connector={"line": {"color": "rgb(63, 63, 63)"}},
-                    decreasing={"marker": {"color": "red"}},
-                    increasing={"marker": {"color": "green"}},
-                    totals={"marker": {"color": "grey"}}
-                ))
-                fig_waterfall.update_layout(
-                    showlegend=False,
-                    template=plotly_theme,
-                    yaxis=dict(visible=False),
-                    margin=dict(t=100, l=10, r=10, b=10),
-                    dragmode=False
-                )
-
-                return html.Div([
-                    html.P(
-                        f"Initial Investment Amount: ${investment_amount:.2f}", className='mb-2'),
-                    html.P(
-                        f"Shares Bought: {shares_bought:.2f}", className='mb-2'),
-                    html.P(
-                        f"Current Value: ${current_value:.2f}", className='mb-2'),
-                    html.P(f"Profit: ${profit:.2f}", className='mb-2'),
-                    dcc.Graph(figure=fig_waterfall)
-                ])
-            else:
-                return html.Div([
-                    html.P(
-                        f"No data available for {stock_symbol} from {investment_date.strftime('%Y-%m-%d')}", className='mb-2')
-                ])
-        return dash.no_update
-    
-   
-    @app.callback(
-        [Output('saved-watchlists-dropdown', 'options'),
-          Output('saved-watchlists-dropdown', 'value'),
-          Output('new-watchlist-name', 'value')],
-        [Input('login-status', 'data'),
-          Input('create-watchlist-button', 'n_clicks'),
-          Input('delete-watchlist-button', 'n_clicks')],
-        [State('new-watchlist-name', 'value'),
-          State('individual-stocks-store', 'data'),
-          State('saved-watchlists-dropdown', 'value'),
-          # Get the selected theme (name, not URL)
-          State('theme-store', 'data'),
-          State('login-username-store', 'data')],
-        # Ensures the callback is not fired before any inputs are triggered
-        prevent_initial_call=True
-    )
-    def manage_watchlists(login_status, create_clicks, delete_clicks, new_watchlist_name, stocks, selected_watchlist_id, selected_theme, username):
-        # Ensure the callback does not run if username or login status is not provided
-        if not username or not login_status:
-            return [], None, ''  # Clear the dropdown and inputs if not logged in
-
-        # Get the user from the database
-        user = User.query.filter_by(username=username).first()
-
-        if user is None:
-            # Handle the case where no user is found
-            print(f"User with username {username} not found")
-            return [], None, ''  # Clear the dropdown and inputs
-
-        # Handle watchlist deletion if `delete_clicks` is triggered
-        if delete_clicks and selected_watchlist_id:
-            watchlist = Watchlist.query.get(selected_watchlist_id)
-            if watchlist and watchlist.user_id == user.id:
-                db.session.delete(watchlist)
-                db.session.commit()
-                selected_watchlist_id = None  # Clear the selected watchlist after deletion
-
-        # Handle watchlist creation or update if `create_clicks` is triggered
-        elif create_clicks:
-            if selected_watchlist_id:
-                # Update existing watchlist if selected
-                watchlist = Watchlist.query.get(selected_watchlist_id)
-                if watchlist and watchlist.user_id == user.id:
-                    # Update the stock list in the watchlist
-                    watchlist.stocks = json.dumps(stocks)
-                    db.session.commit()
-            elif new_watchlist_name:
-                # Create a new watchlist
-                new_watchlist = Watchlist(
-                    user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
-                db.session.add(new_watchlist)
-                db.session.commit()
-
-            # Update the theme in the user's profile (save the theme name, not the URL)
-            for theme_name, theme_info in themes.items():
-                if theme_info['dbc'] == selected_theme:
-                    # Save the theme name (e.g., 'JOURNAL')
-                    user.theme = theme_name
-                    break
-            db.session.commit()
-
-        # Load and return updated watchlist options for the user
-        # watchlists = Watchlist.query.filter_by(user_id=user.id).all()
-        # Only fetch 'id', 'name', and 'stocks' columns from Watchlist table instead of all fields
-        watchlists = Watchlist.query.with_entities(Watchlist.id, Watchlist.name, Watchlist.stocks).filter_by(user_id=user.id).all()
-
-        watchlist_options = [{'label': w.name, 'value': w.id}
-                              for w in watchlists]
-
-        # Clear the new watchlist name input after creation or update
-        return watchlist_options, selected_watchlist_id, ''
-
-    @app.callback(
-        [Output('conversation-store', 'data'),
-         Output('chatbot-conversation', 'children'),
-         Output('chatbot-input', 'value')],
-        [Input('send-button', 'n_clicks')],
-        [State('chatbot-input', 'value'),
-         State('conversation-store', 'data'),
-         State('login-username-store', 'data'),
-         # Get the selected watchlist
-         State('saved-watchlists-dropdown', 'value'),
-         State('individual-stocks-store', 'data')],     # Get stocks from the selected watchlist
-        prevent_initial_call=True
-    )
-    def manage_chatbot_interaction(send_clicks, user_input, conversation_history, username, selected_watchlist, watchlist_stocks):
-        from openai import OpenAI
-        from dotenv import load_dotenv
-        import os
-        load_dotenv()
-        open_api_key = os.getenv('OPEN_API_KEY')
-
-        client = OpenAI(api_key=open_api_key)
-
-        # Define the system message for context
-        system_message = {"role": "system",
-                          "content": "You are a helpful stock financial advisor."}
-
-        # Initialize conversation history if it's not already set
-        if conversation_history is None:
-            conversation_history = [system_message]
-
-        if send_clicks and send_clicks > 0 and user_input:
-            # Append the user's input to the conversation history
-            conversation_history.append(
-                {"role": "user", "content": user_input})
-
-            # If the input contains the keyword 'performance' and the user is logged in
-            if "performance" in user_input.lower() and username:
-                if selected_watchlist and watchlist_stocks:
-                    # Fetch stock performance for the selected watchlist
-                    performance_data = ut.get_stock_performance(
-                        watchlist_stocks)
-                    performance_summaries = [
-                        f"{symbol}: Latest Close - ${data['latest_close']:.2f}" if data[
-                            'latest_close'] is not None else f"{symbol}: Latest Close - N/A"
-                        for symbol, data in performance_data.items()
-                    ]
-                    response = f"Here is the performance data for the stocks in your selected watchlist: {'; '.join(performance_summaries)}."
-                else:
-                    response = "You don't have a watchlist selected to show performance data."
-            else:
-                # Use OpenAI to generate a response for other queries
-                completion = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=conversation_history,
-                )
-                response = completion.choices[0].message.content
-
-            # Append the assistant's response to the conversation history
-            conversation_history.append(
-                {"role": "assistant", "content": response})
-
-            # Update the conversation display with the user's input and assistant's response
-            conversation_display = []
-            for message in conversation_history:
-                if message["role"] == "user":
-                    conversation_display.append(
-                        html.P(f"YOU: {message['content']}", className='user'))
-                elif message["role"] == "assistant":
-                    conversation_display.append(
-                        html.Div(
-                            [
-                                html.Span("🤖", className="robot-avatar",
-                                          style={"margin-right": "10px"}),
-                                html.Span(
-                                    f"{message['content']}", className='chatbot-text'),
-                            ],
-                            className="chatbot-response fade-in"
-                        )
-                    )
-
-            # Clear the chatbot input after responding
-            return conversation_history, conversation_display, ""
-
-        # If no new input, return the current state without updates
-        return conversation_history, dash.no_update, dash.no_update
-
-    @app.callback(
-        Output('analyst-recommendations-content', 'children'),
-        [Input('individual-stocks-store', 'data'),
-         Input('plotly-theme-store', 'data')]
-    )
-    def update_analyst_recommendations(stock_symbols, plotly_theme):
-        if not stock_symbols:
-            return html.P("Please select stocks to view their analyst recommendations.")
-
-        recommendations_content = []
-
-        # Add the text to be displayed at the top
-        recommendations_content.append(
-            html.P([
-                "For more information on how to interpret these ratings, please visit ",
-                html.A(
-                    "this article", href="https://finance.yahoo.com/news/buy-sell-hold-stock-analyst-180414724.html", target="_blank"),
-                "."
-            ], className='mt-2')
-        )
-
-        for symbol in stock_symbols:
-            # df = ut.fetch_analyst_recommendations(symbol)
-            df = fetch_analyst_reco_with_cache(symbol)
-
-            if not df.empty:
-                fig = ut.generate_recommendations_heatmap(df, plotly_theme)
-                recommendations_content.append(
-                    html.H4(f"{symbol}", className='mt-3'))
-                recommendations_content.append(dcc.Graph(figure=fig))
-            else:
-                recommendations_content.append(
-                    html.P(f"No analyst recommendations found for {symbol}."))
-
-        return recommendations_content
-
-    @app.callback(
-        Output('individual-stocks-store', 'data'),
-        [Input('url', 'pathname'),  # Triggers when the page is loaded/refreshed
-         Input('saved-watchlists-dropdown', 'value'),
-         Input('login-status', 'data')],
-        [State('login-username-store', 'data')],
-        prevent_initial_call=False  # Ensure this runs on page load
-    )
-    def load_watchlist(pathname, watchlist_id, login_status, username):
-        # Check if the user is logged in and a username is provided
-        if login_status and username:
-            # Fetch the user from the database
-            user = User.query.filter_by(username=username).first()
-
-            # Ensure user exists before proceeding
-            if user is None:
-                print(f"User with username {username} not found")
-                return ['AAPL', 'MSFT']  # Default stocks if no user is found
-
-            # Load the selected watchlist from the dropdown
-            if watchlist_id:
-                watchlist = db.session.get(Watchlist, watchlist_id)
-                if watchlist and watchlist.user_id == user.id:
-                    return json.loads(watchlist.stocks)
-
-            # If no specific watchlist is selected, load the default or most recent watchlist
-            default_watchlist = Watchlist.query.filter_by(
-                user_id=user.id, is_default=True).first()
-            if default_watchlist:
-                return json.loads(default_watchlist.stocks)
-
-            # If no default watchlist, load the most recent watchlist
-            recent_watchlist = Watchlist.query.filter_by(
-                user_id=user.id).order_by(Watchlist.id.desc()).first()
-            if recent_watchlist:
-                return json.loads(recent_watchlist.stocks)
-
-        # If not logged in or no watchlist is selected, return AAPL and MSFT as the default stocks
-        return ['AAPL', 'MSFT']
-
-    @app.callback(
-        [Output({'type': 'additional-news', 'index': MATCH}, 'children'),
-         Output({'type': 'load-more-button', 'index': MATCH}, 'children'),
-         Output({'type': 'load-more-button', 'index': MATCH}, 'style')],
-        [Input({'type': 'load-more-button', 'index': MATCH}, 'n_clicks')],
-        [State({'type': 'load-more-button', 'index': MATCH}, 'id'),
-         State({'type': 'additional-news', 'index': MATCH}, 'children')]
-    )
-    def load_more_articles(n_clicks, button_id, current_articles):
-        if n_clicks is None or n_clicks == 0:
-            raise PreventUpdate
-
-        symbol = button_id['index']
+    for symbol in symbols:
         ticker = yf.Ticker(symbol)
-        news = ticker.news
+        news = ticker.news  # Fetch news using yfinance
 
-        if not news or len(news) <= 4:
-            return dash.no_update, dash.no_update, dash.no_update
+        if news:
+            news_content.append(html.H4(f"News for {symbol}", className="mt-4"))
 
-        if current_articles is None:
-            current_articles = []
+            articles = []
+            for idx, article in enumerate(news[:max_articles]):  # Display only the first `max_articles` news articles
+                related_tickers = ", ".join(article.get('relatedTickers', []))
+                publisher = article.get('publisher', 'Unknown Publisher')
 
-        # Increase the max articles by 4 each time the button is clicked
-        max_articles = (n_clicks + 1) * 4
-        additional_articles = []
+                # Consistent card height
+                news_card = dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.H5(
+                                html.A(article['title'], href=article['link'], target="_blank"),
+                                # style={"white-space": "nowrap", "overflow": "hidden", "text-overflow": "ellipsis"}
 
-        for article in news[4:max_articles]:
-            related_tickers = ", ".join(article.get('relatedTickers', []))
-            publisher = article.get('publisher', 'Unknown Publisher')
-
-            news_card = dbc.Col(
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H5(
-                            html.A(article['title'], href=article['link'], target="_blank")),
-                        html.Img(
-                            src=article['thumbnail']['resolutions'][0]['url'],
-                            style={"max-width": "150px",
-                                   "height": "auto", "margin-bottom": "10px"}
-                        ) if 'thumbnail' in article else html.Div(),
-                        html.P(
-                            f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
-                        html.Footer(
-                            f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
-                            style={"font-size": "12px", "margin-top": "auto"}
-                        )
-                    ], style={"min-height": "250px", "max-height": "350px", "display": "flex", "flex-direction": "column"})
-                ),
-                xs=12, md=6,  # Full width on mobile, half width on desktop
-                className="mb-2"
-            )
-            additional_articles.append(news_card)
-
-        if max_articles >= len(news):
-            return dbc.Row(additional_articles), "No more articles", {'display': 'none'}
-
-        return dbc.Row(additional_articles), "Load More", dash.no_update
-
-    @app.callback(
-        [Output('financials-modal', 'is_open'),
-         Output('financials-modal-title', 'children'),
-         Output('financials-modal-body', 'children')],
-        [Input({'type': 'stock-symbol', 'index': ALL}, 'n_clicks')],
-        [State('individual-stocks-store', 'data'),
-         State('financials-modal', 'is_open')]
-    )
-    def display_financials_modal(n_clicks, watchlist, is_open):
-        ctx = dash.callback_context
-
-        # Prevent the modal from opening if no click or all n_clicks are None
-        if not ctx.triggered or not watchlist or not any(n_clicks):
-            raise PreventUpdate
-
-        # Get the ID of the triggered button
-        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        if 'stock-symbol' not in triggered_id:
-            raise PreventUpdate  # Ensure the modal only opens when a stock symbol is clicked
-
-        # Extract the index from the triggered ID
-        index = json.loads(triggered_id)['index']
-        stock_symbol = watchlist[index]
-
-        # Fetch financials data
-        ticker = yf.Ticker(stock_symbol)
-        financials = ticker.financials
-        balance_sheet = ticker.balance_sheet
-        cashflow = ticker.cashflow
-        info = ticker.info
-
-        if financials is not None and not financials.empty:
-            income_statement_content = ut.create_financials_table(financials)
-            balance_sheet_content = ut.create_financials_table(balance_sheet)
-            cashflow_content = ut.create_financials_table(cashflow)
-            company_info_content = ut.create_company_info(info)
-
-            # Create tabs for the modal
-            modal_content = dbc.Tabs([
-                dbc.Tab(company_info_content, label="Company Info"),
-                dbc.Tab(balance_sheet_content, label="Balance Sheet"),
-                dbc.Tab(income_statement_content, label="Income Statement"),
-                dbc.Tab(cashflow_content, label="Cash Flow"),
-            ], active_tab="tab-0")  # Set the first tab as active by default
-        else:
-            modal_content = html.P(
-                "No financial data available for this stock.")
-
-        return True, f"Financials for {stock_symbol}", modal_content
-
-    @app.callback(
-        Output('financials-modal', 'is_open', allow_duplicate=True),
-        [Input('close-financials-modal', 'n_clicks')],
-        [State('financials-modal', 'is_open')],
-        prevent_initial_call=True
-    )
-    def close_financials_modal(n_clicks, is_open):
-        if n_clicks:
-            return not is_open
-        return is_open
-
-    @app.callback(
-        [Output("chatbot-modal", "is_open"),
-         Output("conversation-store", "data", allow_duplicate=True),
-         Output("chatbot-conversation", "children", allow_duplicate=True)],
-        [Input("open-chatbot-button", "n_clicks"),
-         Input("clear-button", "n_clicks")],
-        [State("chatbot-modal", "is_open"),
-         State('conversation-store', 'data'),
-         State('login-username-store', 'data'),
-         # Get the selected watchlist
-         State('saved-watchlists-dropdown', 'value'),
-         State('individual-stocks-store', 'data')],     # Get stocks from the selected watchlist
-        prevent_initial_call=True
-    )
-    def toggle_or_clear_chatbot(open_click, clear_click, is_open, conversation_history, username, selected_watchlist, watchlist_stocks):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return is_open, conversation_history, dash.no_update
-
-        # If the chatbot button is clicked or the clear button is clicked
-        if ctx.triggered[0]["prop_id"] in ["open-chatbot-button.n_clicks", "clear-button.n_clicks"]:
-            # Handle opening and closing the modal
-            if ctx.triggered[0]["prop_id"] == "open-chatbot-button.n_clicks" and is_open:
-                return not is_open, conversation_history, dash.no_update
-
-            watchlist_message = ""
-            personalized_greeting = "Hello! My name is Financio, your financial advisor 🤖."
-
-            # If the user is logged in
-            if username:
-                # Check if the watchlist is selected and stocks are available
-                if selected_watchlist and watchlist_stocks:
-                    # Generate the stock performance summaries for the selected watchlist
-                    performance_data = ut.get_stock_performance(
-                        watchlist_stocks)
-                    performance_summaries = [
-                        f"{symbol}: Latest - ${data['latest_close']:.2f}"
-                        for symbol, data in performance_data.items()
-                    ]
-                    watchlist_message = f"Here are the stocks on your selected watchlist and their performance: {'; '.join(performance_summaries)}."
-                else:
-                    watchlist_message = "You currently don't have a watchlist selected."
-
-                # Personalize greeting for logged-in users
-                personalized_greeting = f"Hello, {username}! My name is Financio, your financial advisor 🤖."
-            else:
-                # Handle the case when the user is not logged in
-                watchlist_message = "You're not logged in, so I don't have access to your watchlist."
-
-            # Initialize the conversation with a personalized message
-            conversation_history = [
-                {"role": "system", "content": "You are a helpful stock financial advisor."}]
-            introduction_message = f"{personalized_greeting} How can I assist you today? {watchlist_message}"
-            conversation_history.append(
-                {"role": "assistant", "content": introduction_message})
-
-            conversation_display = [
-                html.Div(
-                    [
-                        html.Span("🤖", className="robot-avatar",
-                                  style={"margin-right": "10px"}),
-                        html.Span(f"{introduction_message}",
-                                  className='chatbot-text'),
-                    ],
-                    className="chatbot-response fade-in"
+                            ),
+                            html.Img(
+                                src=article['thumbnail']['resolutions'][0]['url'],
+                                style={"max-width": "150px", "height": "auto", "margin-bottom": "10px", "loading": "lazy"},alt="stock news"
+                            ) if 'thumbnail' in article else html.Div(),
+                            html.P(f"Related Tickers: {related_tickers}" if related_tickers else "No related tickers available."),
+                            html.Footer(
+                                f"Published by: {publisher} | Published at: {datetime.utcfromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')}",
+                                style={"font-size": "12px", "margin-top": "auto"}
+                            )
+                        ], style={"min-height": "250px", "max-height": "350px", "display": "flex", "flex-direction": "column"})
+                    ),
+                    xs=12, md=6,  # Full width on mobile, half width on desktop
+                    className="mb-2"
                 )
-            ]
-            return True, conversation_history, conversation_display
+                articles.append(news_card)
 
-        return is_open, conversation_history, dash.no_update
+            news_content.append(dbc.Row(articles, className="news-row"))
 
-    @app.callback(
-        Output('forecast-graph', 'figure', allow_duplicate=True),
-        [Input('active-tab', 'data')],
-        [State('forecast-data-store', 'data')],
-        prevent_initial_call=True
-    )
-    def display_stored_forecast(active_tab, stored_forecast):
-        if active_tab == '🌡️ Forecast' and stored_forecast:
-            return stored_forecast
-        return dash.no_update
-    
-    
-    app.clientside_callback(
-        """
-        function(n1, n2, n3, n4, n5, is_open1, is_open2, is_open3, is_open4, is_open5) {
-            let triggered_id = dash_clientside.callback_context.triggered[0].prop_id.split('.')[0];
-    
-            return [
-                triggered_id === 'faq-q1' ? !is_open1 : is_open1,
-                triggered_id === 'faq-q2' ? !is_open2 : is_open2,
-                triggered_id === 'faq-q3' ? !is_open3 : is_open3,
-                triggered_id === 'faq-q4' ? !is_open4 : is_open4,
-                triggered_id === 'faq-q5' ? !is_open5 : is_open5
-            ];
+            if len(news) > max_articles:
+                news_content.append(
+                    dbc.Button("Load More", id={'type': 'load-more-button', 'index': symbol}, color='primary', size='sm', className='mb-2')
+                )
+                news_content.append(html.Div(id={'type': 'additional-news', 'index': symbol}))
+        else:
+            news_content.append(dbc.Col(html.P(f"No news found for {symbol}."), width=12))
+
+    return    dcc.Loading(id="loading-more-news", type="default", children=[html.Div(news_content)])
+
+                                 
+
+def fetch_analyst_recommendations(symbol):
+    ticker = yf.Ticker(symbol)
+    rec = ticker.recommendations
+    if rec is not None and not rec.empty:
+        return rec.tail(10)  # Fetch the latest 10 recommendations
+    return pd.DataFrame()  # Return an empty DataFrame if no data
+
+
+
+def get_stock_performance(symbols):
+    performance_data = {}
+    for symbol in symbols:
+        ticker = yf.Ticker(symbol)
+        # Fetch historical data
+        hist = ticker.history(period="1y")
+        # Fetch basic stock info
+        info = ticker.info
+        
+        # Fetch performance-related data
+        performance_data[symbol] = {
+            "latest_close": hist['Close'].iloc[-1] if not hist.empty else None,
+            "one_year_return": (hist['Close'].iloc[-1] / hist['Close'].iloc[0] - 1) * 100 if not hist.empty else None,
+            "52_week_high": info.get("fiftyTwoWeekHigh"),
+            "52_week_low": info.get("fiftyTwoWeekLow"),
+            "market_cap": info.get("marketCap"),
+            "pe_ratio": info.get("trailingPE"),
+            "dividend_yield": info.get("dividendYield"),
         }
-        """,
-        [Output("collapse-q1", "is_open"),
-         Output("collapse-q2", "is_open"),
-         Output("collapse-q3", "is_open"),
-         Output("collapse-q4", "is_open"),
-         Output("collapse-q5", "is_open")],
-        [Input("faq-q1", "n_clicks"),
-         Input("faq-q2", "n_clicks"),
-         Input("faq-q3", "n_clicks"),
-         Input("faq-q4", "n_clicks"),
-         Input("faq-q5", "n_clicks")],
-        [State("collapse-q1", "is_open"),
-         State("collapse-q2", "is_open"),
-         State("collapse-q3", "is_open"),
-         State("collapse-q4", "is_open"),
-         State("collapse-q5", "is_open")]
+
+    return performance_data
+
+
+def generate_recommendations_heatmap(dataframe, plotly_theme):
+    # Ensure the periods and recommendations are in the correct order
+    periods_order = ['-3m', '-2m', '-1m', '0m']  # Adjust according to your actual periods
+    recommendations_order = ['strongBuy', 'buy', 'hold', 'sell', 'strongSell']
+    
+    # Reshape the DataFrame to have the recommendations types as rows and the periods as columns
+    df_melted = dataframe.melt(id_vars=['period'], 
+                                value_vars=recommendations_order,
+                                var_name='Recommendation', 
+                                value_name='Count')
+    
+    # Ensure the period and recommendation type columns are categorical with a fixed order
+    df_melted['period'] = pd.Categorical(df_melted['period'], categories=periods_order, ordered=True)
+    df_melted['Recommendation'] = pd.Categorical(df_melted['Recommendation'], categories=recommendations_order, ordered=True)
+
+    # Pivot the DataFrame to get the correct format for the heatmap
+    df_pivot = df_melted.pivot(index='Recommendation', columns='period', values='Count')
+
+    # Create the heatmap using plotly.graph_objects to add text
+    fig = go.Figure(data=go.Heatmap(
+        z=df_pivot.values,
+        x=df_pivot.columns,
+        y=df_pivot.index,
+        colorscale='RdYlGn',  # Green for high, Red for low
+        reversescale=False,
+        text=df_pivot.values,  # Show numbers within the cells
+        texttemplate="%{text}",  # Format the text to show as is
+        hoverinfo="z",
+        showscale=False  # Disable the color scale
+    ))
+
+    # Update layout for better visuals, ensuring labels and grid lines are visible
+    fig.update_layout(
+        title=None,
+        autosize=True,  # Automatically adjust the size based on the container
+        xaxis_title="Period",
+        yaxis_title=None,
+        height=300,
+        dragmode=False,
+    
+        xaxis=dict(
+            autorange=False,
+            ticks="",
+            showticklabels=True,
+            automargin=True,  # Automatically adjust margins to fit labels
+            constrain='domain',  # Keep the heatmap within the plot area
+            domain=[0,0.85]
+        ),
+        template= plotly_theme,
+        margin=dict(l=0, r=0, t=0, b=0),  # Increase left and top margins to avoid cutting off
     )
 
-    app.clientside_callback(
-        """
-        function(n_clicks, is_open) {
-            if (n_clicks) {
-                return !is_open;
+    return fig
+
+
+def format_number(value):
+    """Format the number into thousands (K), millions (M), or billions (B)."""
+    if pd.isnull(value):
+        return "N/A"
+    elif value >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    elif value <= -1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    elif value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    elif value <= -1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    elif value >= 100_000:
+        return f"{value / 1_000:.1f}K"
+    elif value <= -100_000:
+        return f"{value / 1_000:.1f}K"
+    else:
+        return f"{value:.0f}"
+
+
+def create_financials_table(data):
+    # Transpose the financials data
+    data = data.T
+    data.index = pd.to_datetime(data.index).year
+    
+    # Format numbers as thousands, millions, or billions
+    data = data.applymap(format_number)
+
+    # Transpose again to switch rows and columns, then reverse the rows
+    data = data.T.reset_index()
+    data.columns.name = None  # Remove the name of the index column
+    data = data.iloc[::-1]  # Reverse the order of the rows
+    
+    # Ensure all column names are strings
+    data.columns = data.columns.astype(str)
+    
+    # Limit to the latest 4 years
+    data = data.iloc[:, :5]  # [:, :5] to include the 'index' column plus 4 years
+
+    # Create Dash DataTable for displaying financial data
+    financials_table = dash_table.DataTable(
+        data=data.to_dict('records'),
+        columns=[{"name": str(i), "id": str(i)} for i in data.columns],
+        style_table={'overflowX': 'auto'},
+        style_cell={
+            'textAlign': 'left', 
+            'whiteSpace': 'normal', 
+            'height': 'auto',
+            'backgroundColor': 'rgba(0, 0, 0, 0)'  # Transparent background for table cells
+        },
+        style_header={
+            'fontWeight': 'bold', 
+            'backgroundColor': 'rgba(0, 0, 0, 0)'  # Transparent background for headers
+        }
+
+    )
+
+    return dbc.Container([
+        html.Hr(),
+        financials_table
+    ])
+
+
+
+def create_company_info(info):
+    """Generate a simple table of company info."""
+    info_table = dbc.Table(
+        [
+            html.Tbody([
+                html.Tr([html.Th("Company Name"), html.Td(info.get("longName", "N/A"))]),
+                html.Tr([html.Th("Sector"), html.Td(info.get("sector", "N/A"))]),
+                html.Tr([html.Th("Industry"), html.Td(info.get("industry", "N/A"))]),
+                html.Tr([html.Th("Market Cap"), html.Td(format_number(info.get("marketCap", None)))]),
+                html.Tr([html.Th("Revenue"), html.Td(format_number(info.get("totalRevenue", None)))]),
+                html.Tr([html.Th("Gross Profits"), html.Td(format_number(info.get("grossProfits", None)))]),
+                html.Tr([html.Th("EBITDA"), html.Td(format_number(info.get("ebitda", None)))]),
+                html.Tr([html.Th("Net Income"), html.Td(format_number(info.get("netIncomeToCommon", None)))]),
+                html.Tr([html.Th("Dividend Yield"), html.Td(f"{info.get('dividendYield', 'N/A'):.2%}" if info.get("dividendYield") else "N/A")]),
+            ])
+        ],
+        bordered=True,
+        striped=True,
+        hover=True,
+    )
+
+    return dbc.Container([
+        # html.H5("Company Information"),
+        html.Hr(),
+        info_table
+    ])
+
+
+def validate_password(password):
+    # Check for minimum length
+    if len(password) < 8:
+        return "Password must be at least 8 characters long."
+    
+    # Check for at least one uppercase letter
+    if not re.search(r"[A-Z]", password):
+        return "Password must contain at least one uppercase letter."
+    
+    # Check for at least one lowercase letter
+    if not re.search(r"[a-z]", password):
+        return "Password must contain at least one lowercase letter."
+    
+    # Check for at least one digit
+    if not re.search(r"\d", password):
+        return "Password must contain at least one digit."
+    
+    # Check for at least one special character
+    # if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password):
+    #     return "Password must contain at least one special character."
+    
+    # If all conditions are met
+    return None
+
+
+def fetch_stock_data_watchlist(symbol):
+    """Fetch latest stock data for a given symbol."""
+    try:
+        stock = yf.Ticker(symbol)
+        hist = stock.history(period="5d")
+        if len(hist) < 2:
+            return None, None, None
+        latest_close = hist['Close'].iloc[-1]
+        previous_close = hist['Close'].iloc[-2]
+        change_percent = ((latest_close - previous_close) / previous_close) * 100
+        return previous_close, latest_close, change_percent
+    except Exception as e:
+        print(f"Error fetching data for {symbol}: {e}")
+        return None, None, None
+    
+    
+    
+def generate_watchlist_table(watchlist):
+    rows = []
+    for i, stock in enumerate(watchlist):
+        prev_close, latest_close, change_percent = fetch_stock_data_watchlist(stock)
+        if prev_close is not None:
+            # Determine the color based on the change percentage
+            color = 'green' if change_percent > 0 else 'red' if change_percent < 0 else 'black'
+            rows.append(
+                html.Tr([
+                    html.Td(html.A(stock, href="#", id={'type': 'stock-symbol', 'index': i}, 
+                                   style={"text-decoration": "none", "color": "bg-primary"}), 
+                            style={"verticalAlign": "middle"}),  # Vertically center the link
+                    html.Td(f"{latest_close:.2f}", style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td(f"{change_percent:.2f}%", style={"color": color, "verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}),
+                            style={"verticalAlign": "middle"})  # Vertically center the button
+                ])
+            )
+        else:
+            rows.append(
+                html.Tr([
+                    html.Td(stock, style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td("N/A", style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td("N/A", style={"verticalAlign": "middle"}),  # Vertically center the text
+                    html.Td(dbc.Button("X", color="danger", size="sm", id={'type': 'remove-stock', 'index': i}),
+                            style={"verticalAlign": "middle"})  # Vertically center the button
+                ])
+            )
+
+    return dbc.Table(
+        children=[
+            html.Thead(html.Tr([html.Th("Symbol"), html.Th("Latest"), html.Th("daily %"), html.Th("")])),
+            html.Tbody(rows)
+        ],
+        bordered=True,
+        hover=True,
+        responsive=True,
+        striped=True,
+        size="sm",
+        className="custom-table"  # Apply the custom class for the table
+    )
+
+
+def get_ticker(company_name):
+    yfinance = "https://query2.finance.yahoo.com/v1/finance/search"
+    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+    params = {"q": company_name, "quotes_count": 3}
+
+    res = requests.get(url=yfinance, params=params, headers={'User-Agent': user_agent})
+    data = res.json()
+
+    # Extract multiple ticker symbols, if available
+    company_codes = [quote['symbol'] for quote in data['quotes'][:3]]
+    
+    return company_codes
+
+
+
+def generate_forecast_data(selected_stocks, horizon):
+    """
+    Generate forecast data using Prophet for selected stocks and return the forecast results,
+    including KPIs for expected price, actual latest price, and percentage difference.
+    """
+    forecast_data = {}
+    for symbol in selected_stocks:
+        try:
+            df = yf.download(symbol, period='5y')  # Fetch 5 years of data
+            if df.empty:
+                raise ValueError(f"No data found for {symbol}")
+
+            df.reset_index(inplace=True)
+            # Prepare data for Prophet
+            df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+            model = Prophet(daily_seasonality=True)
+            
+            # Fit the model
+            model.fit(df_prophet)
+
+            # Make future predictions
+            future = model.make_future_dataframe(periods=horizon)
+            forecast = model.predict(future)
+
+            # Get the latest actual value from the historical data
+            latest_actual_price = df['Close'].iloc[-1]
+
+            # KPIs: Extract the expected price at the end of the horizon
+            expected_price = forecast['yhat'].iloc[-1]
+            expected_upper = forecast['yhat_upper'].iloc[-1]
+            expected_lower = forecast['yhat_lower'].iloc[-1]
+
+            # Calculate percentage difference between latest actual price and expected price
+            percentage_difference = ((expected_price - latest_actual_price) / latest_actual_price) * 100
+
+            # Store forecast data and KPIs
+            forecast_data[symbol] = {
+                'historical': df,
+                'forecast': forecast,
+                'kpi': {
+                    'expected_price': expected_price,
+                    'percentage_difference': percentage_difference,  # Include percentage difference
+                    'latest_actual_price': latest_actual_price,  # Include the latest actual price
+                    'upper_bound': expected_upper,
+                    'lower_bound': expected_lower
+                }
             }
-            return is_open;
-        }
-        """,
-        Output("toc-collapse", "is_open"),
-        Input("toc-toggle", "n_clicks"),
-        State("toc-collapse", "is_open")
+
+        except Exception as e:
+            forecast_data[symbol] = {
+                'error': str(e)
+            }
+
+    return forecast_data
+
+
+
+# def generate_forecast_data(selected_stocks, horizon):
+#     """
+#     Generate forecast data using Prophet for selected stocks and return the forecast results,
+#     including KPIs for expected price at the end of the forecast horizon.
+#     """
+#     forecast_data = {}
+#     for symbol in selected_stocks:
+#         try:
+#             df = yf.download(symbol, period='5y')  # Fetch 5 years of data
+#             if df.empty:
+#                 raise ValueError(f"No data found for {symbol}")
+
+#             df.reset_index(inplace=True)
+#             # Correct renaming of columns
+#             df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+#             model = Prophet(daily_seasonality=True)
+            
+#             model.fit(df_prophet)
+
+#             future = model.make_future_dataframe(periods=horizon)
+#             forecast = model.predict(future)
+
+#             # KPIs: Extract the expected price at the end of the horizon
+#             expected_price = forecast['yhat'].iloc[-1]
+#             expected_upper = forecast['yhat_upper'].iloc[-1]
+#             expected_lower = forecast['yhat_lower'].iloc[-1]
+
+#             forecast_data[symbol] = {
+#                 'historical': df,
+#                 'forecast': forecast,
+#                 'kpi': {
+#                     'expected_price': expected_price,
+#                     'upper_bound': expected_upper,
+#                     'lower_bound': expected_lower
+#                 }
+#             }
+
+#         except Exception as e:
+#             forecast_data[symbol] = {
+#                 'error': str(e)
+#             }
+#     return forecast_data
+
+
+
+# def generate_forecast_data(selected_stocks, horizon):
+#     """
+#     Generate forecast data using Prophet for selected stocks and return the forecast results.
+#     """
+#     forecast_data = {}
+#     for symbol in selected_stocks:
+#         try:
+#             df = yf.download(symbol, period='5y')  # Fetch 5 years of data
+#             if df.empty:
+#                 raise ValueError(f"No data found for {symbol}")
+
+#             df.reset_index(inplace=True)
+#             df_prophet = df[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+#             model = Prophet(daily_seasonality = True)
+            
+#             model.fit(df_prophet)
+
+#             future = model.make_future_dataframe(periods=horizon)
+#             forecast = model.predict(future)
+
+#             forecast_data[symbol] = {
+#                 'historical': df,
+#                 'forecast': forecast
+#             }
+
+#         except Exception as e:
+#             forecast_data[symbol] = {
+#                 'error': str(e)
+#             }
+#     return forecast_data
+
+# forecast_data = generate_forecast_data(["MSFT"],90)
+# 
+
+
+def generate_confirmation_token(email, server):
+    serializer = URLSafeTimedSerializer(server.config['SECRET_KEY'])
+    return serializer.dumps(email, salt='email-confirmation-salt')
+
+def confirm_token(token, server, expiration=3600):
+    serializer = URLSafeTimedSerializer(server.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(token, salt='email-confirmation-salt', max_age=expiration)
+    except Exception as e:
+        print(f"Token confirmation error: {e}")  # Add this line to log the error
+        return False
+    return email
+
+
+def page_not_found_layout():
+    return html.Div([
+        html.H1("404: Page Not Found"),
+        html.P("Sorry, the page you're looking for doesn't exist."),
+        dcc.Link('Go back to Home', href='/')
+    ])
+
+
+def create_blog_post(title, date, author, image_src, content_file, cta_text, cta_href, article_id):
+    return html.Div(
+        [
+            # Blog Article Title
+            html.H2(title, id=article_id, className="text-center my-4"),
+            html.P(f"By {author} | {date}", className="text-center text-muted mb-4"),
+
+            # Blog Image
+            html.Div(
+                html.Img(
+                    src=image_src, 
+                    alt=title, 
+                    # loading="lazy" ,
+                    className="img-fluid rounded", 
+                    style={"width": "auto", "max-width": "350px", "height": "auto"}  # Maintain original width but max 600px
+                ),
+                className="text-center mb-4"
+            ),
+
+            # Blog Content
+            html.Div(
+                dcc.Markdown(open(f"assets/{content_file}").read()),  # Load content from a Markdown file
+                className="p-4",
+                style={"line-height": "1.8", "font-size": "18px", "color": "#343a40", "background-color": "#f9f9f9", "border-radius": "10px"}
+            ),
+
+            # Call to Action Button
+            html.Div(
+                dbc.Button(cta_text, href=cta_href, color="primary", className="d-block mx-auto my-4", style={"width": "100%", "max-width": "400px", "font-size": "20px"}),
+                className="text-center"
+            ),
+        ],
+        className="blog-post",
     )
+
+
