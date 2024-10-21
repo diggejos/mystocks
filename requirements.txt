@@ -1,6 +1,6 @@
 dash==2.9.2
 dash-bootstrap-components
-yfinance
+yfinance==0.2.44
 plotly
 pandas
 requests
