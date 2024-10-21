@@ -547,21 +547,7 @@ def paywall_logged_out():
                 dbc.Button("Log In", href="/login", color="secondary", size="lg", className="mt-3"),
             ], style={'text-align': 'center'}),
         ],
-        style={
-            'text-align': 'center',
-            'font-size': '20px',
-            'font-weight': 'bold',
-            'padding': '10px',
-            'color': 'black',
-            'background-color': '#007bff',
-            'position': 'fixed',
-            'top': '0',
-            'left': '0',
-            'right': '0',
-            'bottom': '0',
-            'z-index': '1000'
-        }
-       
+        style={'text-align': 'center', 'font-size': '20px', 'font-weight': 'bold', 'padding': '10px', 'color': 'black', 'background-color': '#007bff'}
     )
 
 
