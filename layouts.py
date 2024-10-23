@@ -48,8 +48,7 @@ def create_navbar(themes):
                 dbc.Collapse(
                     dbc.Nav(
                         [
-                            # dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
-                            dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/dashboard#prices", active="exact")),
+                            dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
 
                             # About Dropdown with Demo, FAQs, and Blog
                             dbc.DropdownMenu(
