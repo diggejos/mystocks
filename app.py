@@ -186,6 +186,8 @@ def google_callback():
                 subscription_status=subscription_status,  # Set subscription status based on plan
                 confirmed=True  # Google users are automatically confirmed
             )
+            ut.send_welcome_email(email, username, mail)
+            ut.send_watchlist_email(email, username,mail,app)
             db.session.add(user)
             db.session.commit()
             print(f"New user created: {user.username} with {subscription_status} plan.")
