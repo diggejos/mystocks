@@ -9,7 +9,7 @@ import re
 import requests
 from prophet import Prophet
 from flask_mail import Message
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializerf
 from flask import url_for
 from flask import render_template
 from models import User
@@ -66,14 +66,14 @@ def send_welcome_email(user_email, username, mail):
     mail.send(msg)
 
 
-def send_watchlist_email(user_email, username,mail,app):
-    with app.app_context():
+def send_watchlist_email(user_email, username, mail, app):
+    with app.server.app_context():  # Use app.server.app_context() here
         msg = Message("How to Create Your First Watchlist!", 
                       recipients=[user_email], 
                       sender="mystocks.monitoring@gmail.com")
 
         # Attach the GIF
-        with app.open_resource(os.path.join('assets', 'watchlist-tutorial.gif')) as gif:
+        with app.server.open_resource(os.path.join('assets', 'watchlist-tutorial.gif')) as gif:
             msg.attach("watchlist-tutorial.gif", "image/gif", gif.read())
 
         # Use cid to reference the attached GIF in the email body
