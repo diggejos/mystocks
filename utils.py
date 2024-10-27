@@ -9,7 +9,7 @@ import re
 import requests
 from prophet import Prophet
 from flask_mail import Message
-from itsdangerous import URLSafeTimedSerializerf
+from itsdangerous import URLSafeTimedSerializer
 from flask import url_for
 from flask import render_template
 from models import User
