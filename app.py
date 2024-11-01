@@ -988,7 +988,6 @@ def update_watchlist_management_layout(login_status):
         return True, True,True,True,True,dash.no_update,dash.no_update
 
 
-
 app.clientside_callback(
     """
     function(click_n_clicks, login_status, is_overlay_open) {
