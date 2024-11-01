@@ -1262,7 +1262,6 @@ def display_profile(pathname, login_status, username):
         return dash.no_update, dash.no_update, dash.no_update
     raise PreventUpdate
 
-
 @app.callback(
     [
         Output('profile-username', 'disabled'),
@@ -1277,7 +1276,7 @@ def display_profile(pathname, login_status, username):
         Output('profile-req-uppercase', 'style'),
         Output('profile-req-lowercase', 'style'),
         Output('profile-req-digit', 'style'),
-        Output('profile-req-special', 'style'),
+        # Removed special character requirement
         Output('toggle-password-fields', 'style'),
         Output('password-fields-container', 'style'),
         Output('profile-output', 'children')
@@ -1299,7 +1298,8 @@ def display_profile(pathname, login_status, username):
     prevent_initial_call=True
 )
 def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_clicks, 
-                           username, email, current_password, new_password, confirm_password, current_username):
+                            username, email, current_password, new_password, confirm_password, current_username):
+
     ctx = dash.callback_context
     if not ctx.triggered:
         raise PreventUpdate
@@ -1311,7 +1311,7 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
                 {"display": "none"},  # Hide Edit button
                 {"display": "inline-block"},  # Show Save button
                 {"display": "inline-block"},  # Show Cancel button
-                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},  # Show requirements
+                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},  # Show requirements
                 {"display": "inline-block"},  # Show Change Password button
                 {"display": "none"},  # Hide password fields by default
                 "")
@@ -1323,7 +1323,7 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
                     {"display": "inline-block"},  # Show Edit button
                     {"display": "none"},  # Hide Save button
                     {"display": "none"},  # Hide Cancel button
-                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},  # Hide requirements
+                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},  # Hide requirements
                     {"display": "none"},  # Hide Change Password button
                     {"display": "none"},  # Hide password fields
                     dbc.Alert("Username and Email are required.", color="danger"))
@@ -1332,14 +1332,14 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
         if user and not bcrypt.check_password_hash(user.password, current_password):
             return (False, True, True, True, True,
                     {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
-                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
                     {"display": "inline-block"}, {"display": "none"},
                     dbc.Alert("Current password is incorrect.", color="danger"))
 
         if new_password and new_password != confirm_password:
             return (False, True, True, True, True,
                     {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
-                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
                     {"display": "inline-block"}, {"display": "none"},
                     dbc.Alert("New passwords do not match.", color="danger"))
 
@@ -1348,7 +1348,7 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
             if password_error:
                 return (False, True, True, True, True,
                         {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
-                        {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                        {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
                         {"display": "inline-block"}, {"display": "none"},
                         dbc.Alert(password_error, color="danger"))
 
@@ -1362,30 +1362,31 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
             session['username'] = username
             return (True, True, True, True, True,
                     {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
-                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                    {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, 
                     {"display": "none"}, {"display": "none"},
                     dbc.Alert("Profile updated successfully!", color="success"))
 
     elif triggered_id == 'cancel-edit-button':
         return (True, True, True, True, True,
                 {"display": "inline-block"}, {"display": "none"}, {"display": "none"},
-                {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"},
+                {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, 
                 {"display": "none"}, {"display": "none"}, "")
 
     elif triggered_id == 'toggle-password-fields':
         if toggle_pw_clicks % 2 == 1:
             return (False, True, True, False, False,  # Enable password fields
                     {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
-                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                    {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},  # Show requirements
                     {"display": "inline-block"}, {"display": "block"},  # Show password fields
                     "")
         return (False, True, True, True, True,  # Disable password fields
                 {"display": "none"}, {"display": "inline-block"}, {"display": "inline-block"},
-                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},
+                {"display": "block"}, {"display": "block"}, {"display": "block"}, {"display": "block"},  # Show requirements
                 {"display": "inline-block"}, {"display": "none"},  # Hide password fields
                 "")
 
     raise PreventUpdate
+
 
 
 @app.callback(
