@@ -15,6 +15,8 @@ from models import User, db, Watchlist, StockKPI
 from dash.exceptions import PreventUpdate
 from layouts import themes
 import asyncio
+from dash import no_update
+
 
 
 def get_data_callbacks(app, server, cache):
