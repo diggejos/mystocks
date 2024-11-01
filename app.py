@@ -247,6 +247,7 @@ with app.server.app_context():
     db.create_all()
 
 
+
 app.layout = html.Div([
     # Store to keep the conversation history
     dcc.Store(id='conversation-store', data=[]),
@@ -770,7 +771,7 @@ def display_page_and_update_ui(pathname):
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
         return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-  
+
 
     # Default to dashboard if no specific path matches
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
@@ -986,6 +987,7 @@ def update_watchlist_management_layout(login_status):
     else:
         # return True, True, False, True, True  # Disable components and make the dropdown not clearable
         return True, True,True,True,True,dash.no_update,dash.no_update
+
 
 
 app.clientside_callback(
@@ -1261,6 +1263,7 @@ def display_profile(pathname, login_status, username):
         return dash.no_update, dash.no_update, dash.no_update
     raise PreventUpdate
 
+
 @app.callback(
     [
         Output('profile-username', 'disabled'),
@@ -1418,6 +1421,8 @@ def toggle_cancel_modal(open_click, close_click, confirm_click, is_open):
     
     return is_open
 
+
+
 @app.callback(
     Output('cancel-subscription-btn', 'style'),
     [Input('url', 'pathname')],
@@ -1506,6 +1511,8 @@ def update_stylesheet(theme):
     return theme
 
 
+
+
 @app.callback(
     Output('meta-description', 'content'),
     Input('url', 'pathname')
@@ -1528,6 +1535,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 
 app.index_string = '''
