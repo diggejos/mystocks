@@ -182,7 +182,7 @@ def register_auth_callbacks(app, server, mail):
                 # Send welcome email
                 ut.send_welcome_email(email, username, mail)
                 
-                ut.send_watchlist_email(email, username,mail,app)
+                ut.schedule_watchlist_email(email, username,mail,app)
 
     
                 return dbc.Alert("Registration successful! Please confirm your email.", color="success")
@@ -250,11 +250,14 @@ def register_auth_callbacks(app, server, mail):
         [Output('profile-req-length', 'className'),
          Output('profile-req-uppercase', 'className'),
          Output('profile-req-lowercase', 'className'),
-         Output('profile-req-digit', 'className')],
+         Output('profile-req-digit', 'className'),
+         # Output('profile-req-special', 'className')
+         ],
         Input('profile-password', 'value')
     )
     def update_profile_password_requirements(password):
         return update_password_requirements(password)
+    
     
     @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
@@ -312,3 +315,7 @@ def register_auth_callbacks(app, server, mail):
         Output('theme-dropdown', 'disabled'),
         Input('login-status', 'data')
     )
+
+    
+
+
