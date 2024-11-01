@@ -86,10 +86,9 @@ def get_data_callbacks(app, server, cache):
     preloaded_prices = cache.get('prices_data')
     preloaded_news = cache.get('news_data')
     
-
     
-
     from dash import no_update
+
 
     @app.callback(
         [
@@ -100,7 +99,8 @@ def get_data_callbacks(app, server, cache):
             Output('saved-watchlists-dropdown', 'options'),
             Output('saved-watchlists-dropdown', 'value'),
             Output('new-watchlist-name', 'value'),
-            Output('individual-stocks-store', 'data',allow_duplicate=True)
+            Output('individual-stocks-store', 'data'),
+            Output('save_modal_triggered', 'data')
         ],
         [
             Input('create-watchlist-button', 'n_clicks'),
@@ -108,62 +108,60 @@ def get_data_callbacks(app, server, cache):
             Input('delete-watchlist-button', 'n_clicks'),
             Input('confirm-delete-watchlist', 'n_clicks'),
             Input('cancel-save-watchlist', 'n_clicks'),
-            Input('cancel-delete-watchlist', 'n_clicks'),
-            Input('login-status', 'data')
+            Input('cancel-delete-watchlist', 'n_clicks')
         ],
         [
             State('new-watchlist-name', 'value'),
             State('individual-stocks-store', 'data'),
             State('saved-watchlists-dropdown', 'value'),
-            State('login-username-store', 'data')
+            State('login-username-store', 'data'),
+            State('save_modal_triggered', 'data')
         ],
         prevent_initial_call=True
     )
     def manage_watchlists(
         create_clicks, confirm_save_clicks, delete_clicks, confirm_delete_clicks, 
-        cancel_save_clicks, cancel_delete_clicks, login_status,
-        new_watchlist_name, stocks, selected_watchlist_id, username
+        cancel_save_clicks, cancel_delete_clicks,
+        new_watchlist_name, stocks, selected_watchlist_id, username, save_modal_triggered
     ):
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id']
         open_save_modal, open_delete_modal = False, False
     
-        # Check if the user is logged in
-        if not username or not login_status:
-            return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", stocks
+        # Ensure user is logged in
+        if not username:
+            return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", stocks, False
     
-        # Fetch the user
+        # Fetch user and load watchlists
         user = User.query.filter_by(username=username).first()
         if not user:
-            return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", stocks
+            return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", stocks, False
     
-        # Load current watchlists
+        # Load watchlists for dropdown
         watchlists = Watchlist.query.filter_by(user_id=user.id).all()
         watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
     
-        # Handle save button click
+        # Handle "Save" button click - open save modal only if this button was clicked
         if trigger_id == 'create-watchlist-button.n_clicks':
-            # Open modal to confirm save if duplicate or existing watchlist is selected
+            save_modal_triggered = True  # Mark that the save modal was intentionally triggered
             if selected_watchlist_id or any(w.name == new_watchlist_name for w in watchlists):
-                open_save_modal = True
                 overwrite_message = (
                     "Overwrite the existing watchlist?" if selected_watchlist_id else 
                     "A watchlist with this name exists. Do you want to overwrite it?"
                 )
-                return open_save_modal, open_delete_modal, overwrite_message, {"display": "none"}, watchlist_options, no_update, "", stocks
+                return True, False, overwrite_message, {"display": "none"}, watchlist_options, no_update, "", stocks, save_modal_triggered
     
-            # Prompt for a new watchlist name
-            open_save_modal = True
-            return open_save_modal, open_delete_modal, "", {"display": "inline-block"}, watchlist_options, no_update, "", stocks
+            # Prompt for new watchlist name if no duplicates
+            return True, False, "", {"display": "inline-block"}, watchlist_options, no_update, "", stocks, save_modal_triggered
     
-        # Confirm save or overwrite action
-        elif trigger_id == 'confirm-save-watchlist.n_clicks':
+        # Confirm save or overwrite action only if the modal was intentionally triggered
+        elif trigger_id == 'confirm-save-watchlist.n_clicks' and save_modal_triggered:
             if selected_watchlist_id:
                 watchlist = Watchlist.query.get(selected_watchlist_id)
                 if watchlist and watchlist.user_id == user.id:
                     watchlist.stocks = json.dumps(stocks)
                     db.session.commit()
-                    return False, False, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", stocks
+                    return False, False, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", stocks, False
             elif new_watchlist_name:
                 duplicate = Watchlist.query.filter_by(user_id=user.id, name=new_watchlist_name).first()
                 if duplicate:
@@ -175,14 +173,15 @@ def get_data_callbacks(app, server, cache):
                 db.session.commit()
                 selected_watchlist_id = new_watchlist.id
     
-            watchlists = Watchlist.query.with_entities(Watchlist.id, Watchlist.name).filter_by(user_id=user.id).all()
+            # Reload watchlists after save
+            watchlists = Watchlist.query.filter_by(user_id=user.id).all()
             options = [{'label': w.name, 'value': w.id} for w in watchlists]
-            return False, False, "", {"display": "none"}, options, selected_watchlist_id, "", stocks
+            return False, False, "", {"display": "none"}, options, selected_watchlist_id, "", stocks, False
     
         # Handle delete button click
         elif trigger_id == 'delete-watchlist-button.n_clicks' and selected_watchlist_id:
             open_delete_modal = True
-            return open_save_modal, open_delete_modal, "", {"display": "none"}, no_update, no_update, no_update, no_update
+            return open_save_modal, open_delete_modal, "", {"display": "none"}, no_update, no_update, no_update, no_update, save_modal_triggered
     
         # Confirm deletion
         elif trigger_id == 'confirm-delete-watchlist.n_clicks' and selected_watchlist_id:
@@ -192,53 +191,76 @@ def get_data_callbacks(app, server, cache):
                 db.session.commit()
                 selected_watchlist_id = None
     
-            watchlists = Watchlist.query.with_entities(Watchlist.id, Watchlist.name).filter_by(user_id=user.id).all()
+            # Reload watchlists after delete
+            watchlists = Watchlist.query.filter_by(user_id=user.id).all()
             options = [{'label': w.name, 'value': w.id} for w in watchlists]
-            return False, False, "", {"display": "none"}, options, selected_watchlist_id, "", no_update
+            return False, False, "", {"display": "none"}, options, selected_watchlist_id, "", no_update, save_modal_triggered
     
-        # Cancel modal actions
+        # Cancel modal actions and reset `save_modal_triggered`
         elif trigger_id in ['cancel-save-watchlist.n_clicks', 'cancel-delete-watchlist.n_clicks']:
-            return False, False, "", {"display": "none"}, no_update, no_update, "", stocks
+            return False, False, "", {"display": "none"}, no_update, no_update, "", stocks, False
     
-        return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", stocks
+        return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", stocks, save_modal_triggered
+
+   
+     
 
     @app.callback(
-        Output('individual-stocks-store', 'data'),
-        [
-            Input('saved-watchlists-dropdown', 'value'),
-            Input('login-status', 'data')
-        ],
-        [
-            State('login-username-store', 'data'),
-            State('individual-stocks-store', 'data')  # Track existing stocks to avoid unnecessary reloads
-        ],
+        Output('individual-stocks-store', 'data', allow_duplicate=True),
+        [Input('saved-watchlists-dropdown', 'value')],
+        [State('login-username-store', 'data')],
         prevent_initial_call=True
     )
-    def load_watchlist(watchlist_id, login_status, username, current_stocks):
-        # Only proceed if the user is logged in
-        if login_status and username:
+    def load_watchlist(watchlist_id, username):
+        # Ensure user is logged in and watchlist is selected
+        if username and watchlist_id:
             user = User.query.filter_by(username=username).first()
-            if not user:
-                return current_stocks  # Avoid reload if user not found
-    
-            # Load selected watchlist if a specific one is chosen
-            if watchlist_id:
+            if user:
                 watchlist = Watchlist.query.get(watchlist_id)
                 if watchlist and watchlist.user_id == user.id:
                     return json.loads(watchlist.stocks)
     
-            # No watchlist selected; use default or most recent
-            default_watchlist = Watchlist.query.filter_by(user_id=user.id, is_default=True).first()
-            if default_watchlist:
-                return json.loads(default_watchlist.stocks)
+        # Return empty if no valid watchlist
+        return []
+
+
+    # @app.callback(
+    #     Output('individual-stocks-store', 'data',allow_duplicate=True),
+    #     [
+    #         Input('saved-watchlists-dropdown', 'value'),
+    #         Input('login-status', 'data')
+    #     ],
+    #     [
+    #         State('login-username-store', 'data'),
+    #         State('individual-stocks-store', 'data')  # Track existing stocks to avoid unnecessary reloads
+    #     ],
+    #     prevent_initial_call=True
+    # )
+    # def load_watchlist(watchlist_id, login_status, username, current_stocks):
+    #     # Only proceed if the user is logged in
+    #     if login_status and username:
+    #         user = User.query.filter_by(username=username).first()
+    #         if not user:
+    #             return current_stocks  # Avoid reload if user not found
     
-            # Use the most recent if no default is set
-            recent_watchlist = Watchlist.query.filter_by(user_id=user.id).order_by(Watchlist.id.desc()).first()
-            if recent_watchlist:
-                return json.loads(recent_watchlist.stocks)
+    #         # Load selected watchlist if a specific one is chosen
+    #         if watchlist_id:
+    #             watchlist = Watchlist.query.get(watchlist_id)
+    #             if watchlist and watchlist.user_id == user.id:
+    #                 return json.loads(watchlist.stocks)
     
-        # Return the current stocks by default to avoid unnecessary reloads
-        return current_stocks
+    #         # No watchlist selected; use default or most recent
+    #         default_watchlist = Watchlist.query.filter_by(user_id=user.id, is_default=True).first()
+    #         if default_watchlist:
+    #             return json.loads(default_watchlist.stocks)
+    
+    #         # Use the most recent if no default is set
+    #         recent_watchlist = Watchlist.query.filter_by(user_id=user.id).order_by(Watchlist.id.desc()).first()
+    #         if recent_watchlist:
+    #             return json.loads(recent_watchlist.stocks)
+    
+    #     # Return the current stocks by default to avoid unnecessary reloads
+    #     return current_stocks
     
 
         
