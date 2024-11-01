@@ -202,7 +202,7 @@ def get_data_callbacks(app, server, cache):
     
         return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", stocks
 
-       @app.callback(
+    @app.callback(
         Output('individual-stocks-store', 'data'),
         [
             Input('saved-watchlists-dropdown', 'value'),
