@@ -250,7 +250,7 @@ def register_auth_callbacks(app, server, mail):
         [Output('profile-req-length', 'className'),
          Output('profile-req-uppercase', 'className'),
          Output('profile-req-lowercase', 'className'),
-         Output('profile-req-digit', 'className'),
+         Output('profile-req-digit', 'className')],
         Input('profile-password', 'value')
     )
     def update_profile_password_requirements(password):
