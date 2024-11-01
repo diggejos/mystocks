@@ -477,50 +477,69 @@ def create_footer():
         className="footer"
     )
 
+
+
 def create_watchlist_management_layout():
     return dbc.Container([
-
+        
         # Create a clickable area to trigger the overlay
         html.Div(
             id="clickable-watchlist-area",  # ID for the clickable area
             children=[
-                html.Label([
-                    "Saved ",
-                    html.Span("Watchlists", className="bg-success text-white rounded px-2")
+        # Watchlist dropdown for selecting saved watchlists
+            dcc.Dropdown(
+                id='saved-watchlists-dropdown',
+                placeholder="Select a saved Watchlist",
+                options=[],
+                disabled=False,
+                searchable=False,
+                style={"margin-bottom": "10px"}
+            ),
+            
+            # Save button to trigger the modal for naming a new watchlist or overwriting
+            dbc.Button("💾 Save", id='create-watchlist-button', color='primary', className="small-button"),
+    
+            # Delete button to delete the selected watchlist
+            dbc.Button("X Delete", id='delete-watchlist-button', color='danger', className="small-button", style={"margin-left": "10px"}),
+    
+            # Modal for entering or confirming watchlist save
+            dbc.Modal([
+                dbc.ModalHeader("Save Watchlist"),
+                dbc.ModalBody([
+                    html.Div(id="overwrite-warning", style={"color": "red"}),
+                    dcc.Input(
+                        id='new-watchlist-name',
+                        placeholder="Enter Watchlist Name",
+                        className="form-control",
+                        style={"margin-bottom": "10px", "display": "none"}
+                    )
                 ]),
-      
-                dcc.Dropdown(
-                        id='saved-watchlists-dropdown',
-                        placeholder="Select a saved Watchlist",
-                        options=[],
-                        disabled=False,
-                        searchable=False,
-                        style={"margin-bottom": "10px"}
-                ),
-                
-                dcc.Input(
-                    id='new-watchlist-name',
-                    placeholder="Enter Watchlist Name and save it",
-                    className="form-control",
-                    disabled=True
-                ),
-                dbc.Button("💾 save", id='create-watchlist-button', color='primary', className="grayed-out small-button"),
-                dbc.Button("X delete", id='delete-watchlist-button', color='danger', className="grayed-out small-button")
-            ],
-            n_clicks=0,  # Initialize click counter
-            style={'border': '1px transparent', 'border-radius': '5px', 'padding': '10px', 'cursor': 'pointer'}
-        ),
-        
-        # Optional: You can add more content if needed
+                dbc.ModalFooter([
+                    dbc.Button("Save", id='confirm-save-watchlist', color='primary'),
+                    dbc.Button("Cancel", id='cancel-save-watchlist', color='secondary', className="ml-auto")
+                ])
+            ], id="save-watchlist-modal", is_open=False),
+            
+            # Delete confirmation modal
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Confirm Delete"),
+                    dbc.ModalBody("Are you sure you want to delete this watchlist?"),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button("Yes, Delete", id="confirm-delete-watchlist", color="danger"),
+                            dbc.Button("Cancel", id="cancel-delete-watchlist", color="secondary"),
+                        ]
+                    ),
+                ],
+                id="delete-watchlist-modal",
+                is_open=False,
+            )
+            
+        ])
+
     ])
 
-# Overlay component added to the main layout
-overlay = dbc.Offcanvas(
-    "You need to be logged in to perform this action",
-    id="login-overlay",
-    is_open=False,
-    title="Login Required"
-)
 
 
 
