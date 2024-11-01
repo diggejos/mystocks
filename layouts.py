@@ -49,6 +49,7 @@ def create_navbar(themes):
                     dbc.Nav(
                         [
                             dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
+                            # dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/dashboard#prices", active="exact")),
 
                             # About Dropdown with Demo, FAQs, and Blog
                             dbc.DropdownMenu(
@@ -542,8 +543,6 @@ def create_watchlist_management_layout():
 
 
 
-
-
 def paywall_logged_out():
     return html.Div(
         className="bg-light bg-primary-with-shadow",
@@ -795,7 +794,8 @@ def create_dashboard_layout(watchlist_management_layout):
                     id="tabs",
                     active_tab="prices-tab",
                     children=[
-                        dbc.Tab(label='🌡️ Forecast', tab_id='forecast-tab', children=[
+
+                        dbc.Tab(label='🌡️ Forecast', tab_id='forecast-tab',children=[
                             dbc.Card(
                                 dbc.CardBody([
                                     html.P([
@@ -909,7 +909,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                             {'label': 'Medium Risk', 'value': 'medium'},
                                             {'label': 'High Risk', 'value': 'high'},
                                         ],
-                                        value='low',  # Default to medium risk
+                                        value='medium',  # Default to medium risk
                                         placeholder="Select Risk Tolerance",
                                         clearable=False,
                                         searchable=False,
@@ -1069,7 +1069,8 @@ def create_dashboard_layout(watchlist_management_layout):
             ], width=12)
         ], className="mb-4")
     ], fluid=True)
-
+                                                 
+                                                 
 def create_profile_layout():
     return dbc.Container([
         dbc.Row([
@@ -1078,20 +1079,16 @@ def create_profile_layout():
                     dbc.CardBody([
                         html.H1("👩🏻‍💻 User Profile", className="text-center"),
 
-                        # Username field
                         dbc.Label("Username"),
                         dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
 
-                        # Email field (permanently disabled)
                         dbc.Label("Email"),
                         dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
 
-                        # Subscription status
                         dbc.Label("Subscription Status"),
                         html.Div(id='profile-subscription', className='form-control mb-3'),
 
-                        # Password section hidden initially
-                        dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),  # Hidden by default
+                        dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),
                         
                         html.Div([
                             dbc.Label("Current Password"),
@@ -1100,19 +1097,19 @@ def create_profile_layout():
                             dbc.Label("New Password"),
                             dcc.Input(id='profile-password', type='password', placeholder="Enter new password", className='form-control mb-3'),
 
-                            # Password requirement list
+                            # Updated Password requirement list - no special character requirement
                             html.Ul([
                                 html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
                                 html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
                                 html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
-                                html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
-                                # html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
+                                html.Li("At least one digit", id='profile-req-digit', className='text-muted')
                             ], className='mb-3'),
 
                             dbc.Label("Confirm New Password"),
                             dcc.Input(id='profile-confirm-password', type='password', placeholder="Confirm new password", className='form-control mb-3'),
                             
-                        ], id='password-fields-container', style={"display": "none"}),  # Password fields hidden by default
+                        ], id='password-fields-container', style={"display": "none"}),
+
                         dbc.Col(dbc.Button("Cancel Subscription", id="cancel-subscription-btn", color="danger", className="ml-auto")),
                         dbc.Modal(
                             [
@@ -1122,8 +1119,8 @@ def create_profile_layout():
                                     html.Ul([
                                         html.Li("🔒 Personalized Watchlists"),
                                         html.Li("📈 Analyst recommendations"),
-                                        html.Li("🚀 Stock suggestions based on KPIs"),
-                                    ]),
+                                        html.Li("🚀 Stock suggestions based on KPIs")
+                                    ])
                                 ]),
                                 dbc.ModalFooter([
                                     dbc.Button("No, Keep Subscription", id="close-cancel-modal-btn", className="ml-auto"),
@@ -1131,26 +1128,107 @@ def create_profile_layout():
                                 ])
                             ],
                             id="cancel-subscription-modal",
-                            centered=True,
+                            centered=True
                         ),
+
                         html.Div(id="subscription-status", className="mt-4"),
 
-
-                        # Buttons aligned to the right
                         html.Div([
                             dbc.Button("Edit", id='edit-profile-button', color='primary', className='me-2'),
                             dbc.Button("Save", id='save-profile-button', color='success', className='me-2', style={"display": "none"}),
                             dbc.Button("Cancel", id='cancel-edit-button', color='danger', style={"display": "none"})
                         ], style={"float": "right"}),
-                        
 
-                        # Output area for messages
                         html.Div(id='profile-output', className='mt-3')
                     ])
                 ])
             ], width=12, md=6, className="mx-auto")
         ])
     ], fluid=True)
+
+
+
+# def create_profile_layout():
+#     return dbc.Container([
+#         dbc.Row([
+#             dbc.Col([
+#                 dbc.Card([
+#                     dbc.CardBody([
+#                         html.H1("👩🏻‍💻 User Profile", className="text-center"),
+
+#                         # Username field
+#                         dbc.Label("Username"),
+#                         dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
+
+#                         # Email field (permanently disabled)
+#                         dbc.Label("Email"),
+#                         dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
+
+#                         # Subscription status
+#                         dbc.Label("Subscription Status"),
+#                         html.Div(id='profile-subscription', className='form-control mb-3'),
+
+#                         # Password section hidden initially
+#                         dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),  # Hidden by default
+                        
+#                         html.Div([
+#                             dbc.Label("Current Password"),
+#                             dcc.Input(id='profile-current-password', type='password', placeholder="Enter current password", className='form-control mb-3'),
+
+#                             dbc.Label("New Password"),
+#                             dcc.Input(id='profile-password', type='password', placeholder="Enter new password", className='form-control mb-3'),
+
+#                             # Password requirement list
+#                             html.Ul([
+#                                 html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
+#                                 html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
+#                                 html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
+#                                 html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
+#                                 # html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
+#                             ], className='mb-3'),
+
+#                             dbc.Label("Confirm New Password"),
+#                             dcc.Input(id='profile-confirm-password', type='password', placeholder="Confirm new password", className='form-control mb-3'),
+                            
+#                         ], id='password-fields-container', style={"display": "none"}),  # Password fields hidden by default
+#                         dbc.Col(dbc.Button("Cancel Subscription", id="cancel-subscription-btn", color="danger", className="ml-auto")),
+#                         dbc.Modal(
+#                             [
+#                                 dbc.ModalHeader("Confirm Cancelation"),
+#                                 dbc.ModalBody([
+#                                     html.P("Are you sure you want to cancel your subscription? You will lose access to the following features:"),
+#                                     html.Ul([
+#                                         html.Li("🔒 Personalized Watchlists"),
+#                                         html.Li("📈 Analyst recommendations"),
+#                                         html.Li("🚀 Stock suggestions based on KPIs"),
+#                                     ]),
+#                                 ]),
+#                                 dbc.ModalFooter([
+#                                     dbc.Button("No, Keep Subscription", id="close-cancel-modal-btn", className="ml-auto"),
+#                                     dbc.Button("Yes, Cancel Subscription", id="confirm-cancel-btn", color="bg-secondary")
+#                                 ])
+#                             ],
+#                             id="cancel-subscription-modal",
+#                             centered=True,
+#                         ),
+#                         html.Div(id="subscription-status", className="mt-4"),
+
+
+#                         # Buttons aligned to the right
+#                         html.Div([
+#                             dbc.Button("Edit", id='edit-profile-button', color='primary', className='me-2'),
+#                             dbc.Button("Save", id='save-profile-button', color='success', className='me-2', style={"display": "none"}),
+#                             dbc.Button("Cancel", id='cancel-edit-button', color='danger', style={"display": "none"})
+#                         ], style={"float": "right"}),
+                        
+
+#                         # Output area for messages
+#                         html.Div(id='profile-output', className='mt-3')
+#                     ])
+#                 ])
+#             ], width=12, md=6, className="mx-auto")
+#         ])
+#     ], fluid=True)
 
    
        
