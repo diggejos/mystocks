@@ -357,11 +357,7 @@ def validate_password(password):
     # Check for at least one digit
     if not re.search(r"\d", password):
         return "Password must contain at least one digit."
-    
-    # Check for at least one special character
-    # if not re.search(r"[!@#$%^&*(),.?\":{}|<>_]", password):
-    #     return "Password must contain at least one special character."
-    
+
     # If all conditions are met
     return None
 
