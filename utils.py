@@ -68,8 +68,8 @@ def send_welcome_email(user_email, username, mail):
 
 def send_watchlist_email(user_email, username, mail, app):
     with app.server.app_context():  # Use app.server.app_context() here
-        msg = Message("How to Create Your First Watchlist!", 
-                      recipients=[user_email], 
+        msg = Message("How to Create Your First Watchlist!",
+                      recipients=[user_email],
                       sender="mystocks.monitoring@gmail.com")
 
         # Attach the GIF
@@ -77,7 +77,8 @@ def send_watchlist_email(user_email, username, mail, app):
             msg.attach("watchlist-tutorial.gif", "image/gif", gif.read())
 
         # Use cid to reference the attached GIF in the email body
-        msg.html = render_template('watchlist_email.html', username=username, gif_cid='watchlist-tutorial.gif')
+        msg.html = render_template(
+            'watchlist_email.html', username=username, gif_cid='watchlist-tutorial.gif')
         mail.send(msg)
 
         print(f"Email sent to {user_email}")
