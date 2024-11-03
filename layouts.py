@@ -966,7 +966,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                             {'label': 'Medium Risk', 'value': 'medium'},
                                             {'label': 'High Risk', 'value': 'high'},
                                         ],
-                                        value='medium',  # Default to medium risk
+                                        value='low',  # Default to medium risk
                                         placeholder="Select Risk Tolerance",
                                         clearable=False,
                                         searchable=False,
