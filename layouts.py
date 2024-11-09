@@ -1087,11 +1087,12 @@ def create_dashboard_layout(watchlist_management_layout):
                                         searchable=False,
                                     ),
                                     html.Label("Investment Amount ($):", className="font-weight-bold"),
-                                    dcc.Input(
+                                    dcc.Slider(
                                         id='investment-amount',
-                                        type='number',
-                                        value=1000,
-                                        className='form-control',
+                                        min=1000, max=100000, step=1000,  # Range from 1 day to 2 years (730 days)
+                                        value=5000,  # Default value
+                                        marks={i: f'${i//1000}k' for i in range(0, 100001, 10000)},  # Marks every 5,000 formatted as "$5k", "$10k", etc.
+                                        tooltip={"placement": "bottom", "always_visible": False}
                                     ),
                                     html.Label("Investment Date:", className="font-weight-bold"),
                                     dcc.DatePickerSingle(
