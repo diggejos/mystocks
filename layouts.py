@@ -872,14 +872,14 @@ def create_dashboard_layout(watchlist_management_layout):
                                         ),
                                         html.Div(id='forecast-stock-warning', style={'color': 'red'}),
                                         html.Label("Forecast Horizon (days):", className="font-weight-bold"),
-                                        dcc.Input(
+                                        dcc.Slider(
                                             id='forecast-horizon-input',
-                                            type='number',
-                                            value=90,
-                                            className='form-control',
-                                            min=1,
-                                            max=365
+                                            min=30, max=365*2, step=30,  # Range from 1 day to 2 years (730 days)
+                                            value=90,  # Default value
+                                            marks={i: str(i) for i in range(0, 731, 60)},  # Marks at every 30 days
+                                            tooltip={"placement": "bottom", "always_visible": True}
                                         ),
+                        
                                         dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
                                     ], className='mb-3'),
                                     dcc.Markdown('''
