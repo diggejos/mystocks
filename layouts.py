@@ -876,7 +876,7 @@ def create_dashboard_layout(watchlist_management_layout):
                                             id='forecast-horizon-input',
                                             min=30, max=365*2, step=30,  # Range from 1 day to 2 years (730 days)
                                             value=90,  # Default value
-                                            marks={i: str(i) for i in range(0, 731, 60)},  # Marks at every 30 days
+                                            marks={i: str(i) for i in range(0, 731, 90)},  # Marks at every 30 days
                                             tooltip={"placement": "bottom", "always_visible": True}
                                         ),
                         
