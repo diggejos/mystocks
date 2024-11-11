@@ -755,7 +755,7 @@ def display_page_and_update_ui(pathname):
         return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/faqs':  # FAQ layout
         return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname in ['/blog', '/blog/article-compounding', 'blog/article-diversification']:  # Blog layout (to be created)
+    elif pathname in ['/blog', '/blog/article-compounding', '/blog/article-diversification']:  # Blog layout (to be created)
         return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname in ['/register', '/subscription']:
         return create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
