@@ -203,8 +203,8 @@ blog_layout = dbc.Container(
             dbc.Collapse(
                 html.Div(
                     html.Ul([
-                        html.Li(html.A("The Power of Compounding in Long-Term Investments", href="#article-compounding")),
-                        html.Li(html.A("Diversification: The Key to Reducing Investment Risk", href="#article-diversification")),
+                        html.Li(html.A("The Power of Compounding in Long-Term Investments", href="/article-compounding")),
+                        html.Li(html.A("Diversification: The Key to Reducing Investment Risk", href="/article-diversification")),
                         # Add more articles here
                     ], className="toc-list", style={
                         "list-style-type": "none", "padding-left": "0", "text-align": "left",
