@@ -746,7 +746,7 @@ def display_page_and_update_ui(pathname):
 
     # Pages where the footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password',
-        '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
+        '/subscription', '/register-free', '/register-paid', '/blog', '/demo', '/blog/arcticle-compounding', '/blog/article-diversification']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
