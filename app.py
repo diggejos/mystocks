@@ -755,7 +755,7 @@ def display_page_and_update_ui(pathname):
         return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/faqs':  # FAQ layout
         return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/blog':  # Blog layout (to be created)
+    elif pathname == ['/blog', '/blog/article-compounding', 'blog/article-diversification']:  # Blog layout (to be created)
         return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname in ['/register', '/subscription']:
         return create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
@@ -1518,9 +1518,9 @@ def update_stylesheet(theme):
     Input('url', 'pathname')
 )
 def update_meta_description(pathname):
-    if pathname == '/blog/compounding':
+    if pathname == '/blog/article-compounding':
         return "Learn how compounding can significantly grow your investments."
-    elif pathname == '/blog/diversification':
+    elif pathname == '/blog/article-diversification':
         return "Understand how diversification can reduce risk in your investment portfolio."
     else:
         return "Your Stocks monitoring Dashboard: visualize trends, get stocks recommendations and forecasts, and chat with an AI financial advisor. Save your watchlist today!"
