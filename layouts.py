@@ -1333,7 +1333,8 @@ def create_subscription_selection_layout(is_free_user=False):
             dbc.Card([
                 dbc.CardHeader(html.H3("Premium Plan", className="text-center text-light"),className="bg-primary"),
                 dbc.CardBody([
-                    html.Div([html.H5("$9.99 USD per month", className="text-center text-primary")]),
+                    html.Div([html.H4("$2.50 USD per week", className="text-center text-primary")]),
+                    html.Div([html.H6("billed as $9.99 every 4 weeks", className="text-center text-secondary")]),
                     html.H4("What You Get", className="text-center mt-3"),
                     html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
                     html.Div(["🔍 Monitor your favorite stocks"], className="mb-3"),
