@@ -1305,15 +1305,16 @@ def create_subscription_selection_layout(is_free_user=False):
             dbc.Card([
                 dbc.CardHeader(html.H3("Free Plan", className="text-center text-success")),
                 dbc.CardBody([
-                    # html.Div([html.H5("Free access, no credit card", className="text-center text-success mb-4")]),
+                    # html.Div([html.H4("Free access, no credit card", className="text-center text-success mb-4")]),
                     
                     html.Div([
-                        html.H5([
+                        html.H4([
                             "Free access, ",
                             html.Span("no credit card", className="bg-success text-white rounded px-2")
                             ],className="text-center text-success")
                         ]),
-                        
+                    html.Div([html.H6("", className="text-center text-secondary")]),
+
                     html.H4("What You Get", className="text-center mt-3"),
 
                     html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
