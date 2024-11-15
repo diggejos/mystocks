@@ -277,8 +277,6 @@ app.layout = html.Div([
     # dcc.Store(id='forecast-attempt-store', data=0),
     dcc.Store(id='last-known-path', data='/prices'),
     dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session'),
-
-
 ])
 
 
@@ -778,8 +776,6 @@ def display_page_and_update_ui(pathname):
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     # elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
     #     return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname =='/':
-        return dash.page_registry['pages.prices']['layout'],logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     # Default to dashboard if no specific path matches
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
@@ -1540,6 +1536,6 @@ app.index_string = '''
 </html>
 '''
 
-if __name__ == '__main__':
-    app.run_server(debug=True, port=8051)
+if __name__ == "__main__":
+    app.run_server(debug=True)
 
