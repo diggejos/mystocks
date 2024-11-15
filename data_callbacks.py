@@ -255,9 +255,7 @@ def get_data_callbacks(app, server, cache):
 
     from dash import no_update
     
-
- 
-    @app.callback(
+   @app.callback(
         [
             Output('save-watchlist-modal', 'is_open'),
             Output('delete-watchlist-modal', 'is_open'),
@@ -340,7 +338,6 @@ def get_data_callbacks(app, server, cache):
             # Prompt for new watchlist name if no duplicates
             return True, False, "", {"display": "inline-block"}, watchlist_options, no_update, "", save_modal_triggered
     
-        # Confirm save or overwrite action only if the modal was intentionally triggered
         elif trigger_id == 'confirm-save-watchlist' and save_modal_triggered:
             if selected_watchlist_id:
                 watchlist = Watchlist.query.get(selected_watchlist_id)
@@ -353,12 +350,16 @@ def get_data_callbacks(app, server, cache):
                 if duplicate:
                     db.session.delete(duplicate)
                     db.session.commit()
-    
+        
                 new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
                 db.session.add(new_watchlist)
                 db.session.commit()
                 selected_watchlist_id = new_watchlist.id
-    
+        
+            # Ensure `individual-stocks-store` retains its state if no change is needed
+            return False, False, "", {"display": "none"}, watchlist_options, selected_watchlist_id, dash.no_update, False
+            
+
             # Reload watchlists after save
             watchlists = Watchlist.query.filter_by(user_id=user.id).all()
             options = [{'label': w.name, 'value': w.id} for w in watchlists]
@@ -388,7 +389,7 @@ def get_data_callbacks(app, server, cache):
     
         return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", save_modal_triggered
     
-  
+ 
     @app.callback(
         [
             Output('stock-graph', 'figure'),
