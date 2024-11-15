@@ -697,7 +697,6 @@ def page_not_found(e):
 
 @app.callback(
     [
-        Output('url', 'pathname'),
         Output('page-content', 'children'),
         Output('login-status', 'data', allow_duplicate=True),
         Output('login-username-store', 'data', allow_duplicate=True),
@@ -716,10 +715,6 @@ def display_page_and_update_ui(pathname):
     # Avoid triggering callback if non-existent elements are referenced
     if not ctx.triggered:
         raise PreventUpdate
-
-    # Redirect to '/prices' if on the home page '/'
-    if pathname == '/':
-        return '/prices', dashboard_layout, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Get session info
     logged_in = session.get('logged_in', False)
@@ -740,7 +735,8 @@ def display_page_and_update_ui(pathname):
 
     # Adjust layout if the user is logged in
     if logged_in and username:
-        user = User.query.filter_by(username=username).first()  # Fetch user info
+        user = User.query.filter_by(
+            username=username).first()  # Fetch user info
         if user:
             is_free_user = user.subscription_status == 'free'
             is_premium_user = user.subscription_status == 'premium'
@@ -755,34 +751,46 @@ def display_page_and_update_ui(pathname):
 
     # Pages where the footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password',
-                            '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
+        '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
     # Return layout based on the path and login state
-    if pathname in ['/about', '/demo']:
-        return pathname, about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/faqs':
-        return pathname, faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/blog':
-        return pathname, blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    if pathname in ['/about', '/demo']:  # '/demo' now maps to about_layout
+        return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/faqs':  # FAQ layout
+        return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == '/blog':  # Blog layout (to be created)
+        return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname in ['/register', '/subscription']:
-        return pathname, create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
+        return create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
     elif pathname == '/register-free':
-        return pathname, create_register_layout('free'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+        return create_register_layout('free'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/register-paid':
-        return pathname, create_register_layout('premium'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+        return create_register_layout('premium'), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/login' and not logged_in:
-        return pathname, login_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
+        return login_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
     elif pathname == '/profile' and logged_in:
-        return pathname, profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+        return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
-        return pathname, forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-
+        return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    # elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
+    #     return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     # Default to dashboard if no specific path matches
-    return pathname, dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
 
+@app.callback(
+    Output('url', 'pathname'),
+    Output('page-content', 'children',allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call=True
+)
+def redirect_to_prices(pathname):
+    if pathname == '/':
+        return '/prices' , dashboard_layout
+    return pathname,  dash.no_update
+         
             
 app.clientside_callback(
     """
