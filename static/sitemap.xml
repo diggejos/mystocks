@@ -5,24 +5,27 @@
     xmlns:xhtml="http://www.w3.org/1999/xhtml" 
     xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://mystocksportfolio.io/register</loc>
+        <loc>https://mystocksportfolio.io/prices</loc>
     </url>
     <url>
-        <loc>https://mystocksportfolio.io</loc>
+        <loc>https://mystocksportfolio.io/forecast</loc>
     </url>
     <url>
-        <loc>https://mystocksportfolio.io/</loc>
+        <loc>https://mystocksportfolio.io/news</loc>
     </url>
     <url>
-        <loc>https://mystocksportfolio.io/login</loc>
+        <loc>https://mystocksportfolio.io/simulation</loc>
     </url>
     <url>
         <loc>https://mystocksportfolio.io/demo</loc>
     </url>
     <url>
-        <loc>https://mystocksportfolio.io/faqs</loc>
+        <loc>https://mystocksportfolio.io/register</loc>
     </url>
     <url>
+        <loc>https://mystocksportfolio.io/login</loc>
+    </url>
+        <url>
         <loc>https://mystocksportfolio.io/blog</loc>
     </url>
 </urlset>
