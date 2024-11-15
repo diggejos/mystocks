@@ -32,8 +32,6 @@ app = dash.Dash(__name__,  use_pages=True, external_stylesheets=[
                 dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"], suppress_callback_exceptions=True)
 server = app.server
 
-#Minify(app=server, html=True, js=True, cssless=True)
-
 app.server.config['COMPRESS_ALGORITHM'] = 'br'
 app.server.config['COMPRESS_LEVEL'] = 9  # Set compression level (1-9, default is 6)
 app.server.config['COMPRESS_MIN_SIZE'] = 500  # Minimum size (in bytes) to trigger compression
@@ -104,7 +102,6 @@ server.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 # Google OAuth Configuration-----------------------------------------------------------------------------
 from authlib.integrations.flask_client import OAuth
 
-
 oauth = OAuth(app.server)
 
 # Google OAuth Configuration
@@ -123,8 +120,6 @@ def ensure_flask_routes_are_handled():
         return None  # Flask will handle these routes
 
 from flask import render_template, abort
-
-
 import secrets
 
 # Google login route
@@ -259,7 +254,7 @@ app.layout = html.Div([
     html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
     ly.create_navbar(themes),  # Navbar
     ly.create_overlay(),  # Access Restricted Overlay
-    dcc.Location(id='url', refresh=True),
+    dcc.Location(id='url', refresh=False),
     dbc.Container(id='page-content', fluid=True),
     dcc.Store(id='active-tab', data='📈 Prices'),
 
