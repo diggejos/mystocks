@@ -9,8 +9,6 @@ dash.register_page(
 )
 
 
-
-
 layout = html.Div([
     dcc.Store(id='forecast-data-store', storage_type='session'),  # Store for persisting forecast data
     dcc.Store(id='forecast-attempt-store', data=0, storage_type='session'),  # Store for attempt count tracking
@@ -77,43 +75,4 @@ layout = html.Div([
 ])
 
 
-# layout = html.Div([
-#     dcc.Store(id='forecast-data-store', storage_type='session'),  # Store for persisting forecast data
-#     dcc.Store(id='forecast-attempt-store', data=0, storage_type='session'),  # Store for attempt count tracking
-
-#     # Main forecast content card
-#     dbc.Card(
-#         dbc.CardBody([
-#             html.H3("Forecast stock prices", style={"display": "none"}),  # for SEO
-#             html.Div([
-#                 html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
-#                 dcc.Dropdown(
-#                     id='forecast-stock-input',
-#                     options=[], value=[], multi=True,
-#                     className='form-control text-dark', searchable=False
-#                 ),
-#                 html.Div(id='forecast-stock-warning', style={'color': 'red'}),
-#                 html.Label("Forecast Horizon (days):", className="font-weight-bold"),
-#                 dcc.Input(
-#                     id='forecast-horizon-input', type='number', value=90,
-#                     className='form-control', min=1, max=365*2
-#                 ),
-#                 dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
-#             ], className='mb-3'),
-#             dcc.Markdown('''
-#                 **Disclaimer:** This forecast is generated using time series forecasting methods.
-#                 Use cautiously and as one of several sources in decision-making.
-#             ''', style={'font-size': '14px', 'color': 'gray'}),
-#             dcc.Loading(html.Div(id='forecast-kpi-output', className='mb-3')),
-#             dcc.Loading(id="loading-forecast", type="default", children=[
-#                 dcc.Graph(id='forecast-graph', config={'displayModeBar': False})
-#             ]),
-#         ])
-#     ),
-
-#     # This Div acts as the paywall overlay
-#     html.Div(id='forecast-blur-overlay', style={"display": "none"})
-# ])
-
-                         
                          
