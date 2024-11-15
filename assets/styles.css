@@ -54,6 +54,7 @@
 }
 
 
+
 .tab-stock-prices .tab-label::before {
     font-family: "Font Awesome 5 Free";
     content: "\f201"; /* FontAwesome icon for chart-line */
@@ -142,15 +143,15 @@
 }
 
 #chatbot-conversation .chatbot-response {
-    animation: fadeIn 1s ease-in-out; /* Apply the fade-in animation */
+    animation: fadeIn 1s ease-in-out; 
     background-color: #e9ecef;
     color: black;
     margin-right: 30%;
     padding: 10px;
     border-radius: 10px;
     display: flex;
-    align-items: flex-start; /* Align items to the top */
-    opacity: 0; /* Start hidden */
+    align-items: flex-start; 
+    opacity: 0; 
 }
 
 #chatbot-conversation .chatbot-response.fade-in {
@@ -205,17 +206,17 @@
 }
 
 .carousel-caption {
-    background-color: rgba(0, 0, 0, 0.4);  /* Semi-transparent background */
+    background-color: rgba(0, 0, 0, 0.4); 
     padding: 10px;
     border-radius: 10px;
 }
 
 
 .custom-carousel .carousel-item img {
-    max-height: 70vh;  /* Set the maximum height to 60% of the viewport height */
-    width: auto !important;       /* Ensure the width adjusts automatically to maintain aspect ratio */
-    margin: 0 auto;    /* Center the image horizontally */
-    display: block;    /* Treat the image as a block-level element */
+    max-height: 70vh;  
+    width: auto !important;       
+    margin: 0 auto;    
+    display: block;   
     max-width: 100%; 
 }
 
@@ -230,19 +231,17 @@
     color: #dddddd;
 }
 
-/* Custom CSS for carousel captions */
 .custom-carousel .carousel-caption {
-    position: relative; /* Make the caption relative to its normal position */
-    bottom: 0; /* Align caption to the bottom */
-    left: 50%;
+    position: relative; 
+    bottom: 0; 
     transform: translateX(-50%);
-    width: 90%; /* Limit the width of the caption */
-    background-color: rgba(0, 0, 0, 0.3); /* Semi-transparent background for better readability */
-    padding: 10px; /* Padding inside the caption box */
+    width: 90%; 
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 10px; 
     color: white;
     text-align: center;
-    font-size: 1rem; /* Adjust font size */
-    margin-top: 10px; /* Add margin to space out the caption from the image */
+    font-size: 1rem; 
+    margin-top: 10px; 
 }
 
 /* Mobile-specific styling */
@@ -492,10 +491,12 @@
 
 
 
-
-.desktop-only {
-    display: none;
+@media (max-width: 767px) {
+    .desktop-only {
+        display: none !important;
+    }
 }
+
 
 .mobile-only {
     display: block;
@@ -741,14 +742,14 @@ a:hover {
 /* Custom hamburger icon when closed */
 .toggler-icon::before {
     content: "\2630"; /* Unicode for hamburger icon */
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     color: white; /* Adjust to match your theme */
 }
 
 /* Custom "X" icon when open */
 .toggler-icon.open::before {
     content: "\2715"; /* Unicode for 'X' icon */
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     color: white; /* Adjust to match your theme */
 }
 
@@ -776,6 +777,7 @@ a:hover {
 
 
 
+
 .sidebar-card {
     background-color: var(--bs-light); /* Ensure background color consistency */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a shadow for visual consistency */
@@ -784,6 +786,8 @@ a:hover {
     /*max-width:450px;
     margin-left:10px;*/
    color:var(--bs-dark) !important; /* Ensure background color consistency */
+
+
 
 }
 
@@ -794,4 +798,43 @@ a:hover {
     width: 100%; /* Ensure it uses the full available width */
     max-width:550px;
 
+}
+
+
+/* Container to make NavLinks look like tabs */
+.tabs-container .tab-link {
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+    padding: 10px 15px;
+    background-color: #f8f9fa; /* Default background for tabs */
+    color: var(--bs-primary) !important;               /* Default color */
+    font-weight: 500;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+
+.tabs-container .tab-link.active {
+    background-color: var(--bs-secondary) !important; /* Active tab color */
+    color: var(--bs-light) !important;               /* Active text color */
+    font-weight: bold;
+    border-bottom: none;       /* Removes bottom border for active tab effect */
+}
+
+.tabs-container .tab-link:hover {
+    color:var(--bs-info) !important;            /* Hover effect */
+}
+
+
+/* Hide the button on desktop */
+@media (min-width: 768px) {
+    .mobile-only {
+        display: none !important;
+    }
+}
+
+/* Show the button on mobile */
+@media (max-width: 767px) {
+    .mobile-only {
+        display: block !important;
+    }
 }
