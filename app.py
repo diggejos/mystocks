@@ -100,11 +100,6 @@ server.config['MAIL_USE_TLS'] = True
 server.config['MAIL_USERNAME'] = 'mystocks.monitoring@gmail.com'
 server.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
-@server.route('/prices')
-def index():
-    return dashboard_layout  # Or whatever layout/page you want as the home page
-
-
 
 # Google OAuth Configuration-----------------------------------------------------------------------------
 from authlib.integrations.flask_client import OAuth
