@@ -3,7 +3,7 @@ from dash import dcc, html
 import pandas as pd
 # from auth_callbacks import show_overlay_if_logged_out
 import utils as ut
-
+import dash
 
 
 themes = {
@@ -48,7 +48,7 @@ def create_navbar(themes):
                 dbc.Collapse(
                     dbc.Nav(
                         [
-                            dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/", active="exact")),
+                            dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/prices", active="exact")),
                             # dbc.NavItem(dbc.NavLink("📈 Dashboard", href="/dashboard#prices", active="exact")),
 
                             # About Dropdown with Demo, FAQs, and Blog
@@ -203,8 +203,8 @@ blog_layout = dbc.Container(
             dbc.Collapse(
                 html.Div(
                     html.Ul([
-                        html.Li(html.A("The Power of Compounding in Long-Term Investments", href="/blog/article-compounding")),
-                        html.Li(html.A("Diversification: The Key to Reducing Investment Risk", href="/blog/article-diversification")),
+                        html.Li(html.A("The Power of Compounding in Long-Term Investments", href="#article-compounding")),
+                        html.Li(html.A("Diversification: The Key to Reducing Investment Risk", href="#article-diversification")),
                         # Add more articles here
                     ], className="toc-list", style={
                         "list-style-type": "none", "padding-left": "0", "text-align": "left",
@@ -223,8 +223,8 @@ blog_layout = dbc.Container(
                     [
                         html.H2("Table of Contents", className="text-center my-4"),
                         html.Ul([
-                            html.Li(html.A("The Power of Compounding in Long-Term Investments", href="/blog/article-compounding")),
-                            html.Li(html.A("Diversification: The Key to Reducing Investment Risk", href="/blog/article-diversification")),
+                            html.Li(html.A("The Power of Compounding in Long-Term Investments", href="#article-compounding")),
+                            html.Li(html.A("Diversification: The Key to Reducing Investment Risk", href="#article-diversification")),
                             # Add more articles here
                         ], className="toc-list", style={
                             "list-style-type": "none", "padding-left": "0", "text-align": "left",
@@ -290,13 +290,13 @@ def create_sticky_footer_mobile():
             # Footer navigation bar
             dbc.Nav(
                 [
-                    dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="#forecast", id="footer-forecast-tab")),
-                    dbc.NavItem(dbc.NavLink("📈 Prices", href="#prices", id="footer-prices-tab")),
-                    dbc.NavItem(dbc.NavLink("🔥 Hot Stocks", href="#topshots", id="footer-topshots-tab")),
-                    dbc.NavItem(dbc.NavLink("📰 News", href="#news", id="footer-news-tab")),
-                    dbc.NavItem(dbc.NavLink("⚖️ Compare", href="#comparison", id="footer-compare-tab")),
-                    dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="#recommendations", id="footer-recommendations-tab")),
-                    dbc.NavItem(dbc.NavLink("📊 Simulate", href="#simulation", id="footer-simulate-tab")),
+                    dbc.NavItem(dbc.NavLink("🌡️ Forecast", href="/forecast", id="footer-forecast-tab",active="exact", className="tab-link")),
+                    dbc.NavItem(dbc.NavLink("📈 Prices", href="/prices", id="footer-prices-tab",active="exact", className="tab-link")),
+                    dbc.NavItem(dbc.NavLink("🔥 Hot Stocks", href="/hotstocks", id="footer-topshots-tab",active="exact", className="tab-link")),
+                    dbc.NavItem(dbc.NavLink("📰 News", href="/news", id="footer-news-tab",active="exact", className="tab-link")),
+                    dbc.NavItem(dbc.NavLink("⚖️ Compare", href="/compare", id="footer-compare-tab",active="exact", className="tab-link")),
+                    dbc.NavItem(dbc.NavLink("❤️ Recommendations", href="/recommendations", id="footer-recommendations-tab",active="exact", className="tab-link")),
+                    dbc.NavItem(dbc.NavLink("📊 Simulate", href="/simulation", id="footer-simulate-tab",active="exact", className="tab-link")),
                 ],
                 pills=True,
                 justified=True,
@@ -480,6 +480,68 @@ def create_footer():
 
 
 
+def create_watchlist_management_layout():
+    return dbc.Container([
+        # Clickable watchlist area
+        html.Div(
+            id="clickable-watchlist-area",
+            children=[
+                dcc.Dropdown(
+                    id='saved-watchlists-dropdown',
+                    placeholder="Select a saved Watchlist",
+                    options=[],
+                    disabled=False,
+                    searchable=False,
+                    style={"margin-bottom": "10px"}
+                ),
+                dbc.Button("💾 Save", id='create-watchlist-button', color='primary', className="small-button"),
+                dbc.Button("X Delete", id='delete-watchlist-button', color='danger', className="small-button", style={"margin-left": "10px"}),
+
+                # Store components to manage modal trigger and clicks
+                dcc.Store(id='save-button-clicks', data=0),
+            ]
+        ),
+        
+        # Modal for save confirmation
+        dbc.Modal([
+            dbc.ModalHeader("Save Watchlist"),
+            dbc.ModalBody([
+                html.Div(id="overwrite-warning", style={"color": "red"}),
+                dcc.Input(
+                    id='new-watchlist-name',
+                    placeholder="Enter Watchlist Name",
+                    className="form-control",
+                    style={"margin-bottom": "10px", "display": "none"}
+                )
+            ]),
+            dbc.ModalFooter([
+                dbc.Button("Save", id='confirm-save-watchlist', color='primary'),
+                dbc.Button("Cancel", id='cancel-save-watchlist', color='secondary', className="ml-auto")
+            ]),
+            
+            # dcc.Store(id='save-modal-triggered', data=False)  # Store to control save modal
+            dcc.Store(id='save_modal_triggered', data=False)
+
+
+        ], id="save-watchlist-modal", is_open=False),
+
+        # Delete confirmation modal
+        dbc.Modal(
+            [
+                dbc.ModalHeader("Confirm Delete"),
+                dbc.ModalBody("Are you sure you want to delete this watchlist?"),
+                dbc.ModalFooter([
+                    dbc.Button("Yes, Delete", id="confirm-delete-watchlist", color="danger"),
+                    dbc.Button("Cancel", id="cancel-delete-watchlist", color="secondary"),
+                ])
+            ],
+            id="delete-watchlist-modal",
+            is_open=False
+        )
+    ])
+
+
+
 
 def paywall_logged_out():
     return html.Div(
@@ -600,535 +662,109 @@ def paywall_recommendation():
     )
 
 
-
-def create_watchlist_management_layout():
-    return dbc.Container([
-        # Clickable watchlist area
-        html.Div(
-            id="clickable-watchlist-area",
-            children=[
-                dcc.Dropdown(
-                    id='saved-watchlists-dropdown',
-                    placeholder="Select a saved Watchlist",
-                    options=[],
-                    disabled=False,
-                    searchable=False,
-                    style={"margin-bottom": "10px"}
-                ),
-                dbc.Button("💾 Save", id='create-watchlist-button', color='primary', className="small-button"),
-                dbc.Button("X Delete", id='delete-watchlist-button', color='danger', className="small-button", style={"margin-left": "10px"}),
-
-                # Store components to manage modal trigger and clicks
-                dcc.Store(id='save-button-clicks', data=0),
-            ]
-        ),
-        
-        # Modal for save confirmation
-        dbc.Modal([
-            dbc.ModalHeader("Save Watchlist"),
-            dbc.ModalBody([
-                html.Div(id="overwrite-warning", style={"color": "red"}),
-                dcc.Input(
-                    id='new-watchlist-name',
-                    placeholder="Enter Watchlist Name",
-                    className="form-control",
-                    style={"margin-bottom": "10px", "display": "none"}
-                )
-            ]),
-            dbc.ModalFooter([
-                dbc.Button("Save", id='confirm-save-watchlist', color='primary'),
-                dbc.Button("Cancel", id='cancel-save-watchlist', color='secondary', className="ml-auto")
-            ]),
-            
-            # dcc.Store(id='save-modal-triggered', data=False)  # Store to control save modal
-            dcc.Store(id='save_modal_triggered', data=False)
-
-
-        ], id="save-watchlist-modal", is_open=False),
-
-        # Delete confirmation modal
-        dbc.Modal(
-            [
-                dbc.ModalHeader("Confirm Delete"),
-                dbc.ModalBody("Are you sure you want to delete this watchlist?"),
-                dbc.ModalFooter([
-                    dbc.Button("Yes, Delete", id="confirm-delete-watchlist", color="danger"),
-                    dbc.Button("Cancel", id="cancel-delete-watchlist", color="secondary"),
-                ])
-            ],
-            id="delete-watchlist-modal",
-            is_open=False
-        )
-    ])
-
-
-
-# def create_watchlist_management_layout():
-#     return dbc.Container([
-#         # Clickable watchlist area
-#         html.Div(
-#             id="clickable-watchlist-area",
-#             children=[
-#                 dcc.Dropdown(
-#                     id='saved-watchlists-dropdown',
-#                     placeholder="Select a saved Watchlist",
-#                     options=[],
-#                     disabled=False,
-#                     searchable=False,
-#                     style={"margin-bottom": "10px"}
-#                 ),
-#                 dbc.Button("💾 Save", id='create-watchlist-button', color='primary', className="small-button"),
-#                 dbc.Button("X Delete", id='delete-watchlist-button', color='danger', className="small-button", style={"margin-left": "10px"}),
-
-#                 # Store component to track clicks
-#                 dcc.Store(id='save-button-clicks', data=0)
-#             ]
-#         ),
-        
-#         # Modal for save confirmation
-#         dbc.Modal([
-#             dbc.ModalHeader("Save Watchlist"),
-#             dbc.ModalBody([
-#                 html.Div(id="overwrite-warning", style={"color": "red"}),
-#                 dcc.Input(
-#                     id='new-watchlist-name',
-#                     placeholder="Enter Watchlist Name",
-#                     className="form-control",
-#                     style={"margin-bottom": "10px", "display": "none"}
-#                 )
-#             ]),
-#             dbc.ModalFooter([
-#                 dbc.Button("Save", id='confirm-save-watchlist', color='primary'),
-#                 dbc.Button("Cancel", id='cancel-save-watchlist', color='secondary', className="ml-auto")
-#             ])
-#         ], id="save-watchlist-modal", is_open=False),
-
-#         # Delete confirmation modal
-#         dbc.Modal(
-#             [
-#                 dbc.ModalHeader("Confirm Delete"),
-#                 dbc.ModalBody("Are you sure you want to delete this watchlist?"),
-#                 dbc.ModalFooter([
-#                     dbc.Button("Yes, Delete", id="confirm-delete-watchlist", color="danger"),
-#                     dbc.Button("Cancel", id="cancel-delete-watchlist", color="secondary"),
-#                 ])
-#             ],
-#             id="delete-watchlist-modal",
-#             is_open=False
-#         )
-#     ])
-
-
-
-
 def create_dashboard_layout(watchlist_management_layout):
     return dbc.Container([
         dbc.Row([
-            # Sidebar Filters (for both mobile and desktop)
+            # Sidebar column with all steering elements
             dbc.Col([
-                # First Card (for stock input, buttons, and date range)
                 dbc.Card([
                     dbc.CardBody([
-
+                        # Header and descriptions (hidden for SEO)
                         html.H1("Stocks monitoring dashboard - WatchMyStocks", style={"display": "none"}),
                         html.H2("Stocks monitoring made easy", style={"display": "none"}),
-                        html.H2("Create your personal watchlist", style={"display": "none"}),
                         html.H3("Apple Stock, aaple", style={"display": "none"}),
                         html.H3("Microsoft Stock, msft", style={"display": "none"}),
 
-
-                        # The stock suggestions input, buttons, and date range will always be visible
+                        # Stock input section
                         html.Div([
-                            html.H5([
-                                "Add Stock to ",
-                                html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                            ],className="text-dark"),
-                            # Stock suggestions input (always visible)
+                            html.H5("Add Stock to Watchlist", className="text-dark"),
                             dcc.Dropdown(
                                 id='stock-suggestions-input',
                                 options=[],
                                 placeholder="Enter Company or Symbol",
                                 className='custom-dropdown text-dark',
+                                style={'border': '2px solid var(--bs-danger)', 'border-radius': '5px'},
                                 multi=False,
-                                searchable=True,
-                                style={
-                                    'border': '2px solid var(--bs-danger)',
-                                    'border-radius': '5px',
-                                    'padding': '0px',
-                                }
+                                searchable=True
                             ),
+                        ], style={'margin-top': '15px'}),
 
-                            # Buttons (always visible)
-                            # html.Div([
-                            #     # dbc.Button("Add Stock", id='add-stock-button', color='primary', className='small-button'),
-                            # ], className='mb-3'),
-                            
-                            # Date range selector (always visible)
-                            
-                            html.Div(id="date-range-container",style={'display': 'none'}, children=[
-                                html.Hr(),
-                                html.Label([
-                                    "Select ",
-                                    html.Span("Date Range", className="bg-success text-white rounded px-2")
-                                ], className="text-dark"),
-                                dcc.Dropdown(
-                                    id='predefined-ranges', searchable=False,
-                                    options=[
-                                        {'label': 'Intraday', 'value': '1D_15m'},
-                                        {'label': 'Last 5D', 'value': '5D_15m'},
-                                        {'label': 'Last Month', 'value': '1M'},
-                                        {'label': 'Last 3M', 'value': '3M'},
-                                        {'label': 'Year to Date', 'value': 'YTD'},
-                                        {'label': 'Last 12M', 'value': '12M'},
-                                        {'label': 'Last 24M', 'value': '24M'},
-                                        {'label': 'Last 5Y', 'value': '5Y'},
-                                        {'label': 'Last 10Y', 'value': '10Y'}
-                                    ],
-                                    value='12M', className="text-dark"
-                                )
-                            ]),
-                        ],style={'margin-top': '15px'}) ,
-                           
+                        # Date range selection (conditionally displayed based on tab)
+                        html.Div(id="date-range-container", style={'display': 'none'}, children=[
+                            html.Hr(),
+                            html.Label("Select Date Range", className="text-dark"),
+                            dcc.Dropdown(
+                                id='predefined-ranges',
+                                options=[
+                                    {'label': 'Intraday', 'value': '1D_15m'},
+                                    {'label': 'Last 5D', 'value': '5D_15m'},
+                                    {'label': 'Last Month', 'value': '1M'},
+                                    {'label': 'Last 3M', 'value': '3M'},
+                                    {'label': 'Year to Date', 'value': 'YTD'},
+                                    {'label': 'Last 12M', 'value': '12M'},
+                                    {'label': 'Last 24M', 'value': '24M'},
+                                    {'label': 'Last 5Y', 'value': '5Y'},
+                                    {'label': 'Last 10Y', 'value': '10Y'}
+                                ],
+                                value='12M',
+                                className="text-dark"
+                            )
+                        ]),
+                        
+                        html.Hr(),
 
-                        # Mobile-specific overlay for watchlist and other filters
+                        # Toggle button for mobile to open/close the watchlist
                         dbc.Button(
-                            id="toggle-filters-button",
-                            color="info",
+                            id="toggle-watchlist-button",
+                            color="primary",
                             outline=False,
                             size="sm",
                             className="mobile-only toggler-icon align-items-center",
-                            style={
-                                "position": "fixed",
-                                "top": "73px",
-                                "left": "10px",
-                                "z-index": "1001",
-                                "font-weight": "bold",
-                                "font-size": "18px",
-                            },
-                            children= html.Span(["  Manage ", html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                                ]),
-                        )
-
-                    ], className="sidebar-card-body"),       
-                    
-                ], className="sidebar-card"),  # Apply the same styling as the second card
-
-                # Mobile overlay for other filters
-                html.Div(id="mobile-overlay", className="mobile-overlay", style={"display": "none"}),
-
-                dcc.Store(id='button-state', data=False),  # False means closed, True means open
-
-                # Second Card (for the filters collapse)
-                dbc.Collapse(
-                    dbc.Card([
-                        dbc.CardBody([
-                                html.H5([
-                                    "Manage ",
-                                    html.Span("Watchlist", className="bg-warning text-white rounded px-2")
+                            children=html.Span(" Watchlist")
+                        ),
+                        
+                        # Watchlist summary (collapsible on mobile, open on desktop)
+                        html.Div([
+                            dbc.Collapse(
+                                dbc.Card([
+                                    dbc.CardBody([
+                                        html.H5("Manage Watchlist", className="text-dark"),
+                                        dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
+                                        html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),
+                                        dcc.Loading(id="loading-watchlist", type="default", children=[
+                                            html.Div(id='watchlist-summary', className='mb-3')
+                                        ]),
+                                        html.Hr(),
+                                    ]),
+                                    watchlist_management_layout
                                 ]),
-                                dbc.Button("Reset all", id='reset-stocks-button', color='danger', className='small-button'),
-                                html.Span("🔄", id='refresh-data-icon', style={'cursor': 'pointer', 'font-size': '25px'}, className='mt-2 me-2'),
+                                id='watchlist-collapse',
+                                is_open=False  # Always open on desktop
+                            )
+                        ], className="mobile-collapsible"),
 
-                            # Watchlist filters and management layout
-                            dcc.Loading(id="loading-watchlist", type="default", children=[
-                                html.Div(id='watchlist-summary', className='mb-3')
-                            ]),
+                    ], className="sidebar-card-body"),
+                ], className="sidebar-card"),
+            ], width=12, md=3, style={"margin-top": "10px"}),
 
-                        ]),
-                        watchlist_management_layout
-                    ], className="filters-collapse"),  # Use the same class for consistency
-                    id="filters-collapse",
-                    is_open=False  # Initially closed on mobile
-                ),
-
-            ], width=12, md=3, style={"margin-top": "10px", "buttom": "50px"}),
-                          
-                            
-
-            # Main content area (Tabs for Prices, News, Comparison, etc.)
+            # Main content area with tabs
             dbc.Col([
-                dbc.Tabs(
-                    id="tabs",
-                    active_tab="prices-tab",
-                    children=[
-
-                        dbc.Tab(label='🌡️ Forecast', tab_id='forecast-tab',children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.P([
-                                        "Filter Stocks from ",
-                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    html.H3("Forecast stocks prices", style={"display": "none"}),  # for SEO
-                                    html.Div([
-                                        html.Label("Select up to 3 Stocks:", className="font-weight-bold"),
-                                        dcc.Dropdown(
-                                            id='forecast-stock-input',
-                                            options=[],  
-                                            value=[],  
-                                            multi=True,
-                                            className='form-control text-dark',
-                                            searchable=False,
-                                        ),
-                                        html.Div(id='forecast-stock-warning', style={'color': 'red'}),
-                                        html.Label("Forecast Horizon (days):", className="font-weight-bold"),
-                                        dcc.Slider(
-                                            id='forecast-horizon-input',
-                                            min=30, max=365*2, step=30,  # Range from 1 day to 2 years (730 days)
-                                            value=90,  # Default value
-                                            marks={i: str(i) for i in range(0, 731, 90)},  # Marks at every 30 days
-                                            tooltip={"placement": "bottom", "always_visible": True}
-                                        ),
-                        
-                                        dbc.Button("Generate Forecasts", id='generate-forecast-button', color='primary', className='mt-2')
-                                    ], className='mb-3'),
-                                    dcc.Markdown('''
-                                        **Disclaimer:** This forecast is generated using time series forecasting methods, specifically Facebook Prophet. 
-                                        These predictions should be considered with caution and should not be used as your single source of financial advice.
-                                    ''', style={'font-size': '14px', 'margin-top': '20px', 'color': 'gray'}),
-                                    
-                                    dcc.Loading(
-                                        html.Div(id='forecast-kpi-output', className='mb-3')
-                                    ), 
-                                    
-                                    dcc.Loading(
-                                        id="loading-forecast",
-                                        type="default",
-                                        children=[dcc.Graph(id='forecast-graph', config={'displayModeBar': False})]
-                                    ),
-                                    html.Div(id='forecast-blur-overlay', style={
-                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                        'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                        'backdrop-filter': 'blur(5px)'
-                                    })  
-                      
-                                ])
-                                   
-                            )
-                        ]),
-                        dbc.Tab(label='📈 Prices', tab_id="prices-tab", children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.P([
-                                        "Filter Stocks from ",
-                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    dcc.Dropdown(
-                                        id='prices-stock-dropdown',
-                                        options=[],  
-                                        value=[],  
-                                        multi=True,
-                                        placeholder="Select stocks to display",
-                                        searchable=False,
-                                        className="text-dark"
-                                    ),
-                                    dcc.RadioItems(
-                                        id='chart-type',
-                                        options=[
-                                            {'label': 'Line Chart', 'value': 'line'},
-                                            {'label': 'Candlestick Chart', 'value': 'candlestick'}
-                                        ],
-                                        value='line',
-                                        inline=True,
-                                        inputStyle={"margin-right": "10px"},
-                                        labelStyle={"margin-right": "20px"}
-                                    ),
-                                    dcc.Checklist(
-                                        id='movag_input',
-                                        options=[
-                                            {'label': '30D Moving Average', 'value': '30D_MA'},
-                                            {'label': '100D Moving Average', 'value': '100D_MA'},
-                                            {'label': 'Volume', 'value': 'Volume'}
-                                        ],
-                                        value=[],
-                                        inline=True,
-                                        inputStyle={"margin-right": "10px"},
-                                        labelStyle={"margin-right": "20px"}
-                                    ),
-                                    
-                                    # dcc.Graph(id='stock-graph', style={'height': '500px', 'backgroundColor': 'transparent'})
-                                    dcc.Loading(id="loading-prices", type="default", children=[
-                                        dcc.Graph(id='stock-graph', style={'min-height': '1000px', 'backgroundColor': 'transparent'},config={'displayModeBar': False})
-                                    ])
-                                ])
-                            )
-                        ]),
-                        dbc.Tab(label='🔥 Hot Stocks', tab_id="topshots-tab", children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.H3("The hottest stocks to invest in at the moment based on financial KPIs", style={"display": "none"}),  # for SEO
-                                    html.P("Find the hottest stocks at the moment to consider investing in based on financial KPIs. This list is updated once a week. Currently the model looks at all SP500 companies and ranks them accordingly."),  # for SEO
-                                    dcc.Dropdown(
-                                        id='risk-tolerance-dropdown',
-                                        options=[
-                                            {'label': 'Low Risk', 'value': 'low'},
-                                            {'label': 'Medium Risk', 'value': 'medium'},
-                                            {'label': 'High Risk', 'value': 'high'},
-                                        ],
-                                        value='low',  # Default to medium risk
-                                        placeholder="Select Risk Tolerance",
-                                        clearable=False,
-                                        searchable=False,
-                                        className="text-dark"
-                                    ),
-                                    dcc.Loading(
-                                        id="loading-top-stocks",
-                                        children=[html.Div(id='top-stocks-table')],  # Placeholder for the stocks table
-                                        type="default"
-                                    ),
-                        
-                                    # This Div will dynamically show the appropriate paywall (logged-out, free, or none)
-                                    html.Div(id='topshots-blur-overlay', style={
-                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
-                                        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                        'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                        'backdrop-filter': 'blur(5px)'
-                                    })
-                                ])
-                            )
-                        ]),
-                        dbc.Tab(label='📰 News', tab_id="news-tab", children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    # html.P("Filter your Stocks from selection here"),
-                                    html.P([
-                                        "Filter Stocks from ",
-                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    dcc.Dropdown(
-                                        id='news-stock-dropdown',
-                                        options=[],  
-                                        value=[],  
-                                        multi=True,
-                                        placeholder="Select stocks to display",
-                                        searchable=False,
-                                        className="text-dark"
-                                    ),
-                                    dcc.Loading(id="loading-news", type="default", children=[
-                                        html.Div(id='stock-news', className='news-container')
-                                    ])
-                                ])
-                            )
-                        ]),
-                        dbc.Tab(label='⚖️ Compare', tab_id="compare-tab", children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.P([
-                                        "Filter Stocks from ",
-                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    html.Label("Select Stocks for Comparison:", className="font-weight-bold"),
-                                    dcc.Dropdown(
-                                        id='indexed-comparison-stock-dropdown',
-                                        options=[],  # Populated dynamically
-                                        value=[],  
-                                        multi=True,
-                                        searchable=False,
-                                        className="text-dark"
-                                    ),
-                                    dcc.RadioItems(
-                                        id='benchmark-selection',
-                                        options=[
-                                            {'label': 'None', 'value': 'None'},
-                                            {'label': 'S&P 500', 'value': '^GSPC'},
-                                            {'label': 'NASDAQ 100', 'value': '^NDX'},
-                                            {'label': 'SMI', 'value': '^SSMI'}
-                                        ],
-                                        value='None',
-                                        inline=True,
-                                        inputStyle={"margin-right": "10px"},
-                                        labelStyle={"margin-right": "20px"}
-                                    ),
-                                    dcc.Loading(id="loading-comparison", type="default", children=[
-                                        dcc.Graph(id='indexed-comparison-graph', style={'height': '500px'},config={'displayModeBar': False})
-                                    ])
-                                ])
-                            )
-                        ]),
-                        dbc.Tab(label='❤️ Recommendations', tab_id='recommendations-tab', children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.P([
-                                        "Find your Stocks from ",
-                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    html.H3("Get analyst stock recommendations", style={"display": "none"}),  # for SEO
-                                    dcc.Loading(
-                                        id="loading-analyst-recommendations",
-                                        type="default",
-                                        children=[html.Div(id='analyst-recommendations-content', className='mt-4')]
-                                    ),
-                                    html.Div(id='recommendation-blur-overlay', style={
-                                        'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%', 
-                                        'background-color': 'rgba(255, 255, 255, 0.8)', 'display': 'none',
-                                        'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
-                                        'backdrop-filter': 'blur(5px)'
-                                    })
-                                  
-                                ])
-                            )
-                        ]),
-
-                        dbc.Tab(label='📊 Simulate', tab_id="simulate-tab", children=[
-                            dbc.Card(
-                                dbc.CardBody([
-                                    html.P([
-                                        "Filter Stocks from ",
-                                        html.Span("Watchlist", className="bg-primary text-white rounded px-2")
-                                    ], className="fs-5"),
-                                    html.H3("Simulate stock profits and losses over historical time period", style={"display": "none"}),  # for SEO
-                                    html.Label("Stock Symbol:", className="font-weight-bold"),
-                                    dcc.Dropdown(
-                                        id='simulation-stock-input',
-                                        options=[],  
-                                        value=[],  
-                                        className='form-control text-dark',
-                                        searchable=False,
-                                    ),
-                                    html.Label("Investment Amount ($):", className="font-weight-bold"),
-                                    dcc.Slider(
-                                        id='investment-amount',
-                                        min=1000, max=100000, step=1000,  # Range from 1 day to 2 years (730 days)
-                                        value=5000,  # Default value
-                                        marks={i: f'${i//1000}k' for i in range(0, 100001, 10000)},  # Marks every 5,000 formatted as "$5k", "$10k", etc.
-                                        tooltip={"placement": "bottom", "always_visible": False}
-                                    ),
-                                    html.Label("Investment Date:", className="font-weight-bold"),
-                                    dcc.DatePickerSingle(
-                                        id='investment-date',
-                                        date=pd.to_datetime('2024-01-01'),
-                                        className='form-control'
-                                    ),
-                                    dbc.Button("Simulate Investment", id='simulate-button', color='primary', className='mt-2'),
-                                    dcc.Loading(id="loading-simulation", type="default", children=[
-                                        html.Div(id='simulation-result', className='mt-4')
-                                    ])
-                                ])
-                            )
-                        ])
-
-                    ], className="desktop-tabs bg-light sticky-tabs fs-7",                           
-                    )           
-            ], width=12, md=9, xs=12)
-        ], className='mb-4'),
-
-        # Welcome section
-        dbc.Row([
-            dbc.Col([
-                html.H3("Welcome to Your Stock Monitoring Dashboard. Save your watchlists, monitoring stocks made easy", className="text-center mb-4", style={"display": "none"}),
-                html.P([
-                    "Track and analyze your favorite stocks with real-time data, forecasts, and personalized recommendations. ",
-                    html.A("Learn more about the features.", href="/about", className="text-primary"),
-                    html.Br(),  # Line break
-                    " Want to save your personal Watchlist or get access to forecasts and analyst recommendations?",
-                    html.A(" Register for free.", href="/register", className="text-primary"),
-                ], className="text-center"),
-            ], width=12)
-        ], className="mb-4")
+                dbc.Nav([
+                    dbc.NavLink("Forecast", href="/forecast", active="exact", className="tab-link"),
+                    dbc.NavLink("Prices", href="/prices", active="exact", className="tab-link"),
+                    dbc.NavLink("Comparison", href="/compare", active="exact", className="tab-link"),
+                    dbc.NavLink("News", href="/news", active="exact", className="tab-link"),
+                    dbc.NavLink("Recommendations", href="/recommendations", active="exact", className="tab-link"),
+                    dbc.NavLink("Hot Stocks", href="/hotstocks", active="exact", className="tab-link"),
+                    dbc.NavLink("Simulate", href="/simulation", active="exact", className="tab-link"),
+                ], pills=True, className="tabs-container desktop-only"),
+                dash.page_container
+            ], width=12, md=9)
+        ], className='mb-4')
     ], fluid=True)
-                                                 
-                                                 
+
+
+
 def create_profile_layout():
     return dbc.Container([
         dbc.Row([
@@ -1137,16 +773,20 @@ def create_profile_layout():
                     dbc.CardBody([
                         html.H1("👩🏻‍💻 User Profile", className="text-center"),
 
+                        # Username field
                         dbc.Label("Username"),
                         dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
 
+                        # Email field (permanently disabled)
                         dbc.Label("Email"),
                         dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
 
+                        # Subscription status
                         dbc.Label("Subscription Status"),
                         html.Div(id='profile-subscription', className='form-control mb-3'),
 
-                        dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),
+                        # Password section hidden initially
+                        dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),  # Hidden by default
                         
                         html.Div([
                             dbc.Label("Current Password"),
@@ -1155,19 +795,19 @@ def create_profile_layout():
                             dbc.Label("New Password"),
                             dcc.Input(id='profile-password', type='password', placeholder="Enter new password", className='form-control mb-3'),
 
-                            # Updated Password requirement list - no special character requirement
+                            # Password requirement list
                             html.Ul([
                                 html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
                                 html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
                                 html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
-                                html.Li("At least one digit", id='profile-req-digit', className='text-muted')
+                                html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
+                                # html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
                             ], className='mb-3'),
 
                             dbc.Label("Confirm New Password"),
                             dcc.Input(id='profile-confirm-password', type='password', placeholder="Confirm new password", className='form-control mb-3'),
                             
-                        ], id='password-fields-container', style={"display": "none"}),
-
+                        ], id='password-fields-container', style={"display": "none"}),  # Password fields hidden by default
                         dbc.Col(dbc.Button("Cancel Subscription", id="cancel-subscription-btn", color="danger", className="ml-auto")),
                         dbc.Modal(
                             [
@@ -1177,8 +817,8 @@ def create_profile_layout():
                                     html.Ul([
                                         html.Li("🔒 Personalized Watchlists"),
                                         html.Li("📈 Analyst recommendations"),
-                                        html.Li("🚀 Stock suggestions based on KPIs")
-                                    ])
+                                        html.Li("🚀 Stock suggestions based on KPIs"),
+                                    ]),
                                 ]),
                                 dbc.ModalFooter([
                                     dbc.Button("No, Keep Subscription", id="close-cancel-modal-btn", className="ml-auto"),
@@ -1186,107 +826,26 @@ def create_profile_layout():
                                 ])
                             ],
                             id="cancel-subscription-modal",
-                            centered=True
+                            centered=True,
                         ),
-
                         html.Div(id="subscription-status", className="mt-4"),
 
+
+                        # Buttons aligned to the right
                         html.Div([
                             dbc.Button("Edit", id='edit-profile-button', color='primary', className='me-2'),
                             dbc.Button("Save", id='save-profile-button', color='success', className='me-2', style={"display": "none"}),
                             dbc.Button("Cancel", id='cancel-edit-button', color='danger', style={"display": "none"})
                         ], style={"float": "right"}),
+                        
 
+                        # Output area for messages
                         html.Div(id='profile-output', className='mt-3')
                     ])
                 ])
             ], width=12, md=6, className="mx-auto")
         ])
     ], fluid=True)
-
-
-
-# def create_profile_layout():
-#     return dbc.Container([
-#         dbc.Row([
-#             dbc.Col([
-#                 dbc.Card([
-#                     dbc.CardBody([
-#                         html.H1("👩🏻‍💻 User Profile", className="text-center"),
-
-#                         # Username field
-#                         dbc.Label("Username"),
-#                         dcc.Input(id='profile-username', type='text', disabled=True, className='form-control mb-3'),
-
-#                         # Email field (permanently disabled)
-#                         dbc.Label("Email"),
-#                         dcc.Input(id='profile-email', type='email', disabled=True, className='form-control mb-3'),
-
-#                         # Subscription status
-#                         dbc.Label("Subscription Status"),
-#                         html.Div(id='profile-subscription', className='form-control mb-3'),
-
-#                         # Password section hidden initially
-#                         dbc.Button("Change Password", id='toggle-password-fields', color='link', className='mb-3', style={"display": "none"}),  # Hidden by default
-                        
-#                         html.Div([
-#                             dbc.Label("Current Password"),
-#                             dcc.Input(id='profile-current-password', type='password', placeholder="Enter current password", className='form-control mb-3'),
-
-#                             dbc.Label("New Password"),
-#                             dcc.Input(id='profile-password', type='password', placeholder="Enter new password", className='form-control mb-3'),
-
-#                             # Password requirement list
-#                             html.Ul([
-#                                 html.Li("At least 8 characters", id='profile-req-length', className='text-muted'),
-#                                 html.Li("At least one uppercase letter", id='profile-req-uppercase', className='text-muted'),
-#                                 html.Li("At least one lowercase letter", id='profile-req-lowercase', className='text-muted'),
-#                                 html.Li("At least one digit", id='profile-req-digit', className='text-muted'),
-#                                 # html.Li("At least one special character (!@#$%^&*(),.?\":{}|<>)_", id='profile-req-special', className='text-muted')
-#                             ], className='mb-3'),
-
-#                             dbc.Label("Confirm New Password"),
-#                             dcc.Input(id='profile-confirm-password', type='password', placeholder="Confirm new password", className='form-control mb-3'),
-                            
-#                         ], id='password-fields-container', style={"display": "none"}),  # Password fields hidden by default
-#                         dbc.Col(dbc.Button("Cancel Subscription", id="cancel-subscription-btn", color="danger", className="ml-auto")),
-#                         dbc.Modal(
-#                             [
-#                                 dbc.ModalHeader("Confirm Cancelation"),
-#                                 dbc.ModalBody([
-#                                     html.P("Are you sure you want to cancel your subscription? You will lose access to the following features:"),
-#                                     html.Ul([
-#                                         html.Li("🔒 Personalized Watchlists"),
-#                                         html.Li("📈 Analyst recommendations"),
-#                                         html.Li("🚀 Stock suggestions based on KPIs"),
-#                                     ]),
-#                                 ]),
-#                                 dbc.ModalFooter([
-#                                     dbc.Button("No, Keep Subscription", id="close-cancel-modal-btn", className="ml-auto"),
-#                                     dbc.Button("Yes, Cancel Subscription", id="confirm-cancel-btn", color="bg-secondary")
-#                                 ])
-#                             ],
-#                             id="cancel-subscription-modal",
-#                             centered=True,
-#                         ),
-#                         html.Div(id="subscription-status", className="mt-4"),
-
-
-#                         # Buttons aligned to the right
-#                         html.Div([
-#                             dbc.Button("Edit", id='edit-profile-button', color='primary', className='me-2'),
-#                             dbc.Button("Save", id='save-profile-button', color='success', className='me-2', style={"display": "none"}),
-#                             dbc.Button("Cancel", id='cancel-edit-button', color='danger', style={"display": "none"})
-#                         ], style={"float": "right"}),
-                        
-
-#                         # Output area for messages
-#                         html.Div(id='profile-output', className='mt-3')
-#                     ])
-#                 ])
-#             ], width=12, md=6, className="mx-auto")
-#         ])
-#     ], fluid=True)
 
    
        
@@ -1305,16 +864,19 @@ def create_subscription_selection_layout(is_free_user=False):
             dbc.Card([
                 dbc.CardHeader(html.H3("Free Plan", className="text-center text-success")),
                 dbc.CardBody([
-                    # html.Div([html.H4("Free access, no credit card", className="text-center text-success mb-4")]),
+                    # html.Div([html.H5("Free access, no credit card", className="text-center text-success mb-4")]),
                     
                     html.Div([
                         html.H4([
                             "Free access, ",
                             html.Span("no credit card", className="bg-success text-white rounded px-2")
-                            ],className="text-center text-success")
-                        ]),
-                    html.Div([html.H6("", className="text-center text-secondary")]),
+                            ],className="text-center text-success"),
+                        html.Br()
 
+                        
+                        
+                        ]),
+                        
                     html.H4("What You Get", className="text-center mt-3"),
 
                     html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
@@ -1334,8 +896,11 @@ def create_subscription_selection_layout(is_free_user=False):
             dbc.Card([
                 dbc.CardHeader(html.H3("Premium Plan", className="text-center text-light"),className="bg-primary"),
                 dbc.CardBody([
-                    html.Div([html.H4("$2.50 USD per week", className="text-center text-primary")]),
-                    html.Div([html.H6("billed as $9.99 every 4 weeks", className="text-center text-secondary")]),
+                    html.Div([
+                        html.H4("$2.50 USD per week", className="text-center text-primary"),
+                        html.H6("billed as $9.99 USD every 4 weeks", className="text-center text-secondary")
+                        ]),
+                    
                     html.H4("What You Get", className="text-center mt-3"),
                     html.Div(["📊 Create and save your own stock watchlists"], className="mb-3"),
                     html.Div(["🔍 Monitor your favorite stocks"], className="mb-3"),
