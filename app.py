@@ -254,7 +254,7 @@ app.layout = html.Div([
     html.Link(id='theme-switch', rel='stylesheet', href=dbc.themes.BOOTSTRAP),
     ly.create_navbar(themes),  # Navbar
     ly.create_overlay(),  # Access Restricted Overlay
-    dcc.Location(id='url', refresh=True),
+    dcc.Location(id='url', refresh=False),
     dbc.Container(id='page-content', fluid=True),
     dcc.Store(id='active-tab', data='📈 Prices'),
 
