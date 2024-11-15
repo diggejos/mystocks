@@ -28,7 +28,8 @@ from flask_compress import Compress
 
 
 # Initialize the Dash app with a default Bootstrap theme
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"])
+app = dash.Dash(__name__,  use_pages=True, external_stylesheets=[
+                dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"], suppress_callback_exceptions=True)
 server = app.server
 
 #Minify(app=server, html=True, js=True, cssless=True)
