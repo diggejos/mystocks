@@ -81,7 +81,7 @@ def get_stock_list():
     return list(set(sp500_tickers))  # Remove duplicates
 
 def store_top_20_stocks(stock_symbols):
-    with app.server.app_context():
+    with app.app_context():  # Use app.app_context() instead of app.server.app_context()
         kpi_data = []
         batch_id = int(datetime.utcnow().timestamp())
 
