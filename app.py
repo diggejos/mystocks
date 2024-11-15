@@ -760,6 +760,8 @@ def display_page_and_update_ui(pathname):
         return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/faqs':  # FAQ layout
         return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname == in ['/', '/prices']
+        return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/blog':  # Blog layout (to be created)
         return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname in ['/register', '/subscription']:
@@ -784,14 +786,13 @@ def display_page_and_update_ui(pathname):
 
 @app.callback(
     Output('url', 'pathname'),
-    Output('page-content', 'children', allow_duplicate=True),
     Input('url', 'pathname'),
     prevent_initial_call=True
 )
 def redirect_to_prices(pathname):
     if pathname == '/':
-        return '/prices', dashboard_layout  # Redirect to the '/prices' page
-    return pathname,  dash.no_update   # Otherwise, stay on the current page
+        return '/prices'  
+    return pathname,  
          
 
             
