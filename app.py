@@ -246,12 +246,10 @@ SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
 with app.server.app_context():
     db.create_all()
 
-
-
 app.layout = html.Div([
     # Store to keep the conversation history
     dcc.Store(id='conversation-store', data=[]),
-    dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT']),
+    dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT'], storage_type='session'),
     dcc.Store(id='theme-store', data=dbc.themes.SPACELAB),
     dcc.Store(id='plotly-theme-store', data='plotly_white'),
     dcc.Store(id='login-status', data=False),  # Store to track login status
@@ -263,7 +261,7 @@ app.layout = html.Div([
     dcc.Location(id='url', refresh=True),
     dbc.Container(id='page-content', fluid=True),
     dcc.Store(id='active-tab', data='📈 Prices'),
-    dcc.Store(id='forecast-data-store'),
+
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
     ly.create_floating_chatbot_button(),  # Floating Chatbot Button
@@ -280,7 +278,10 @@ app.layout = html.Div([
     # Store to keep track of the active tab globally
     dcc.Store(id='active-tab-store', data='prices-tab'),  # Default active tab
     # Initialize the forecast attempts at 0
-    dcc.Store(id='forecast-attempt-store', data=0)
+    # dcc.Store(id='forecast-attempt-store', data=0),
+    dcc.Store(id='last-known-path', data='/prices'),
+    dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session'),
+
 
 ])
 
@@ -652,6 +653,22 @@ def handle_plan_selection(free_clicks, paid_clicks):
         return '/register-paid'
 
     raise PreventUpdate
+    
+    
+
+@app.callback(
+    Output("date-range-container", "style"),
+    [Input("url", "pathname")]  # Assuming you have dcc.Location(id="url") in your app layout
+)
+def toggle_date_range_container(pathname):
+    # Define paths where the date range container should be shown
+    show_on_paths = ["/prices", "/compare"]  # Adjust paths as needed
+
+    if pathname in show_on_paths:
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
 
 
 app.clientside_callback(
@@ -684,10 +701,6 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
-@server.route('/forecast')
-def forecast_page():
-    # Serve the forecast tab as a standalone page
-    return render_template('forecast.html')
 
 
 @app.callback(
@@ -746,7 +759,7 @@ def display_page_and_update_ui(pathname):
 
     # Pages where the footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password',
-        '/subscription', '/register-free', '/register-paid', '/blog', '/demo', '/blog/arcticle-compounding', '/blog/article-diversification']
+        '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
@@ -755,7 +768,7 @@ def display_page_and_update_ui(pathname):
         return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/faqs':  # FAQ layout
         return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname in ['/blog', '/blog/article-compounding', '/blog/article-diversification']:  # Blog layout (to be created)
+    elif pathname == '/blog':  # Blog layout (to be created)
         return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname in ['/register', '/subscription']:
         return create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
@@ -769,148 +782,21 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast', '/about/article-compounding', '/about/article-diversification']:
-        return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-
+    # elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
+    #     return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
     # Default to dashboard if no specific path matches
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
-
-app.clientside_callback(
-    """
-    function(current_tab) {
-        // Determine which tab is active and apply the "active" class accordingly
-        return [
-            current_tab === '📰 News' ? "nav-link active" : "nav-link",
-            current_tab === '📈 Prices' ? "nav-link active" : "nav-link",
-            current_tab === '⚖️ Compare' ? "nav-link active" : "nav-link",
-            current_tab === '🌡️ Forecast' ? "nav-link active" : "nav-link",
-            current_tab === '📊 Simulate' ? "nav-link active" : "nav-link",
-            current_tab === '❤️ Reccomendations' ? "nav-link active" : "nav-link"
-        ];
-    }
-    """,
-    [Output('tab-prices', 'className'),
-     Output('tab-news', 'className'),
-     Output('tab-comparison', 'className'),
-     Output('tab-forecast', 'className'),
-     Output('tab-simulation', 'className'),
-     Output('tab-reccommendation', 'className')],
-    [Input('tabs', 'value')]
+@app.callback(
+    Output('url', 'pathname'),
+    Input('url', 'pathname')
 )
-
-
-
-app.clientside_callback(
-    """
-    function(desktop_tab, n_clicks_news, n_clicks_prices, n_clicks_compare,
-             n_clicks_forecast, n_clicks_simulate, n_clicks_recommendations,
-             n_clicks_topshots, pathname, current_active_tab) {
-
-        var active_class = 'footer-tab active';
-        var inactive_class = 'footer-tab';
-
-        var footer_to_tab = {
-            'footer-news-tab': 'news-tab',
-            'footer-prices-tab': 'prices-tab',
-            'footer-compare-tab': 'compare-tab',
-            'footer-forecast-tab': 'forecast-tab',
-            'footer-simulate-tab': 'simulate-tab',
-            'footer-recommendations-tab': 'recommendations-tab',
-            'footer-topshots-tab': 'topshots-tab',
-        };
-
-        if (!dash_clientside.callback_context.triggered || dash_clientside.callback_context.triggered[0].prop_id === 'url.pathname') {
-            if (pathname === '/news') {
-                return ['news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'];
-            } else if (pathname === '/prices') {
-                return ['prices-tab', inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'prices-tab'];
-            } else if (pathname === '/comparison') {
-                return ['compare-tab', inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, inactive_class, 'compare-tab'];
-            } else if (pathname === '/forecast') {
-                return ['forecast-tab', inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, inactive_class, 'forecast-tab'];
-            } else if (pathname === '/simulation') {
-                return ['simulate-tab', inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, inactive_class, 'simulate-tab'];
-            } else if (pathname === '/recommendations') {
-                return ['recommendations-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, inactive_class, 'recommendations-tab'];
-            } else if (pathname === '/topshots') {
-                return ['topshots-tab', inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, active_class, 'topshots-tab'];
-            } else {
-                return ['news-tab', active_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, 'news-tab'];
-            }
-        }
-
-        if (dash_clientside.callback_context.triggered[0].prop_id === 'tabs.active_tab') {
-            return [desktop_tab,
-                    desktop_tab === 'news-tab' ? active_class : inactive_class,
-                    desktop_tab === 'prices-tab' ? active_class : inactive_class,
-                    desktop_tab === 'compare-tab' ? active_class : inactive_class,
-                    desktop_tab === 'forecast-tab' ? active_class : inactive_class,
-                    desktop_tab === 'simulate-tab' ? active_class : inactive_class,
-                    desktop_tab === 'recommendations-tab' ? active_class : inactive_class,
-                    desktop_tab === 'topshots-tab' ? active_class : inactive_class,
-                    desktop_tab];
-        }
-
-        var triggered_id = dash_clientside.callback_context.triggered[0].prop_id.split('.')[0];
-        if (footer_to_tab.hasOwnProperty(triggered_id)) {
-            var selected_tab = footer_to_tab[triggered_id];
-            return [selected_tab,
-                    selected_tab === 'news-tab' ? active_class : inactive_class,
-                    selected_tab === 'prices-tab' ? active_class : inactive_class,
-                    selected_tab === 'compare-tab' ? active_class : inactive_class,
-                    selected_tab === 'forecast-tab' ? active_class : inactive_class,
-                    selected_tab === 'simulate-tab' ? active_class : inactive_class,
-                    selected_tab === 'recommendations-tab' ? active_class : inactive_class,
-                    selected_tab === 'topshots-tab' ? active_class : inactive_class,
-                    selected_tab];
-        }
-
-        return [dash_clientside.no_update, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, inactive_class, current_active_tab];
-    }
-    """,
-    [Output('tabs', 'active_tab'),
-     Output('footer-news-tab', 'className'),
-     Output('footer-prices-tab', 'className'),
-     Output('footer-compare-tab', 'className'),
-     Output('footer-forecast-tab', 'className'),
-     Output('footer-simulate-tab', 'className'),
-     Output('footer-recommendations-tab', 'className'),
-     Output('footer-topshots-tab', 'className'),
-     Output('active-tab-store', 'data')],
-    [Input('tabs', 'active_tab'),
-     Input('footer-news-tab', 'n_clicks'),
-     Input('footer-prices-tab', 'n_clicks'),
-     Input('footer-compare-tab', 'n_clicks'),
-     Input('footer-forecast-tab', 'n_clicks'),
-     Input('footer-simulate-tab', 'n_clicks'),
-     Input('footer-recommendations-tab', 'n_clicks'),
-     Input('footer-topshots-tab', 'n_clicks'),
-     Input('url', 'pathname')],
-    [State('active-tab-store', 'data')],
-    prevent_initial_call=False
-)
-
-
-
-app.clientside_callback(
-    """
-    function(active_tab) {
-        // List of tabs where the date range should be hidden
-        var hidden_tabs = ['news-tab', 'simulate-tab', 'recommendations-tab', 'topshots-tab'];
-        
-        // Check if the active tab is in the list of hidden tabs
-        if (hidden_tabs.includes(active_tab)) {
-            return {'display': 'none'};
-        } else {
-            return {'display': 'block'};
-        }
-    }
-    """,
-    Output('date-range-container', 'style'),
-    Input('tabs', 'active_tab')
-)
+def redirect_to_prices(pathname):
+    if pathname == '/':
+        return '/prices'  # Redirect to the '/prices' page
+    return pathname  # Otherwise, stay on the current page
+         
 
             
 app.clientside_callback(
@@ -922,7 +808,6 @@ app.clientside_callback(
     Output('active-tab', 'data'),
     Input('tabs', 'value')
 )
-
 
 
 
@@ -970,23 +855,42 @@ from dash.dependencies import Input, Output, State
 
 
 @app.callback(
-    [Output('new-watchlist-name', 'disabled'),
-      Output('saved-watchlists-dropdown', 'disabled'),
-      Output('saved-watchlists-dropdown', 'clearable'),  # Control clearable property
-      Output('create-watchlist-button', 'disabled'),
-      Output('delete-watchlist-button', 'disabled'),
-      Output('create-watchlist-button', 'className'),
-      Output('delete-watchlist-button', 'className')
-      ],
-    [Input('login-status', 'data')]
-    # prevent_initial_call=True  # Updated to valid boolean value
+    [
+        Output('new-watchlist-name', 'disabled'),
+        Output('saved-watchlists-dropdown', 'disabled'),
+        Output('saved-watchlists-dropdown', 'clearable'),
+        Output('create-watchlist-button', 'disabled'),
+        Output('delete-watchlist-button', 'disabled'),
+        Output('create-watchlist-button', 'className'),
+        Output('delete-watchlist-button', 'className')
+    ],
+    [
+        Input('login-status', 'data'),
+        Input('saved-watchlists-dropdown', 'value')  # Check selected watchlist
+    ]
 )
-def update_watchlist_management_layout(login_status):
+def update_watchlist_management_layout(login_status, selected_watchlist_id):
     if login_status:
-        return False, False, True, False, False, "small-button", "small-button"  # Enable components and make the dropdown clearable
+        delete_button_disabled = selected_watchlist_id is None  # Disable delete button if no watchlist is selected
+        return (
+            False,  # Enable new watchlist name input
+            False,  # Enable saved watchlists dropdown
+            True,   # Make dropdown clearable
+            False,  # Enable create watchlist button
+            delete_button_disabled,  # Conditionally disable delete button
+            "small-button",  # Class for create button
+            "small-button"   # Class for delete button
+        )
     else:
-        # return True, True, False, True, True  # Disable components and make the dropdown not clearable
-        return True, True,True,True,True,dash.no_update,dash.no_update
+        return (
+            True,  # Disable new watchlist name input
+            True,  # Disable saved watchlists dropdown
+            True,  # Make dropdown clearable (irrelevant when disabled)
+            True,  # Disable create watchlist button
+            True,  # Disable delete button
+            dash.no_update,  # No update to create button class
+            dash.no_update   # No update to delete button class
+        )
 
 
 
@@ -1111,52 +1015,38 @@ def update_topshots_visibility(login_status, username):
 
 
 
-
-@app.callback(
-    [Output('forecast-stock-input', 'options'),
-      Output('simulation-stock-input', 'options')],
-    Input('individual-stocks-store', 'data')
-)
-def update_forecast_simulation_dropdown(individual_stocks):
-    if not individual_stocks:
-        return [], []
-    
-    options = [{'label': stock, 'value': stock} for stock in individual_stocks]
-    return options, options
-
-
-
+# Register the callback for toggling the watchlist summary with burger icon logic
 app.clientside_callback(
     """
     function(n_clicks, is_open, button_class) {
-        // If the button has been clicked
-        if (n_clicks) {
-            // Toggle the sidebar open/close state
-            var new_is_open = !is_open;
-            var overlay_style = {"display": new_is_open ? "block" : "none"};
+        var isMobile = window.innerWidth < 768;
 
-            // Toggle the button class to switch between hamburger and "X" icons
-            if (new_is_open) {
-                button_class = "mobile-only toggler-icon open";  // Add the "open" class
-            } else {
-                button_class = "mobile-only toggler-icon";  // No "open" class
+        if (isMobile) {
+            if (n_clicks) {
+                var new_is_open = !is_open;
+
+                // Toggle the button class between hamburger and "X" icon
+                if (new_is_open) {
+                    button_class = "mobile-only toggler-icon open";  // Add the "open" class
+                } else {
+                    button_class = "mobile-only toggler-icon";  // Remove the "open" class
+                }
+
+                return [new_is_open, button_class];
             }
-
-            // Return the updated values
-            return [new_is_open, overlay_style, button_class];
+            return [is_open, button_class];
         }
-
-        // If no clicks yet, return the default state
-        return [is_open, {"display": "none"}, button_class];
+        return [true, button_class];  // Always open on desktop
     }
     """,
-    [Output('filters-collapse', 'is_open'),
-     Output('mobile-overlay', 'style'),
-     Output('toggle-filters-button', 'className')],
-    [Input('toggle-filters-button', 'n_clicks')],
-    [State('filters-collapse', 'is_open'),
-     State('toggle-filters-button', 'className')]
+    [Output('watchlist-collapse', 'is_open'),
+     Output('toggle-watchlist-button', 'className')],
+    [Input('toggle-watchlist-button', 'n_clicks')],
+    [State('watchlist-collapse', 'is_open'),
+     State('toggle-watchlist-button', 'className')]
 )
+
+
 
                 
 @server.route('/')
@@ -1166,85 +1056,74 @@ def index():
     return render_template('index.html')  # Or the Dash app
 
 
-@app.callback(
-    Output('forecast-attempt-store', 'data',allow_duplicate=True),
-    [Input('generate-forecast-button', 'n_clicks')],
-    [State('login-status', 'data')],
-    prevent_initial_call=True
-)
-def sync_forecast_attempt_store(n_clicks, login_status):
-    if not login_status:  # Handle logged-out users only
-        return session.get('forecast_attempts', 0)  # Return the Flask session value for attempts
 
-    raise PreventUpdate  # For logged-in users, don't update the store here
-
-
-                
 @app.callback(
     [Output('forecast-blur-overlay', 'children'),
      Output('forecast-blur-overlay', 'style')],
     [Input('login-status', 'data'),
      Input('login-username-store', 'data'),
-     Input('forecast-attempt-store', 'data')]  # Store tracking forecast attempts for logged-out users
+     Input('forecast-attempt-store', 'data')],
+    prevent_initial_call=True
 )
 def update_forecast_visibility(login_status, username, forecast_attempt):
-    # Case: User is logged out or session user (no username)
+    blur_style = {'display': 'none'}  # Default: hide the overlay
+
+    # Case 1: Logged-out user or session-based (no username)
     if not login_status or not username:
-        if forecast_attempt is None:
-            forecast_attempt = 0
+        forecast_attempt = forecast_attempt or 0
+        print(f"Logged-out user attempt count: {forecast_attempt}")
 
-        if forecast_attempt < 2:
-            # Allow two free forecasts for logged-out users
-            blur_style = {'display': 'none'}
-            return '', blur_style
-        else:
-            # Show the paywall after the second successful attempt
+        # Show paywall for logged-out users after 2 attempts
+        if forecast_attempt >= 2:
+            print("Triggering paywall for logged-out user")
             paywall = ly.paywall_logged_out_forecast()
-            blur_style = {
+            blur_style.update({
                 'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
                 'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
                 'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
                 'backdrop-filter': 'blur(2px)'
-            }
+            })
             return paywall, blur_style
-
-    # Case: User is logged in
-    user = User.query.filter_by(username=username).first()
-
-    if user and user.subscription_status == 'free':
-        # For logged-in free users, allow two attempts before showing the paywall
-        if user.forecast_attempts < 2:
-            blur_style = {'display': 'none'}
-            return '', blur_style
         else:
-            # Show the paywall after the second successful attempt
+            return '', blur_style  # No overlay if attempts are under the limit
+
+    # Case 2: Logged-in user
+    user = User.query.filter_by(username=username).first()
+    if user and user.subscription_status == 'free':
+        print(f"Logged-in free user attempt count: {user.forecast_attempts}")
+        # Show paywall for free users after 2 attempts
+        if user.forecast_attempts >= 2:
+            print("Triggering paywall for free logged-in user")
             paywall = ly.paywall_free_user_forecast()
-            blur_style = {
+            blur_style.update({
                 'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
                 'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
                 'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
                 'backdrop-filter': 'blur(2px)'
-            }
+            })
             return paywall, blur_style
+        else:
+            return '', blur_style  # No overlay if attempts are under the limit
 
+    # Case 3: Premium user (no overlay required)
     elif user and user.subscription_status == 'premium':
-        # Case: Premium user, no paywall and no blur
-        blur_style = {'display': 'none'}
-        return '', blur_style
+        print("Premium user - no overlay")
+        return dash.no_update, {'display': 'none'}
 
     # Fallback: Treat as logged-out if user role is undefined
+    print("Fallback case - triggering logged-out paywall")
     paywall = ly.paywall_logged_out_forecast()
-    blur_style = {
+    blur_style.update({
         'position': 'absolute', 'top': 0, 'left': 0, 'width': '100%', 'height': '100%',
         'background-color': 'rgba(255, 255, 255, 0.3)', 'display': 'flex',
         'justify-content': 'center', 'align-items': 'center', 'z-index': 1000,
         'backdrop-filter': 'blur(2px)'
-    }
+    })
     return paywall, blur_style
+
+
             
-           
-
-
+          
 @app.callback(
     [Output('profile-username', 'value'),
       Output('profile-email', 'value'),
@@ -1391,6 +1270,7 @@ def handle_profile_actions(edit_clicks, save_clicks, cancel_clicks, toggle_pw_cl
 
 
 
+
 @app.callback(
     Output("cancel-subscription-modal", "is_open"),
     [Input("cancel-subscription-btn", "n_clicks"),
@@ -1474,7 +1354,6 @@ def update_stock_suggestions(company_name):
         return [{'label': 'Error retrieving stock suggestions', 'value': ''}]
 
 
-
 @app.callback(
     [Output('theme-store', 'data'),
      Output('plotly-theme-store', 'data')],
@@ -1511,21 +1390,6 @@ def update_stylesheet(theme):
     return theme
 
 
-
-
-@app.callback(
-    Output('meta-description', 'content'),
-    Input('url', 'pathname')
-)
-def update_meta_description(pathname):
-    if pathname == '/blog/article-compounding':
-        return "Learn how compounding can significantly grow your investments."
-    elif pathname == '/blog/article-diversification':
-        return "Understand how diversification can reduce risk in your investment portfolio."
-    else:
-        return "Your Stocks monitoring Dashboard: visualize trends, get stocks recommendations and forecasts, and chat with an AI financial advisor. Save your watchlist today!"
-
-
 app.clientside_callback(
     """
     function(n_clicks) {
@@ -1535,7 +1399,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
 
 
 app.index_string = '''
