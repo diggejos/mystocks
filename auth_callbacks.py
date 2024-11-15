@@ -91,7 +91,7 @@ def register_auth_callbacks(app, server, mail):
                 themes[user_theme]['dbc'],  # User's selected theme
                 plotly_theme,  # User's selected Plotly theme
                 dash.no_update,  # No error message
-                '/'  # This will redirect to the home page and update the URL
+                '/prices'  # This will redirect to the home page and update the URL
             )
     
         # If the button was not clicked, do not update anything
@@ -258,7 +258,6 @@ def register_auth_callbacks(app, server, mail):
     def update_profile_password_requirements(password):
         return update_password_requirements(password)
     
-    
     @app.callback(
     [Output('login-status', 'data', allow_duplicate=True),
      Output('login-link', 'style', allow_duplicate=True),
@@ -287,7 +286,7 @@ def register_auth_callbacks(app, server, mail):
                 ['AAPL', 'MSFT'],  # Reset individual stocks store to default
                 dbc.themes.SPACELAB,  # Reset theme to default
                 'plotly_white',  # Reset plotly theme to default
-                '/'  # Redirect to login page
+                '/prices'  # Redirect to login page
             )
     
         # No updates if logout button was not clicked
@@ -315,7 +314,4 @@ def register_auth_callbacks(app, server, mail):
         Output('theme-dropdown', 'disabled'),
         Input('login-status', 'data')
     )
-
-    
-
 
