@@ -791,7 +791,7 @@ def display_page_and_update_ui(pathname):
 def redirect_to_prices(pathname):
     if pathname == '/':
         return '/prices' , dashboard_layout
-    return pathname,  ""
+    return pathname, dash.no_update
          
 
             
