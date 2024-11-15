@@ -10,7 +10,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -26,7 +25,6 @@ class User(db.Model):
     stripe_subscription_id = db.Column(db.String(100), nullable=True)  # Add stripe_subscription_id
     forecast_attempts = db.Column(db.Integer, nullable=False, default=0)  # Track forecast attempts
 
-    
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
