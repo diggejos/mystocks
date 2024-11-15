@@ -4,6 +4,7 @@ import pandas as pd
 # from auth_callbacks import show_overlay_if_logged_out
 import utils as ut
 import dash
+from dash import page_registry
 
 
 themes = {
