@@ -255,7 +255,7 @@ def get_data_callbacks(app, server, cache):
 
     from dash import no_update
     
-   @app.callback(
+    @app.callback(
         [
             Output('save-watchlist-modal', 'is_open'),
             Output('delete-watchlist-modal', 'is_open'),
@@ -389,7 +389,141 @@ def get_data_callbacks(app, server, cache):
     
         return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", save_modal_triggered
     
+    
+
  
+    # @app.callback(
+    #     [
+    #         Output('save-watchlist-modal', 'is_open'),
+    #         Output('delete-watchlist-modal', 'is_open'),
+    #         Output('overwrite-warning', 'children'),
+    #         Output('new-watchlist-name', 'style'),
+    #         Output('saved-watchlists-dropdown', 'options'),
+    #         Output('saved-watchlists-dropdown', 'value'),
+    #         Output('new-watchlist-name', 'value'),
+    #         Output('save_modal_triggered', 'data')
+    #     ],
+    #     [
+    #         Input('create-watchlist-button', 'n_clicks'),
+    #         Input('confirm-save-watchlist', 'n_clicks'),
+    #         Input('delete-watchlist-button', 'n_clicks'),
+    #         Input('confirm-delete-watchlist', 'n_clicks'),
+    #         Input('cancel-save-watchlist', 'n_clicks'),
+    #         Input('cancel-delete-watchlist', 'n_clicks'),
+    #         Input('saved-watchlists-dropdown', 'value'),  # To load selected watchlist
+    #         Input('url', 'pathname'),  # Detects tab changes
+    #         Input('login-username-store', 'data')  # Detects initial load for a logged-in user
+    #     ],
+    #     [
+    #         State('new-watchlist-name', 'value'),
+    #         State('individual-stocks-store', 'data'),
+    #         State('login-username-store', 'data'),
+    #         State('save_modal_triggered', 'data')
+    #     ],
+    #     prevent_initial_call=True
+    # )
+    # def manage_watchlists(
+    #     create_clicks, confirm_save_clicks, delete_clicks, confirm_delete_clicks,
+    #     cancel_save_clicks, cancel_delete_clicks, selected_watchlist_id, pathname, username_initial,
+    #     new_watchlist_name, stocks, username, save_modal_triggered
+    # ):
+    #     ctx = dash.callback_context
+    #     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    #     open_save_modal, open_delete_modal = False, False
+    
+    #     # Ensure user is logged in
+    #     if not username:
+    #         return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", False
+    
+    #     # Fetch user and load watchlists when necessary
+    #     user = User.query.filter_by(username=username).first()
+    #     if not user:
+    #         return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", False
+    
+    #     # Check if we need to load the watchlists (on initial load or when tab changes)
+    #     watchlists = Watchlist.query.filter_by(user_id=user.id).all()
+    #     watchlist_options = [{'label': w.name, 'value': w.id} for w in watchlists]
+    
+    #     if trigger_id in ['login-username-store', 'url']:  # Load on initial login or tab change
+    #         selected_watchlist = watchlist_options[0]['value'] if watchlist_options else None
+    #         return (
+    #             open_save_modal, open_delete_modal, "", {"display": "none"},
+    #             watchlist_options, selected_watchlist, "", save_modal_triggered
+    #         )
+    
+    #     # Load selected watchlist data when dropdown value changes
+    #     if trigger_id == 'saved-watchlists-dropdown':
+    #         if selected_watchlist_id:
+    #             watchlist = Watchlist.query.get(selected_watchlist_id)
+    #             if watchlist and watchlist.user_id == user.id:
+    #                 return (
+    #                     open_save_modal, open_delete_modal, "", {"display": "none"},
+    #                     watchlist_options, selected_watchlist_id, "", save_modal_triggered
+    #                 )
+    #         return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, None, "", save_modal_triggered
+    
+    #     # Handle "Save" button click - open save modal only if this button was clicked
+    #     if trigger_id == 'create-watchlist-button':
+    #         save_modal_triggered = True  # Mark that the save modal was intentionally triggered
+    #         if selected_watchlist_id or any(w.name == new_watchlist_name for w in watchlists):
+    #             overwrite_message = (
+    #                 "Overwrite the existing watchlist?" if selected_watchlist_id else 
+    #                 "A watchlist with this name exists. Do you want to overwrite it?"
+    #             )
+    #             return True, False, overwrite_message, {"display": "none"}, watchlist_options, no_update, "", save_modal_triggered
+    
+    #         # Prompt for new watchlist name if no duplicates
+    #         return True, False, "", {"display": "inline-block"}, watchlist_options, no_update, "", save_modal_triggered
+    
+    #     # Confirm save or overwrite action only if the modal was intentionally triggered
+    #     elif trigger_id == 'confirm-save-watchlist' and save_modal_triggered:
+    #         if selected_watchlist_id:
+    #             watchlist = Watchlist.query.get(selected_watchlist_id)
+    #             if watchlist and watchlist.user_id == user.id:
+    #                 watchlist.stocks = json.dumps(stocks)
+    #                 db.session.commit()
+    #                 return False, False, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", False
+    #         elif new_watchlist_name:
+    #             duplicate = Watchlist.query.filter_by(user_id=user.id, name=new_watchlist_name).first()
+    #             if duplicate:
+    #                 db.session.delete(duplicate)
+    #                 db.session.commit()
+    
+    #             new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
+    #             db.session.add(new_watchlist)
+    #             db.session.commit()
+    #             selected_watchlist_id = new_watchlist.id
+    
+    #         # Reload watchlists after save
+    #         watchlists = Watchlist.query.filter_by(user_id=user.id).all()
+    #         options = [{'label': w.name, 'value': w.id} for w in watchlists]
+    #         return False, False, "", {"display": "none"}, options, selected_watchlist_id, "", False
+    
+    #     # Handle delete button click
+    #     elif trigger_id == 'delete-watchlist-button' and selected_watchlist_id:
+    #         open_delete_modal = True
+    #         return open_save_modal, open_delete_modal, "", {"display": "none"}, no_update, no_update, no_update, save_modal_triggered
+    
+    #     # Confirm deletion
+    #     elif trigger_id == 'confirm-delete-watchlist' and selected_watchlist_id:
+    #         watchlist = Watchlist.query.get(selected_watchlist_id)
+    #         if watchlist and watchlist.user_id == user.id:
+    #             db.session.delete(watchlist)
+    #             db.session.commit()
+    #             selected_watchlist_id = None
+    
+    #         # Reload watchlists after delete
+    #         watchlists = Watchlist.query.filter_by(user_id=user.id).all()
+    #         options = [{'label': w.name, 'value': w.id} for w in watchlists]
+    #         return False, False, "", {"display": "none"}, options, selected_watchlist_id, "", save_modal_triggered
+    
+    #     # Cancel modal actions and reset `save_modal_triggered`
+    #     elif trigger_id in ['cancel-save-watchlist', 'cancel-delete-watchlist']:
+    #         return False, False, "", {"display": "none"}, no_update, no_update, "", False
+    
+    #     return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", save_modal_triggered
+    
+  
     @app.callback(
         [
             Output('stock-graph', 'figure'),
