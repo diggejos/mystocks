@@ -697,8 +697,6 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
-
-
 @app.callback(
     [
         Output('page-content', 'children'),
@@ -780,9 +778,12 @@ def display_page_and_update_ui(pathname):
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     # elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
     #     return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-
+    elif pathname =='/':
+        return dash.page_registry['pages.prices']['layout'],logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     # Default to dashboard if no specific path matches
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+
+
 
 @app.callback(
     Output('url', 'pathname'),
