@@ -784,7 +784,7 @@ def display_page_and_update_ui(pathname):
 
 @app.callback(
     Output('url', 'pathname'),
-    Output('page-content', 'children'),
+    Output('page-content', 'children', allow_duplicate=True),
     Input('url', 'pathname'),
     prevent_initial_call=True
 )
