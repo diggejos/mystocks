@@ -759,7 +759,6 @@ def create_dashboard_layout(watchlist_management_layout):
                     dbc.NavLink("Hot Stocks", href="/hotstocks", active="exact", className="tab-link"),
                     dbc.NavLink("Simulate", href="/simulation", active="exact", className="tab-link"),
                 ], pills=True, className="tabs-container desktop-only"),
-                dcc.Location(id="url",refresh=False),  # For page navigation
                 dash.page_container
             ], width=12, md=9)
         ], className='mb-4')
