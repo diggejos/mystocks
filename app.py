@@ -781,14 +781,17 @@ def display_page_and_update_ui(pathname):
 
 
 
+
 @app.callback(
     Output('url', 'pathname'),
-    Input('url', 'pathname')
+    Output('page-content', 'children', allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call=True
 )
 def redirect_to_prices(pathname):
     if pathname == '/':
-        return '/prices'  # Redirect to the '/prices' page
-    return pathname  # Otherwise, stay on the current page
+        return '/prices', dashboard_layout  # Redirect to the '/prices' page
+    return pathname, dashboard_layout  # Otherwise, stay on the current page
          
 
             
