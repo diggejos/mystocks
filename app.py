@@ -25,6 +25,8 @@ import logging
 from flask_caching import Cache
 from flask_minify import Minify
 from flask_compress import Compress
+from flask import render_template, abort
+import secrets
 
 
 # Initialize the Dash app with a default Bootstrap theme
@@ -119,8 +121,6 @@ def ensure_flask_routes_are_handled():
     if request.path.startswith("/login"):
         return None  # Flask will handle these routes
 
-from flask import render_template, abort
-import secrets
 
 # Google login route
 @server.route('/login/google')
