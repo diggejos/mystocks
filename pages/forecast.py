@@ -43,7 +43,7 @@ layout = html.Div([
             # Main forecast content card
             dbc.Card(
                 dbc.CardBody([
-                    html.H1("Forecast stock prices", style={"display": "none"}),  # <h1> for SEO
+                    html.H1("Forecast stock prices"),  # <h1> for SEO
 
                     # Forecast input controls
                     html.Div([
