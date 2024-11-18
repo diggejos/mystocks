@@ -16,14 +16,7 @@ layout = html.Div([
     html.Meta(name="viewport", content="width=device-width, initial-scale=1"),
     html.Meta(name="robots", content="index, follow"),
     html.Meta(name="author", content="WatchMyStocks"),
-    html.Meta(property="og:title", content="Forecast - WatchMyStocks"),
-    html.Meta(property="og:description", content="Get forecasted stock prices using advanced time series models."),
-    html.Meta(property="og:image", content="/assets/forecast-thumbnail.png"),
-    html.Meta(property="og:type", content="website"),
-    html.Meta(property="twitter:card", content="summary_large_image"),
-    html.Meta(property="twitter:title", content="Forecast - WatchMyStocks"),
-    html.Meta(property="twitter:description", content="Plan better with forecasted stock prices."),
-    html.Meta(property="twitter:image", content="/assets/forecast-thumbnail.png"),
+
     
     # Structured data (JSON-LD)
     html.Script(type="application/ld+json", children='''
