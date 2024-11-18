@@ -5,8 +5,13 @@ from dash import html, dcc, callback, Input, Output
 import dash
 
 
-dash.register_page(__name__, title="Stock Prices - WatchMyStocks", path='/prices', 
-                   description="Explore real-time and historical stock prices with various charting options. Choose line or candlestick charts and add moving averages for better insights.")
+dash.register_page(
+    __name__,
+    title="Stock Prices - WatchMyStocks",
+    path='/prices',
+    description="Explore real-time and historical stock prices with various charting options. Choose line or candlestick charts and add moving averages for better insights.",
+    keywords="stock prices, real-time stocks, historical stock prices, stock charting, moving average, candlestick charts"
+)
 
 layout = html.Div([
     
