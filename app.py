@@ -27,6 +27,7 @@ from flask_minify import Minify
 from flask_compress import Compress
 from flask import render_template, abort
 import secrets
+from pages.home import layout as homepage_layout
 
 
 # Initialize the Dash app with a default Bootstrap theme
