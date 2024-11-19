@@ -13,7 +13,7 @@ import layouts as ly
 from layouts import themes
 import utils as ut
 from models import db, bcrypt, User  # Import User model and bcrypt instance
-from layouts import login_layout, dashboard_layout, about_layout,profile_layout, forgot_layout, subscription_page, create_register_layout,create_subscription_selection_layout, faq_layout, blog_layout
+#from layouts import login_layout, dashboard_layout, about_layout,profile_layout, forgot_layout, subscription_page, create_register_layout,create_subscription_selection_layout, faq_layout, blog_layout
 from flask_mail import Mail
 import auth_callbacks
 from flask import request
@@ -35,6 +35,7 @@ app = dash.Dash(__name__,  use_pages=True, external_stylesheets=[
 server = app.server
 
 from pages.home import layout as homepage_layout
+from layouts import login_layout, dashboard_layout, about_layout,profile_layout, forgot_layout, subscription_page, create_register_layout,create_subscription_selection_layout, faq_layout, blog_layout
 
 
 app.server.config['COMPRESS_ALGORITHM'] = 'br'
