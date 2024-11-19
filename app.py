@@ -140,7 +140,6 @@ def logout():
     session.clear()
     return redirect('/')
 
-# sub_1Q6VpcJDCPstqzb12PMNdB61
 
 # Google callback route
 @server.route('/login/callback')
@@ -237,10 +236,12 @@ mail = Mail(app.server)
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 SUBSCRIPTION_PRICE_ID = os.getenv('SUBSCRIPTION_PRICE_ID')
-    
+
+
 # Create the database tables
 with app.server.app_context():
     db.create_all()
+
 
 app.layout = html.Div([
     # Store to keep the conversation history
@@ -256,8 +257,9 @@ app.layout = html.Div([
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
     dbc.Container(id='page-content', fluid=True),
-    dcc.Store(id='active-tab', data='📈 Prices'),
 
+    # dash.page_container,  # This should render content from registered pages
+    dcc.Store(id='active-tab', data='📈 Prices'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
     ly.create_floating_chatbot_button(),  # Floating Chatbot Button
@@ -277,6 +279,8 @@ app.layout = html.Div([
     # dcc.Store(id='forecast-attempt-store', data=0),
     dcc.Store(id='last-known-path', data='/prices'),
     dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session'),
+
+
 ])
 
 
@@ -695,6 +699,8 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
+
+
 @app.callback(
     [
         Output('page-content', 'children'),
@@ -780,6 +786,8 @@ def display_page_and_update_ui(pathname):
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
 
+
+
 @app.callback(
     Output('url', 'pathname'),
     Output('page-content', 'children',allow_duplicate=True),
@@ -793,6 +801,7 @@ def redirect_to_prices(pathname):
         return pathname , dashboard_layout
     return pathname,  dash.no_update
          
+
             
 app.clientside_callback(
     """
@@ -1394,7 +1403,6 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
-
 
 app.index_string = '''
 <!DOCTYPE html>
