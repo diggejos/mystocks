@@ -699,8 +699,6 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
-
-
 @app.callback(
     [
         Output('page-content', 'children'),
@@ -741,8 +739,7 @@ def display_page_and_update_ui(pathname):
 
     # Adjust layout if the user is logged in
     if logged_in and username:
-        user = User.query.filter_by(
-            username=username).first()  # Fetch user info
+        user = User.query.filter_by(username=username).first()  # Fetch user info
         if user:
             is_free_user = user.subscription_status == 'free'
             is_premium_user = user.subscription_status == 'premium'
@@ -757,16 +754,20 @@ def display_page_and_update_ui(pathname):
 
     # Pages where the footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password',
-        '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
+                            '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
     # Return layout based on the path and login state
-    if pathname in ['/about', '/demo']:  # '/demo' now maps to about_layout
+    if pathname == '/':
+        return homepage_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+
+
+    elif pathname in ['/about', '/demo']:
         return about_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/faqs':  # FAQ layout
+    elif pathname == '/faqs':
         return faq_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    elif pathname == '/blog':  # Blog layout (to be created)
+    elif pathname == '/blog':
         return blog_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname in ['/register', '/subscription']:
         return create_subscription_selection_layout(is_free_user), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], {"display": "none"}
@@ -780,27 +781,9 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-    # elif pathname not in ['/about', '/demo', '/faqs', '/', '/register', '/subscription', '/register-free', '/register-paid', '/login', '/profile', '/forgot-password', '/forecast']:
-    #     return ut.page_not_found_layout(), logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+
     # Default to dashboard if no specific path matches
     return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
-
-
-
-
-@app.callback(
-    Output('url', 'pathname'),
-    Output('page-content', 'children',allow_duplicate=True),
-    Input('url', 'pathname'),
-    prevent_initial_call=True
-)
-def redirect_to_prices(pathname):
-    if pathname == '/':
-        return '/prices' , dashboard_layout
-    elif pathname == '/prices':
-        return pathname , dashboard_layout
-    return pathname,  dash.no_update
-         
 
             
 app.clientside_callback(
@@ -1403,6 +1386,7 @@ app.clientside_callback(
     Output("trigger-fullscreen", "data"),
     [Input("fullscreen-button", "n_clicks")]
 )
+
 
 app.index_string = '''
 <!DOCTYPE html>
