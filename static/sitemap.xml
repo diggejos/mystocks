@@ -4,6 +4,10 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
     xmlns:xhtml="http://www.w3.org/1999/xhtml" 
     xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <url>
+        <loc>https://mystocksportfolio.io/</loc>
+    </url>
     <url>
         <loc>https://mystocksportfolio.io/prices</loc>
     </url>
@@ -25,7 +29,8 @@
     <url>
         <loc>https://mystocksportfolio.io/login</loc>
     </url>
-        <url>
+    <url>
         <loc>https://mystocksportfolio.io/blog</loc>
     </url>
+
 </urlset>
