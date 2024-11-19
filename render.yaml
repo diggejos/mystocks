@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mystocksportfolio
+    env: python
+    plan: free  # Or whatever plan you're using
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:server"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /
