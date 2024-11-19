@@ -260,9 +260,11 @@ app.layout = html.Div([
     ly.create_navbar(themes),  # Navbar
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
-    dbc.Container(id='page-content', fluid=True),
-    #dash.page_container,  # This should render content from registered pages
-    # dash.page_container,  # This should render content from registered pages
+    dbc.Container(
+        dash.page_container,  # This will render the content of each page dynamically
+        id='page-content',
+        fluid=True
+    ),
     dcc.Store(id='active-tab', data='📈 Prices'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
@@ -283,8 +285,6 @@ app.layout = html.Div([
     # dcc.Store(id='forecast-attempt-store', data=0),
     dcc.Store(id='last-known-path', data='/prices'),
     dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session'),
-
-
 ])
 
 
