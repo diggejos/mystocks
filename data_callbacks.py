@@ -174,7 +174,6 @@ def get_data_callbacks(app, server, cache):
             
         return options, selected_simulation_stocks
     
-    # Callback to handle modifications to `individual-stocks-store`
     @app.callback(
         [
             Output('individual-stocks-store', 'data'),  # Update the individual stocks store
@@ -198,11 +197,15 @@ def get_data_callbacks(app, server, cache):
     ):
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id']
-        default_stocks = []  # Set default to empty list for a full reset
         
+        # Debug print for tracing
+        print(f"Triggered ID: {trigger_id}")
+        print(f"Individual stocks before modification: {individual_stocks}")
+    
+        default_stocks = []  # Set default to empty list for a full reset
+    
         # Load watchlist if selected
         if 'saved-watchlists-dropdown' in trigger_id:
-            # Load the watchlist data based on selected dropdown
             if watchlist_id:
                 # Fetch watchlist from database
                 watchlist = db.session.get(Watchlist, watchlist_id)
@@ -218,27 +221,26 @@ def get_data_callbacks(app, server, cache):
             new_stock = new_stock.upper().strip()
             if new_stock and new_stock not in individual_stocks:
                 individual_stocks.append(new_stock)
-            # Clear the input field after adding the stock
+            print(f"Added new stock: {new_stock}")
             return individual_stocks, ''
     
         # Reset stocks if reset button is clicked
         elif 'reset-stocks-button' in trigger_id:
             individual_stocks = []  # Reset to empty list
+            print("Stocks reset to empty list")
             return individual_stocks, dash.no_update
     
         # Remove specific stock based on index
         elif 'remove-stock' in trigger_id:
             index_to_remove = json.loads(trigger_id.split('.')[0])['index']
             if 0 <= index_to_remove < len(individual_stocks):
-                individual_stocks.pop(index_to_remove)
+                removed_stock = individual_stocks.pop(index_to_remove)
+                print(f"Removed stock at index {index_to_remove}: {removed_stock}")
             return individual_stocks, dash.no_update
     
-        print(f"Updated individual_stocks: {individual_stocks}")  # Debugging
-        
-        # Return the updated stocks list and no update for input if no new stock added
+        print(f"Updated individual_stocks: {individual_stocks}")
         return individual_stocks, dash.no_update
 
- 
     
     @app.callback(
     Output('watchlist-summary', 'children'),
@@ -295,15 +297,25 @@ def get_data_callbacks(app, server, cache):
     ):
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+        # Debug prints for tracing
+        print(f"Triggered by: {trigger_id}")
+        print(f"Stocks before action: {stocks}")
+        print(f"Selected Watchlist ID: {selected_watchlist_id}")
+        print(f"New Watchlist Name: {new_watchlist_name}")
+        print(f"Save Modal Triggered: {save_modal_triggered}")
+    
         open_save_modal, open_delete_modal = False, False
     
         # Ensure user is logged in
         if not username:
+            print("User not logged in")
             return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", False
     
         # Fetch user and load watchlists when necessary
         user = User.query.filter_by(username=username).first()
         if not user:
+            print("User not found")
             return open_save_modal, open_delete_modal, "", {"display": "none"}, [], None, "", False
     
         # Check if we need to load the watchlists (on initial load or when tab changes)
@@ -312,6 +324,7 @@ def get_data_callbacks(app, server, cache):
     
         if trigger_id in ['login-username-store', 'url']:  # Load on initial login or tab change
             selected_watchlist = watchlist_options[0]['value'] if watchlist_options else None
+            print("Loading initial watchlists")
             return (
                 open_save_modal, open_delete_modal, "", {"display": "none"},
                 watchlist_options, selected_watchlist, "", save_modal_triggered
@@ -322,6 +335,7 @@ def get_data_callbacks(app, server, cache):
             if selected_watchlist_id:
                 watchlist = Watchlist.query.get(selected_watchlist_id)
                 if watchlist and watchlist.user_id == user.id:
+                    print(f"Loaded watchlist: {watchlist.name}")
                     return (
                         open_save_modal, open_delete_modal, "", {"display": "none"},
                         watchlist_options, selected_watchlist_id, "", save_modal_triggered
@@ -336,9 +350,10 @@ def get_data_callbacks(app, server, cache):
                     "Overwrite the existing watchlist?" if selected_watchlist_id else 
                     "A watchlist with this name exists. Do you want to overwrite it?"
                 )
+                print("Prompting for overwrite")
                 return True, False, overwrite_message, {"display": "none"}, watchlist_options, no_update, "", save_modal_triggered
     
-            # Prompt for new watchlist name if no duplicates
+            print("Prompting for new watchlist name")
             return True, False, "", {"display": "inline-block"}, watchlist_options, no_update, "", save_modal_triggered
     
         elif trigger_id == 'confirm-save-watchlist' and save_modal_triggered:
@@ -347,22 +362,21 @@ def get_data_callbacks(app, server, cache):
                 if watchlist and watchlist.user_id == user.id:
                     watchlist.stocks = json.dumps(stocks)
                     db.session.commit()
+                    print("Watchlist updated")
                     return False, False, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", False
             elif new_watchlist_name:
                 duplicate = Watchlist.query.filter_by(user_id=user.id, name=new_watchlist_name).first()
                 if duplicate:
                     db.session.delete(duplicate)
                     db.session.commit()
-        
+                    print("Duplicate watchlist deleted")
+    
                 new_watchlist = Watchlist(user_id=user.id, name=new_watchlist_name, stocks=json.dumps(stocks))
                 db.session.add(new_watchlist)
                 db.session.commit()
                 selected_watchlist_id = new_watchlist.id
-        
-            # Ensure `individual-stocks-store` retains its state if no change is needed
-            return False, False, "", {"display": "none"}, watchlist_options, selected_watchlist_id, dash.no_update, False
-            
-
+                print("New watchlist created")
+    
             # Reload watchlists after save
             watchlists = Watchlist.query.filter_by(user_id=user.id).all()
             options = [{'label': w.name, 'value': w.id} for w in watchlists]
@@ -371,6 +385,7 @@ def get_data_callbacks(app, server, cache):
         # Handle delete button click
         elif trigger_id == 'delete-watchlist-button' and selected_watchlist_id:
             open_delete_modal = True
+            print("Opening delete modal")
             return open_save_modal, open_delete_modal, "", {"display": "none"}, no_update, no_update, no_update, save_modal_triggered
     
         # Confirm deletion
@@ -380,6 +395,7 @@ def get_data_callbacks(app, server, cache):
                 db.session.delete(watchlist)
                 db.session.commit()
                 selected_watchlist_id = None
+                print("Watchlist deleted")
     
             # Reload watchlists after delete
             watchlists = Watchlist.query.filter_by(user_id=user.id).all()
@@ -388,12 +404,11 @@ def get_data_callbacks(app, server, cache):
     
         # Cancel modal actions and reset `save_modal_triggered`
         elif trigger_id in ['cancel-save-watchlist', 'cancel-delete-watchlist']:
+            print("Action canceled")
             return False, False, "", {"display": "none"}, no_update, no_update, "", False
     
         return open_save_modal, open_delete_modal, "", {"display": "none"}, watchlist_options, selected_watchlist_id, "", save_modal_triggered
-    
 
-  
     @app.callback(
         [
             Output('stock-graph', 'figure'),
