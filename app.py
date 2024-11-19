@@ -261,7 +261,7 @@ app.layout = html.Div([
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
     dbc.Container(id='page-content', fluid=True),
-
+    dash.page_container,  # This should render content from registered pages
     # dash.page_container,  # This should render content from registered pages
     dcc.Store(id='active-tab', data='📈 Prices'),
     # dcc.Location(id='url-refresh', refresh=True),
