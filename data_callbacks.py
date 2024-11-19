@@ -176,15 +176,16 @@ def get_data_callbacks(app, server, cache):
     
     @app.callback(
         [
-            Output('individual-stocks-store', 'data'),  # Update the individual stocks store
-            Output('stock-suggestions-input', 'value')   # Clear the input field after adding
+            Output('individual-stocks-store', 'data'),
+            Output('stock-suggestions-input', 'value')
         ],
         [
             Input('saved-watchlists-dropdown', 'value'),
             Input('refresh-data-icon', 'n_clicks'),
             Input('stock-suggestions-input', 'value'),
             Input('reset-stocks-button', 'n_clicks'),
-            Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks')
+            Input({'type': 'remove-stock', 'index': ALL}, 'n_clicks'),
+            Input('create-watchlist-button', 'n_clicks')  # Add this input to ignore during processing
         ],
         [
             State('login-username-store', 'data'),
@@ -193,30 +194,29 @@ def get_data_callbacks(app, server, cache):
         prevent_initial_call=True
     )
     def modify_individual_stocks(
-        watchlist_id, refresh_n_clicks, new_stock, reset_n_clicks, remove_clicks, username, individual_stocks
+        watchlist_id, refresh_n_clicks, new_stock, reset_n_clicks, remove_clicks, create_clicks, username, individual_stocks
     ):
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id']
-        
+    
+        # Ignore updates when the create button is clicked to prevent clearing the store
+        if trigger_id == 'create-watchlist-button.n_clicks':
+            return individual_stocks, dash.no_update
+    
+        default_stocks = []  # Default to an empty list for a full reset
+    
         # Debug print for tracing
         print(f"Triggered ID: {trigger_id}")
         print(f"Individual stocks before modification: {individual_stocks}")
     
-        default_stocks = []  # Set default to empty list for a full reset
-    
-        # Load watchlist if selected
-        if 'saved-watchlists-dropdown' in trigger_id:
-            if watchlist_id:
-                # Fetch watchlist from database
-                watchlist = db.session.get(Watchlist, watchlist_id)
-                if watchlist:
-                    individual_stocks = json.loads(watchlist.stocks)
-                else:
-                    individual_stocks = default_stocks
+        if 'saved-watchlists-dropdown' in trigger_id and watchlist_id:
+            # Fetch watchlist from database
+            watchlist = db.session.get(Watchlist, watchlist_id)
+            if watchlist:
+                individual_stocks = json.loads(watchlist.stocks)
             else:
                 individual_stocks = default_stocks
     
-        # Add new stock from suggestions input
         elif 'stock-suggestions-input' in trigger_id and new_stock:
             new_stock = new_stock.upper().strip()
             if new_stock and new_stock not in individual_stocks:
@@ -224,13 +224,11 @@ def get_data_callbacks(app, server, cache):
             print(f"Added new stock: {new_stock}")
             return individual_stocks, ''
     
-        # Reset stocks if reset button is clicked
         elif 'reset-stocks-button' in trigger_id:
-            individual_stocks = []  # Reset to empty list
+            individual_stocks = []
             print("Stocks reset to empty list")
             return individual_stocks, dash.no_update
     
-        # Remove specific stock based on index
         elif 'remove-stock' in trigger_id:
             index_to_remove = json.loads(trigger_id.split('.')[0])['index']
             if 0 <= index_to_remove < len(individual_stocks):
@@ -240,6 +238,7 @@ def get_data_callbacks(app, server, cache):
     
         print(f"Updated individual_stocks: {individual_stocks}")
         return individual_stocks, dash.no_update
+
 
     
     @app.callback(
