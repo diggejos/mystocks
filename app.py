@@ -27,13 +27,15 @@ from flask_minify import Minify
 from flask_compress import Compress
 from flask import render_template, abort
 import secrets
-from pages.home import layout as homepage_layout
 
 
 # Initialize the Dash app with a default Bootstrap theme
 app = dash.Dash(__name__,  use_pages=True, external_stylesheets=[
                 dbc.themes.SPACELAB, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css"], suppress_callback_exceptions=True)
 server = app.server
+
+from pages.home import layout as homepage_layout
+
 
 app.server.config['COMPRESS_ALGORITHM'] = 'br'
 app.server.config['COMPRESS_LEVEL'] = 9  # Set compression level (1-9, default is 6)
