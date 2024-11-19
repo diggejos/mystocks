@@ -702,7 +702,6 @@ def page_not_found(e):
     # logging.error(f"404 error: {str(e)}")
     return render_template('404.html'), 404
 
-
 @app.callback(
     [
         Output('page-content', 'children'),
@@ -758,7 +757,7 @@ def display_page_and_update_ui(pathname):
 
     # Pages where the footer should be hidden
     pages_without_footer = ['/about', '/login', '/register', '/profile', '/forgot-password',
-                            '/subscription', '/register-free', '/register-paid', '/blog', '/demo', '/']
+                            '/subscription', '/register-free', '/register-paid', '/blog', '/demo']
     if pathname in pages_without_footer:
         footer_style = {"display": "none"}
 
@@ -785,9 +784,12 @@ def display_page_and_update_ui(pathname):
         return profile_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
     elif pathname == '/forgot-password':
         return forgot_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    elif pathname  in ['/prices', '/forecast', '/compare', '/news', '/recommendations', '/simulation', '/hotstocks']:
+        return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
 
     # Default to dashboard if no specific path matches
-    return dashboard_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+    return homepage_layout, logged_in, username, layout_values['login-link'], layout_values['logout-button'], layout_values['profile-link'], layout_values['register-link'], footer_style
+
 
             
 app.clientside_callback(
