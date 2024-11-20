@@ -2,8 +2,8 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc
 import dash
 
-dash.register_page(__name__, title="Stocks Dashboard - WatchMyStocks", path='/',
-                   description="Welcome to WatchMyStocks - Your Stocks Dashboard")
+dash.register_page(__name__, title="Stocks Dashboard - WatchMyStocks - Save your watchlist today", path='/',
+                   description="Welcome to WatchMyStocks - Your Stocks Dashboard to monitor your favorite stocks and save your watchlist")
 
 # Layout template for feature sections with text and video
 def create_feature_section(title, description, video_src, link_href, button_text, reverse=False):
