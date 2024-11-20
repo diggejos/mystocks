@@ -36,7 +36,7 @@ def create_feature_section(title, description, video_src, link_href, button_text
                             title=f"{title} demo video",  # Descriptive title for SEO and accessibility
                             className="video-demo",
                             style={
-                                "width": "80%",
+                                "width": "100%",
                                 "maxWidth": "800px",
                                 "borderRadius": "8px",
                                 "boxShadow": "0 4px 8px rgba(0, 0, 0, 0.1)"
