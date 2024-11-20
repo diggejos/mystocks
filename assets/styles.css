@@ -864,7 +864,7 @@ a:hover {
 /* Media query for smaller screens */
 @media (max-width: 768px) {
     .typewriter h1 {
-        font-size: 2.0rem !important; /* Smaller font size for mobile */
+        font-size: 1.5rem !important; /* Smaller font size for mobile */
         letter-spacing: .05em; /* Adjust spacing for mobile */
         max-width: 100%; /* Allow more space for text */
         padding: 0 10px; /* Add horizontal padding */
