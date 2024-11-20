@@ -5,7 +5,7 @@ import dash
 # Register the page with relevant metadata for SEO
 dash.register_page(
     __name__,
-    title="Forecast - WatchMyStocks",
+    title="Stocks Forecast - WatchMyStocks Dashboard",
     description="Get forecasted stock prices using advanced time series models. Perfect for financial planning and insights.",
     keywords="stock forecasting, best stock forecast, time series models, stock prices"
 )
