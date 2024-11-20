@@ -5,7 +5,7 @@ from dash import html, dcc, callback, Input, Output
 import dash
 
 
-dash.register_page(__name__,    title="Stock News - WatchMyStocks",
+dash.register_page(__name__,    title="Stock News - WatchMyStocks Dashboard",
     description="Stay updated with the latest news on your selected stocks. Filter by watchlist to see tailored news for better investment insights.")
 
 layout = html.Div([
