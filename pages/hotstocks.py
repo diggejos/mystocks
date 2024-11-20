@@ -5,7 +5,7 @@ from dash import html, dcc, callback, Input, Output
 import dash
 
 
-dash.register_page(__name__,    title="Hot Stocks - WatchMyStocks",
+dash.register_page(__name__,    title="Hot Stocks - WatchMyStocks Dashboard",
     description="Discover today's top-performing stocks tailored to your risk tolerance! Get insights on high-profit potential picks backed by key financial KPIs and momentum metrics, ensuring you stay ahead in the market with data-driven recommendations.")
 
 
