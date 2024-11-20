@@ -5,7 +5,7 @@ from dash import html, dcc, callback, Input, Output
 import dash
 
 
-dash.register_page(__name__, title="Investment Simulation - WatchMyStocks",
+dash.register_page(__name__, title="Investment Simulation - WatchMyStocks Dashboard",
     description="Simulate stock investment outcomes over historical periods. Enter stock symbols, investment amount, and dates to see potential profits and losses.")
 
 layout = html.Div([
