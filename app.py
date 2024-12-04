@@ -1398,95 +1398,71 @@ app.index_string = '''
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <!-- Google tag (gtag.js) for AW-960985880 -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-960985880"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-960985880');
-        </script>
-        
-        <!-- Hotjar Tracking Code (lazy-loaded on interaction) -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                function loadHotjar() {
-                    (function(h,o,t,j,a,r){
-                        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-                        h._hjSettings={hjid:5148807,hjsv:6};
-                        a=o.getElementsByTagName('head')[0];
-                        r=o.createElement('script');r.async=1;
-                        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-                        a.appendChild(r);
-                    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-                }
-
-                // Load Hotjar only on user interaction
-                window.addEventListener('scroll', loadHotjar, {once: true});
-                window.addEventListener('click', loadHotjar, {once: true});
-            });
-        </script>
-
-        <!-- Google tag (gtag.js) for G-9BR02FMBX1 -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-9BR02FMBX1"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-9BR02FMBX1');
-        </script>
-
-        <!-- Google Tag Manager (Lazy-Loaded) -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                function loadGoogleTagManager() {
-                    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-                    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-                    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-                    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-                    })(window,document,'script','dataLayer','GTM-T6SPT9FD');
-                }
-
-                window.addEventListener('scroll', loadGoogleTagManager, {once: true});
-                window.addEventListener('click', loadGoogleTagManager, {once: true});
-            });
-        </script>
-        <script>
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/assets/service-worker.js')
-            .then(function() { console.log('Service Worker Registered'); });
-          }
-        </script>
-
         {%metas%}
-        <title>Stocks Dashboard, save your watchlist today - WatchMyStocks</title>
+        <title>Stocks Dashboard, Save Your Watchlist Today - WatchMyStocks</title>
         
         <!-- Preload styles and favicon -->
         <link rel="preload" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/styles.css" as="style">
         <link rel="stylesheet" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/styles.css?v=1.0">
         <link rel="preload" href="https://cdn.jsdelivr.net/.../bootstrap.min.css" as="style">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/.../bootstrap.min.css">
+        <link rel="icon" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/logo_with_transparent_background_favicon.png" type="image/png">
+        
         <meta charset="UTF-8">
-        <meta name="yandex-verification" content="234fe899dd410f3e" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stocks recommendations, and chat with an AI financial advisor. Save your watchlist today!">
+        <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
         <meta name="keywords" content="stock, stocks, stocks dashboard, finance, stocks forecasting, stocks news, stocks monitoring, stocks recommendations, finance, financial advisor, watchlist, watchmystocks, mystocks, apple stock, microsoft stock">
         <meta name="author" content="WatchMyStocks">
-        <meta property="og:title" content="Stocks Monitoring Dashboard" />
-        <meta property="og:description" content="Stocks monitoring, recommendations, news and more" />
-        <meta property="og:image" content="https://mystocksportfolio.io/assets/logo_with_transparent_background.png" />
-        <meta property="og:url" content="https://mystocksportfolio.io/" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <link rel="canonical" href="https://mystocksportfolio.io/" />
-        <link rel="icon" href="https://raw.githubusercontent.com/diggejos/mystocks/1f733f3776983b8fb277f7347c7d784686d36b4d/assets/logo_with_transparent_background_favicon.png" type="image/png">
+        <link rel="canonical" href="https://mystocksportfolio.io/">
+        
+        <!-- Structured data for SEO -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "url": "https://mystocksportfolio.io/",
+            "name": "myStocksPortfolio",
+            "description": "Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor.",
+            "publisher": {
+                "@type": "Organization",
+                "name": "MyStocks"
+            }
+        }
+        </script>
+
+        <!-- Lazy-loaded third-party scripts -->
+        <script>
+            window.addEventListener('load', function () {
+                // Google Tag Manager
+                (function(w, d, s, l, i) {
+                    w[l] = w[l] || [];
+                    w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+                    var f = d.getElementsByTagName(s)[0],
+                        j = d.createElement(s),
+                        dl = l != 'dataLayer' ? '&l=' + l : '';
+                    j.async = true;
+                    j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+                    f.parentNode.insertBefore(j, f);
+                })(window, document, 'script', 'dataLayer', 'GTM-T6SPT9FD');
+
+                // Hotjar
+                (function(h, o, t, j, a, r) {
+                    h.hj = h.hj || function () { (h.hj.q = h.hj.q || []).push(arguments) };
+                    h._hjSettings = { hjid: 5148807, hjsv: 6 };
+                    a = o.getElementsByTagName('head')[0];
+                    r = o.createElement('script');
+                    r.async = 1;
+                    r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+                    a.appendChild(r);
+                })(window, document, 'https://static.hotjar.com/c/hotjar-', '.js?sv=');
+            });
+        </script>
 
         <!-- Defer Dash scripts -->
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/dash/1.16.3/dash.min.js"></script>
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/dash-bootstrap-components/0.10.7/dash_bootstrap_components.min.js"></script>
 
-
         {%css%}
-        <link id="theme-switch" rel="stylesheet" href="{{ external_stylesheets[0] }}">
         
         <!-- Style adjustments for responsiveness -->
         <style>
@@ -1501,39 +1477,24 @@ app.index_string = '''
                 }
             }
         </style>
-
-        <!-- Structured data for SEO -->
-        <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "url": "https://mystocksportfolio.io/",
-          "name": "myStocksPortfolio",
-          "description": "Track and forecast stock prices, visualize trends, get stock recommendations, and chat with an AI financial advisor.",
-          "publisher": {
-            "@type": "Organization",
-            "name": "MyStocks"
-          }
-        }
-        </script>
     </head>
     <body>
-        <!-- Google Tag Manager (noscript) -->
+        <!-- Google Tag Manager (noscript fallback) -->
         <noscript>
             <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T6SPT9FD"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe>
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
         </noscript>
-        <!-- End Google Tag Manager (noscript) -->
 
         {%app_entry%}
 
         <footer>
             {%config%}
-            {%scripts%} <!-- Dash scripts go here -->
+            {%scripts%}
             {%renderer%}
         </footer>
     </body>
 </html>
+
 '''
 
 if __name__ == "__main__":
