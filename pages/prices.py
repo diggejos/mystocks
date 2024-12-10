@@ -9,11 +9,17 @@ dash.register_page(
     __name__,
     title="Stock Prices - WatchMyStocks Dashboard",
     path='/prices',
-    description="Explore real-time and historical stock prices with various charting options. Choose line or candlestick charts and add moving averages for better insights.",
-    keywords="stock prices, real-time stocks, historical stock prices, stock charting, moving average, candlestick charts"
+    description="Explore real-time and historical stock prices dashboard with various charting options. Choose line or candlestick charts and add moving averages for better insights.",
+    keywords="stock prices, real-time stocks, historical stock prices, stock charting, moving average, candlestick charts, dashboard, aapl, msft"
 )
 
 layout = html.Div([
+
+    # Invisible SEO Headers
+    html.H1("Real-Time and Historical Stock Prices Dashboard", className="invisible-header"),
+    html.H2("Explore Stock Charting Options with Moving Averages", className="invisible-header"),
+    html.H3("Line and Candlestick Charts for Better Insights", className="invisible-header"),
+    
     
     dcc.Store(id='prices-fig-store', storage_type='session'),
     # dcc.Store(id='individual-stocks-store', storage_type='session'),
