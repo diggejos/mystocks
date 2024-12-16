@@ -27,6 +27,7 @@ from flask_minify import Minify
 from flask_compress import Compress
 from flask import render_template, abort
 import secrets
+from flask import send_from_directory
 
 
 # Initialize the Dash app with a default Bootstrap theme
@@ -248,6 +249,7 @@ with app.server.app_context():
 
 
 app.layout = html.Div([
+    dbc.Container(dash.page_container, id='page-content', fluid=True) , # Render pages dynamically
     # Store to keep the conversation history
     dcc.Store(id='conversation-store', data=[]),
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT'], storage_type='session'),
@@ -260,11 +262,6 @@ app.layout = html.Div([
     ly.create_navbar(themes),  # Navbar
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
-    dbc.Container(
-        dash.page_container,  # This will render the content of each page dynamically
-        id='page-content',
-        fluid=True
-    ),
     dcc.Store(id='active-tab', data='📈 Prices'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
@@ -286,6 +283,18 @@ app.layout = html.Div([
     dcc.Store(id='last-known-path', data='/prices'),
     dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session'),
 ])
+
+# Serve Static Assets
+@server.route('/assets/<path:path>')
+def serve_assets(path):
+    return send_from_directory('assets', path)
+
+# Catch-All Route for Multipage App
+@server.route('/', defaults={'path': ''})
+@server.route('/<path:path>')
+def serve_dash_app(path):
+    # Always serve Dash's `index.html` for unmatched routes
+    return send_from_directory('', 'index.html')
 
 
 auth_callbacks.register_auth_callbacks(app, server, mail)
