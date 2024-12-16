@@ -249,8 +249,8 @@ with app.server.app_context():
 
 
 app.layout = html.Div([
-    dbc.Container(dash.page_container, id='page-content', fluid=True) , # Render pages dynamically
     # Store to keep the conversation history
+
     dcc.Store(id='conversation-store', data=[]),
     dcc.Store(id='individual-stocks-store', data=['AAPL', 'MSFT'], storage_type='session'),
     dcc.Store(id='theme-store', data=dbc.themes.SPACELAB),
@@ -262,6 +262,8 @@ app.layout = html.Div([
     ly.create_navbar(themes),  # Navbar
     ly.create_overlay(),  # Access Restricted Overlay
     dcc.Location(id='url', refresh=True),
+    dbc.Container(dash.page_container, id='page-content', fluid=True) , # Render pages dynamically
+
     dcc.Store(id='active-tab', data='📈 Prices'),
     # dcc.Location(id='url-refresh', refresh=True),
     dcc.Location(id='url-redirect', refresh=True),
@@ -281,7 +283,8 @@ app.layout = html.Div([
     # Initialize the forecast attempts at 0
     # dcc.Store(id='forecast-attempt-store', data=0),
     dcc.Store(id='last-known-path', data='/prices'),
-    dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session'),
+    dcc.Store(id='forecast-attempt-store', data=0, storage_type= 'session')
+
 ])
 
 # Serve Static Assets
