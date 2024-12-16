@@ -100,13 +100,31 @@ layout = html.Div([
             "textAlign": "center",
         },
         children=[
-            html.H1("Welcome to WatchMyStocks", style={"fontSize": "4rem", "fontWeight": "bold"}),
+            html.Div(
+                className="typewriter",
+                style={
+                    "textAlign": "center",
+                    "padding": "20px 10px",  # Add padding to prevent edges on mobile
+                    "maxWidth": "100%",      # Ensure the text block is not too wide
+                    "overflow": "hidden"     # Prevent overflow on smaller screens
+                },
+                children=[
+                    html.H1(
+                        "Welcome to WatchMyStocks",
+                        style={
+                            "fontSize": "4rem",  # This adjusts based on the media query
+                            "fontWeight": "bold",
+                            "fontFamily": "'Roboto Mono', monospace",
+                            "margin": "0 auto",
+                            "display": "inline-block"
+                        }
+                    )
+                ]
+            ),
+            
             html.H2("Your Stocks Dashboard"),
             html.H3("Simplicity is key"),
-            html.P(
-                "Your go-to platform for tracking, forecasting, and monitoring stock trends.",
-                style={"fontSize": "1.5rem", "margin": "20px 0", "color": "var(--bs-primary)"}
-            ),
+
             html.Div([
                 html.Button("Explore Stock Prices", id="btn-prices", n_clicks=0, className="btn btn-primary btn-lg m-2"),
                 html.Button("Forecast Stocks", id="btn-forecast", n_clicks=0, className="btn btn-info btn-lg m-2"),
