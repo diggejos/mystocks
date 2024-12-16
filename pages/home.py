@@ -1,5 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc
+from dash.dependencies import Input, Output
 import dash
 
 dash.register_page(
@@ -25,10 +26,11 @@ def create_feature_section(title, description, video_src, link_href, button_text
                         html.Div([
                             html.H2(title, className=f"mb-3 {text_color_class}"),
                             html.P(description, className=f"lead {text_color_class}"),
-                            dbc.Button(
-                                dcc.Link(button_text, href=link_href, className="text-white text-decoration-none"),
-                                color="success",
-                                className="mt-3"
+                            html.Button(
+                                button_text,
+                                id=f"btn-{button_text.replace(' ', '-').lower()}",
+                                n_clicks=0,
+                                className="btn btn-success mt-3"
                             )
                         ]),
                         md=6,
@@ -61,6 +63,7 @@ def create_feature_section(title, description, video_src, link_href, button_text
     )
 
 
+
 # JavaScript for playing videos only when visible
 js_script = """
 document.addEventListener('DOMContentLoaded', function () {
@@ -83,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 """
 
+
 # Main layout
 layout = html.Div([
     # Hero section
@@ -96,58 +100,19 @@ layout = html.Div([
             "textAlign": "center",
         },
         children=[
-            html.Link(
-                href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400&display=swap",
-                rel="stylesheet"
-            ),
-            html.Div(
-                className="typewriter",
-                style={
-                    "textAlign": "center",
-                    "padding": "20px 10px",  # Add padding to prevent edges on mobile
-                    "maxWidth": "100%",      # Ensure the text block is not too wide
-                    "overflow": "hidden"     # Prevent overflow on smaller screens
-                },
-                children=[
-                    html.H1(
-                        "Welcome to WatchMyStocks",
-                        style={
-                            "fontSize": "4rem",  # This adjusts based on the media query
-                            "fontWeight": "bold",
-                            "fontFamily": "'Roboto Mono', monospace",
-                            "margin": "0 auto",
-                            "display": "inline-block"
-                        }
-                    )
-                ]
-            ),
-
+            html.H1("Welcome to WatchMyStocks", style={"fontSize": "4rem", "fontWeight": "bold"}),
             html.H2("Your Stocks Dashboard"),
             html.H3("Simplicity is key"),
-
             html.P(
                 "Your go-to platform for tracking, forecasting, and monitoring stock trends.",
                 style={"fontSize": "1.5rem", "margin": "20px 0", "color": "var(--bs-primary)"}
             ),
             html.Div([
-                dbc.Button(
-                    dcc.Link("Explore Stock Prices", href="/prices", className="text-white text-decoration-none"),
-                    color="primary",
-                    size="lg",
-                    className="m-2"
-                ),
-                dbc.Button(
-                    dcc.Link("Forecast Stocks", href="/forecast", className="text-white text-decoration-none"),
-                    color="info",
-                    size="lg",
-                    className="m-2"
-                ),
-                dbc.Button(
-                    dcc.Link("Read News", href="/news", className="text-white text-decoration-none"),
-                    color="secondary",
-                    size="lg",
-                    className="m-2"
-                )
+                html.Button("Explore Stock Prices", id="btn-prices", n_clicks=0, className="btn btn-primary btn-lg m-2"),
+                html.Button("Forecast Stocks", id="btn-forecast", n_clicks=0, className="btn btn-info btn-lg m-2"),
+                html.Button("Read News", id="btn-news", n_clicks=0, className="btn btn-secondary btn-lg m-2"),
+                html.Button("Compare Stocks", id="btn-compare", n_clicks=0, className="btn btn-warning btn-lg m-2"),
+                html.Button("Get Hottest Stocks", id="btn-hotstocks", n_clicks=0, className="btn btn-danger btn-lg m-2"),
             ])
         ]
     ),
@@ -209,3 +174,66 @@ layout = html.Div([
     # Adding the JavaScript to the layout
     html.Script(js_script)
 ])
+
+# Client-Side Callbacks for All Buttons
+app = dash.get_app()
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            window.location.href = "/prices";
+        }
+    }
+    """,
+    Output('btn-prices', 'n_clicks'),
+    Input('btn-prices', 'n_clicks')
+)
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            window.location.href = "/forecast";
+        }
+    }
+    """,
+    Output('btn-forecast', 'n_clicks'),
+    Input('btn-forecast', 'n_clicks')
+)
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            window.location.href = "/news";
+        }
+    }
+    """,
+    Output('btn-news', 'n_clicks'),
+    Input('btn-news', 'n_clicks')
+)
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            window.location.href = "/compare";
+        }
+    }
+    """,
+    Output('btn-compare', 'n_clicks'),
+    Input('btn-compare', 'n_clicks')
+)
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            window.location.href = "/hotstocks";
+        }
+    }
+    """,
+    Output('btn-hotstocks', 'n_clicks'),
+    Input('btn-hotstocks', 'n_clicks')
+)
