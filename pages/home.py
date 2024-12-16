@@ -2,8 +2,13 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc
 import dash
 
-dash.register_page(__name__, title="Stocks Dashboard - WatchMyStocks - Save your watchlist today", path='/',
-                   description="Welcome to WatchMyStocks - Your Stocks Dashboard to monitor your favorite stocks and save your watchlist")
+dash.register_page(
+    __name__,
+    title="Stocks Dashboard - WatchMyStocks - Save your watchlist today",
+    path='/',
+    description="Welcome to WatchMyStocks - Your Stocks Dashboard to monitor your favorite stocks and save your watchlist"
+)
+
 
 # Layout template for feature sections with text and video
 def create_feature_section(title, description, video_src, link_href, button_text, reverse=False):
@@ -20,7 +25,11 @@ def create_feature_section(title, description, video_src, link_href, button_text
                         html.Div([
                             html.H2(title, className=f"mb-3 {text_color_class}"),
                             html.P(description, className=f"lead {text_color_class}"),
-                            dbc.Button(button_text, href=link_href, color="success", className="mt-3")
+                            dbc.Button(
+                                dcc.Link(button_text, href=link_href, className="text-white text-decoration-none"),
+                                color="success",
+                                className="mt-3"
+                            )
                         ]),
                         md=6,
                         className="order-md-2" if reverse else "order-md-1",
@@ -52,7 +61,6 @@ def create_feature_section(title, description, video_src, link_href, button_text
     )
 
 
-
 # JavaScript for playing videos only when visible
 js_script = """
 document.addEventListener('DOMContentLoaded', function () {
@@ -79,7 +87,6 @@ document.addEventListener('DOMContentLoaded', function () {
 layout = html.Div([
     # Hero section
     html.Div(
-
         style={
             "backgroundImage": "url('/assets/background_picture.svg')",
             "backgroundSize": "cover",
@@ -115,18 +122,33 @@ layout = html.Div([
                 ]
             ),
 
-
             html.H2("Your Stocks Dashboard"),
             html.H3("Simplicity is key"),
 
-
             html.P(
-                "Your go-to platform for tracking, forecasting, and monitoring stock trends.", 
+                "Your go-to platform for tracking, forecasting, and monitoring stock trends.",
                 style={"fontSize": "1.5rem", "margin": "20px 0", "color": "var(--bs-primary)"}
             ),
-            dbc.Button("Explore Stock Prices", href="/prices", color="primary", size="lg", className="m-2"),
-            dbc.Button("Forecast Stocks", href="/forecast", color="info", size="lg", className="m-2"),
-            dbc.Button("Read News", href="/news", color="secondary", size="lg", className="m-2")
+            html.Div([
+                dbc.Button(
+                    dcc.Link("Explore Stock Prices", href="/prices", className="text-white text-decoration-none"),
+                    color="primary",
+                    size="lg",
+                    className="m-2"
+                ),
+                dbc.Button(
+                    dcc.Link("Forecast Stocks", href="/forecast", className="text-white text-decoration-none"),
+                    color="info",
+                    size="lg",
+                    className="m-2"
+                ),
+                dbc.Button(
+                    dcc.Link("Read News", href="/news", className="text-white text-decoration-none"),
+                    color="secondary",
+                    size="lg",
+                    className="m-2"
+                )
+            ])
         ]
     ),
 
@@ -146,7 +168,6 @@ layout = html.Div([
         "Go to Forecast",
         reverse=True
     ),
-    
     create_feature_section(
         "Stock Comparison",
         "Compare stocks against market indices and peers to find the best opportunities. See how the stocks in your watchlist perform against the market e.g. SP500 indices.",
@@ -161,7 +182,6 @@ layout = html.Div([
         "/hotstocks",
         "Get hottest Stocks",
         reverse=True
-
     ),
     create_feature_section(
         "AI Chatbot",
