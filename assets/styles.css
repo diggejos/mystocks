@@ -846,7 +846,7 @@ a:hover {
 
 @keyframes blink-caret {
     from, to { border-color: transparent; }
-    50% { border-color: white; }
+    60% { border-color: black; }
 }
 
 .typewriter h1 {
@@ -856,29 +856,17 @@ a:hover {
     margin: 0 auto;
     letter-spacing: .15em;
     animation: typing 3.5s steps(30, end), blink-caret .75s step-end infinite;
-    width: 100%; /* Ensures it takes the full width available */
-    max-width: 90%; /* Constrain width on smaller screens */
+    width: 60%; /* Ensures it takes the full width available */
+    max-width: 60%; /* Constrain width on smaller screens */
     display: inline-block;
 }
 
 /* Media query for smaller screens */
 @media (max-width: 768px) {
     .typewriter h1 {
-        font-size: 1.5rem !important; /* Smaller font size for mobile */
+        font-size: 1.3rem !important; /* Smaller font size for mobile */
         letter-spacing: .05em; /* Adjust spacing for mobile */
         max-width: 100%; /* Allow more space for text */
         padding: 0 10px; /* Add horizontal padding */
     }
 }
-
-.invisible-header {
-    position: absolute;
-    left: -9999px;
-    top: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-}
-
