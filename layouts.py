@@ -419,7 +419,7 @@ def create_chatbot_modal():
                              'background-color': '#f8f9fa',
                              'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'
                          }),
-                dcc.Textarea(id='chatbot-input',
+                dcc.Loading(dcc.Textarea(id='chatbot-input',
                              placeholder='Ask your financial question...',
                              style={
                                  'width': '100%',
@@ -430,7 +430,7 @@ def create_chatbot_modal():
                                  'margin-top': '10px',
                                  'resize': 'none',
                                  'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'
-                             }),
+                             })),
                 dbc.Button("Send", id='send-button', color='primary', className='mt-2'),
                 dbc.Button("Clear Conversation", id='clear-button', color='danger', className='mt-2 ms-2'),
             ])
@@ -443,7 +443,6 @@ def create_chatbot_modal():
             "z-index": "2000",
         }    
     )
-
 
 def create_footer():
     return html.Footer(
