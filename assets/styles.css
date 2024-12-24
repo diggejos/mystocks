@@ -265,7 +265,6 @@
 
 /* Footer Container */
 .footer {
-    position: fixed;
     background-color: #3b5e82; /* Light grey background color */
     color: #e1e6eb; /* Darker text color for readability */
     padding:10px 0; /* Reduce top and bottom padding */
@@ -274,13 +273,24 @@
     margin-top:200px;
     margin-bottom:30px; /* Center text in the footer */
     height:180px
-    z-index: 1030; /* Ensures it stays above other content */
-
 }
 
-/* Adjusting body content to avoid overlap with footer */
-body {
-    margin-bottom: 180px; /* Matches footer height to prevent overlap */
+/* Ensure the body takes up at least the full viewport height */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+/* Wrapper to ensure footer sticks to the bottom of content */
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+/* Main content area takes up remaining space above footer */
+.dash-container {
+    flex: 1;
 }
 
 /* Links in the Footer */
