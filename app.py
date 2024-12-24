@@ -42,7 +42,7 @@ from layouts import login_layout, dashboard_layout, about_layout,profile_layout,
 app.server.config['COMPRESS_ALGORITHM'] = 'br'
 app.server.config['COMPRESS_LEVEL'] = 9  # Set compression level (1-9, default is 6)
 app.server.config['COMPRESS_MIN_SIZE'] = 500  # Minimum size (in bytes) to trigger compression
-app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/javascript', 'application/json','font/woff','font/woff2', 'image/gif']  # File types to compress
+# app.server.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/javascript', 'application/json','font/woff','font/woff2', 'image/gif']  # File types to compress
 compress = Compress()
 compress.init_app(server)
 
@@ -1424,7 +1424,7 @@ app.index_string = '''
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Track and forecast your favorite stocks, visualize trends, get stock recommendations, and chat with an AI financial advisor. Save your watchlist today!">
         <meta name="keywords" content="stock, stocks, stocks dashboard, finance, stocks forecasting, stocks news, stocks monitoring, stocks recommendations, finance, financial advisor, watchlist, watchmystocks, mystocks, apple stock, microsoft stock">
-        <meta name="author" content="WatchMyStocks">
+        <meta name="author" content="WatchMyStocks">f
         <link rel="canonical" href="https://mystocksportfolio.io/">
         
         <!-- Structured data for SEO -->
