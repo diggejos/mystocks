@@ -265,6 +265,7 @@
 
 /* Footer Container */
 .footer {
+    position: fixed;
     background-color: #3b5e82; /* Light grey background color */
     color: #e1e6eb; /* Darker text color for readability */
     padding:10px 0; /* Reduce top and bottom padding */
@@ -273,6 +274,13 @@
     margin-top:200px;
     margin-bottom:30px; /* Center text in the footer */
     height:180px
+    z-index: 1030; /* Ensures it stays above other content */
+
+}
+
+/* Adjusting body content to avoid overlap with footer */
+body {
+    margin-bottom: 180px; /* Matches footer height to prevent overlap */
 }
 
 /* Links in the Footer */
