@@ -263,16 +263,20 @@
     }
 }
 
-/* Footer Container */
-.footer {
-    background-color: #3b5e82; /* Light grey background color */
-    color: #e1e6eb; /* Darker text color for readability */
-    padding:10px 0; /* Reduce top and bottom padding */
-    font-size: 14px; /* Smaller font size */
+/* Footer with fixed position from the top */
+.fixed-footer {
+    position: relative;
+    bottom: 0px; /* Distance from the top of the viewport */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Adjust for exact centering */
+    z-index: 1030; /* Ensure it stays above other elements */
+    width: 100%; /* Adjust width as needed */
+    background-color: var(--bs-dark); /* Matches Darkly theme */
+    color: white;
     text-align: center;
-    margin-top:200px;
-    margin-bottom:30px; /* Center text in the footer */
-    height:180px
+    padding: 1rem 2rem; /* Add padding for better readability */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for a floating effect */
+    /*border-radius: 10px; /* Rounded corners for a polished look */
 }
 
 /* Ensure the body takes up at least the full viewport height */
