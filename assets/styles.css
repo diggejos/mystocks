@@ -263,12 +263,10 @@
     }
 }
 
-/* Footer with fixed position from the top */
 .fixed-footer {
-    position: relative;
-    bottom: 0px; /* Distance from the top of the viewport */
-    left: 50%; /* Center horizontally */
-    transform: translateX(-50%); /* Adjust for exact centering */
+    position: absolute;
+    top: 4800px;
+    /*left: 50%; /* Center horizontally */
     z-index: 1030; /* Ensure it stays above other elements */
     width: 100%; /* Adjust width as needed */
     background-color: var(--bs-dark); /* Matches Darkly theme */
