@@ -475,9 +475,8 @@ def create_footer():
                 ], className="d-flex justify-content-center")
             ])
         ], fluid=True, style={"height": "180px"}),
-        className="footer fixed-bottom bg-dark text-white py-3"
+        className="footer bg-dark text-white py-3"
     )
-
 
 
 
