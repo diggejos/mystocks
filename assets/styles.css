@@ -265,7 +265,7 @@
 
 .fixed-footer {
     position: absolute;
-    top: 4800px;
+    top: 5000px;
     /*left: 50%; /* Center horizontally */
     z-index: 1030; /* Ensure it stays above other elements */
     width: 100%; /* Adjust width as needed */
