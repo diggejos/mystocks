@@ -474,9 +474,10 @@ def create_footer():
                     html.P("© 2024 WatchMyStocks. All rights reserved.", className="text-center")
                 ], className="d-flex justify-content-center")
             ])
-        ], fluid=True,style={"height": "180px"}),
-        className="footer"
+        ], fluid=True, style={"height": "180px"}),
+        className="footer fixed-bottom bg-dark text-white py-3"
     )
+
 
 
 
