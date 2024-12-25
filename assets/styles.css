@@ -264,7 +264,7 @@
 }
 
 .fixed-footer {
-    position: fix;
+    position: fixed;
     top: 5000px;
     /*left: 50%; /* Center horizontally */
     z-index: 1030; /* Ensure it stays above other elements */
